@@ -1,4 +1,4 @@
-package models
+package types
 
 type Namespace struct {
 	Name string `json:"name"  binding:"required"`
