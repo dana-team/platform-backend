@@ -26,7 +26,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("can't initialize zap logger: %v", err)
 	}
-	defer logger.Sync()
+	defer func() {
+		if err := logger.Sync(); err != nil {
+			log.Fatalf("Error syncing logger: %v", err)
+		}
+	}()
 
 	r := gin.Default()
 	r.GET("/ping", func(c *gin.Context) {
@@ -43,5 +47,7 @@ func main() {
 		nsGroup.DELETE("/:name", routes.DeleteNamespace(client, logger))
 	}
 
-	r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+	if err := r.Run(); err != nil {
+		panic(err.Error())
+	}
 }
