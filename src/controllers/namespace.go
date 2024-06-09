@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+
 	"github.com/dana-team/platform-backend/src/types"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
@@ -10,11 +11,11 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-type NameSpaceController interface {
-	GetNamespaces() (types.OutputNamespaces, error)
-	GetNamespace(nsName string) (types.Namespace, error)
-	CreateNamespace(nsName string) (types.Namespace, error)
-	DeleteNamespace(nsName string) error
+type NamespaceController interface {
+	GetNamespaces() (types.NamespaceList, error)
+	GetNamespace(name string) (types.Namespace, error)
+	CreateNamespace(name string) (types.Namespace, error)
+	DeleteNamespace(name string) error
 }
 
 type namespaceController struct {
@@ -23,64 +24,65 @@ type namespaceController struct {
 	logger *zap.Logger
 }
 
-func NewNSController(client *kubernetes.Clientset, logger *zap.Logger) NameSpaceController {
+func New(client *kubernetes.Clientset, context context.Context, logger *zap.Logger) NamespaceController {
 	return &namespaceController{
 		logger: logger,
 		client: client,
-		ctx:    context.Background(),
+		ctx:    context,
 	}
 }
 
-func (n *namespaceController) GetNamespaces() (types.OutputNamespaces, error) {
+func (n *namespaceController) GetNamespaces() (types.NamespaceList, error) {
+	n.logger.Debug("Trying to fetch all namespaces")
 
+	namespaceList := types.NamespaceList{}
 	namespaces, err := n.client.CoreV1().Namespaces().List(n.ctx, metav1.ListOptions{})
-	n.logger.Debug("trying to fetch all namespaces")
 	if err != nil {
 		n.logger.Error(fmt.Sprintf("Could not fetch namespaces with error: %s", err.Error()))
-		return types.OutputNamespaces{}, err
+		return namespaceList, err
 	}
-	n.logger.Debug("fetched namespaces successfully")
-	outputNamespaces := types.OutputNamespaces{}
+
+	n.logger.Debug("Fetched namespaces successfully")
 
 	for _, namespace := range namespaces.Items {
-		outputNamespaces.Namespaces = append(outputNamespaces.Namespaces, types.Namespace{Name: namespace.Name})
+		namespaceList.Namespaces = append(namespaceList.Namespaces, types.Namespace{Name: namespace.Name})
 	}
-	outputNamespaces.Count = len(outputNamespaces.Namespaces)
-	return outputNamespaces, nil
+	namespaceList.Count = len(namespaceList.Namespaces)
+	return namespaceList, nil
 }
 
-func (n *namespaceController) GetNamespace(nsName string) (types.Namespace, error) {
-	outputNS := types.Namespace{}
-	n.logger.Debug(fmt.Sprintf("Trying to fetch namespace: %q", nsName))
-	namespace, err := n.client.CoreV1().Namespaces().Get(n.ctx, nsName, metav1.GetOptions{})
-	if err != nil {
-		n.logger.Error(fmt.Sprintf("Could not fetch namespace %q with error: %s", nsName, err.Error()))
-	}
-	n.logger.Debug(fmt.Sprintf("fetched namespace %q successfully", nsName))
-	outputNS.Name = namespace.Name
-	return outputNS, err
+func (n *namespaceController) GetNamespace(name string) (types.Namespace, error) {
+	n.logger.Debug(fmt.Sprintf("Trying to fetch namespace: %q", name))
 
+	namespace, err := n.client.CoreV1().Namespaces().Get(n.ctx, name, metav1.GetOptions{})
+	if err != nil {
+		n.logger.Error(fmt.Sprintf("Could not fetch namespace %q with error: %s", name, err.Error()))
+	}
+
+	n.logger.Debug(fmt.Sprintf("Fetched namespace %q successfully", name))
+	return types.Namespace{Name: namespace.Name}, err
 }
 
-func (n *namespaceController) CreateNamespace(nsName string) (types.Namespace, error) {
-	outputNS := types.Namespace{}
-	namespace := v1.Namespace{}
-	namespace.Name = nsName
-	n.logger.Debug(fmt.Sprintf("Trying to create namespace: %q", nsName))
-	createdNamespace, err := n.client.CoreV1().Namespaces().Create(n.ctx, &namespace, metav1.CreateOptions{})
+func (n *namespaceController) CreateNamespace(name string) (types.Namespace, error) {
+	n.logger.Debug(fmt.Sprintf("Trying to create namespace: %q", name))
+
+	newNamespace := v1.Namespace{}
+	newNamespace.Name = name
+	namespace, err := n.client.CoreV1().Namespaces().Create(n.ctx, &newNamespace, metav1.CreateOptions{})
 	if err != nil {
-		n.logger.Error(fmt.Sprintf("Could not create namespace %q with error: %s", nsName, err.Error()))
+		n.logger.Error(fmt.Sprintf("Could not create namespace %q with error: %s", name, err.Error()))
 		return types.Namespace{}, err
 	}
-	outputNS.Name = createdNamespace.Name
-	n.logger.Debug(fmt.Sprintf("created namespace %q successfully", nsName))
-	return outputNS, err
+
+	n.logger.Debug(fmt.Sprintf("Created namespace %q successfully", name))
+	return types.Namespace{Name: namespace.Name}, err
 }
 
-func (n *namespaceController) DeleteNamespace(nsName string) error {
-	n.logger.Debug(fmt.Sprintf("Trying to delete namespace: %q", nsName))
-	if err := n.client.CoreV1().Namespaces().Delete(n.ctx, nsName, metav1.DeleteOptions{}); err != nil {
-		n.logger.Debug(fmt.Sprintf("deleted namespace %q successfully", nsName))
+func (n *namespaceController) DeleteNamespace(name string) error {
+	n.logger.Debug(fmt.Sprintf("Trying to delete namespace: %q", name))
+
+	if err := n.client.CoreV1().Namespaces().Delete(n.ctx, name, metav1.DeleteOptions{}); err != nil {
+		n.logger.Debug(fmt.Sprintf("Deleted namespace %q successfully", name))
 	}
 	return nil
 }
