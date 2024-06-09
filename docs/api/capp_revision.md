@@ -1,20 +1,18 @@
-
-# CappRevision Management CRUD API
-
-## Overview
+# CappRevision Management API
 
 This document outlines the CRUD (Create, Read, Update, Delete) on CappRevision. Capp revision is represents version of capp.
 
 ## API Endpoints
 
-### Capp Revision  
-- **GET** `/v1/namespaces/{namespaece}/cappRevisions`
-  - **Description**: get all cappRevision of namespace
-  - **Query Params**: 
+### Capp Revision
+
+- **GET** `/v1/namespaces/{namespace}/cappRevisions`
+  - **Description**: Get all cappRevision of namespace.
+  - **Query Params**:
     ```json
     {
       "lables": {
-        "key": str,  
+        "key": str,
         "key1": str
       }
     }
@@ -27,11 +25,10 @@ This document outlines the CRUD (Create, Read, Update, Delete) on CappRevision. 
     }
     ```
 
-
-- **GET** `/v1/namepaces/{namespaece}/cappRevisions/{cappRevisionName}`
-  - **Response**: CappRevision info or an error message.`
+- **GET** `/v1/namepaces/{namespace}/cappRevisions/{cappRevisionName}`
+  - **Response**: CappRevision info or an error message.
     ```json
     {
-      CappRevision 
+      CappRevision
     }
     ```

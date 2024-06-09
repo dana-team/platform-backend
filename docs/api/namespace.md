@@ -1,24 +1,22 @@
 
-# Namespace Management CRUD API
-
-## Overview
+# Namespace Management API
 
 This document outlines the CRUD (Create, Read, Update, Delete) operations for managing namespaces.
 
 - **GET** `/v1/namespaces`
-  - **Description**: get all namespaces
- - **Path Parameter**: 
-    -  `namespace` - namespace of the capp.
-  - **Query Params**: 
+  - **Description**: Get all namespaces.
+  - **Path Parameter**:
+    - `namespace` - The namespace of the capp.
+  - **Query Params**:
     ```json
     {
       "lables": {
-        "key": str,  
+        "key": str,
         "key1": str
       }
     }
     ```
-  - **Response**:  namespaces names  or an error message.
+  - **Response**: Namespaces names or an error message.
     ```json
     {
        "namespaces": []str,
@@ -27,36 +25,31 @@ This document outlines the CRUD (Create, Read, Update, Delete) operations for ma
     ```
 
 - **GET** `/v1/namespaces/{namespace}`
-  - **Description**: get specific namespace
- - **Path Parameter**: 
-    -  `namespace` - namespace of the capp.
-
-  - **Response**:  namespace name and users for the namespaces or an error message.
+  - **Description**: Get specific namespace.
+  - **Path Parameter**: 
+    - `namespace` - The namespace of the capp.
+  - **Response**: Namespace name or an error message.
     ```json
     {
-       "namespace": str ,
+       "namespace": str,
     }
     ```
 
 - **GET** `/v1/namespaces/{namespace}/users`
-  - **Description**: get user of namespace
- - **Path Parameter**: 
-    -  `namespace` - namespace of the capp.
-
-  - **Response**:  user of the namespace or an error message.
+  - **Description**: Get users of namespace.
+  - **Path Parameter**:
+    -  `namespace` - The namespace of the capp.
+  - **Response**: The users of the namespace or an error message.
     ```json
     {
        "users": []str 
     }
     ```
 
-        
-
-
 - **POST** `/v1/namespaces`
-  - **Description**: Create namespace
-  - **Path Parameter**: 
-  - **Body**: 
+  - **Description**: Create a new namespace.
+  - **Path Parameter**:
+  - **Body**:
     ```json
     {
       name: str
@@ -70,9 +63,10 @@ This document outlines the CRUD (Create, Read, Update, Delete) operations for ma
     ```
 
 - **POST** `/v1/namespaces/users`
-  - **Description**: Add members to namespace
-  - **Path Parameter**: 
-  - **Body**: 
+  - **Description**: Add users to namespace.
+  - **Path Parameter**:
+    - `userNames` - User names.
+  - **Body**:
     ```json
     {
       userNames: []str
@@ -86,11 +80,10 @@ This document outlines the CRUD (Create, Read, Update, Delete) operations for ma
     }
     ```
 
-
 - **DELETE** `/v1/namespaces/{namespaece}`
-  - **Description**: delete namespace
- - **Path Parameter**: 
-    -  `namespace` - namespace name.
+  - **Description**: Delete a specific namespace.
+  - **Path Parameter**:
+    - `namespace` - Namespace name.
   - **Response**: Confirmation of deletion an error message.
     ```json
     {
@@ -99,15 +92,12 @@ This document outlines the CRUD (Create, Read, Update, Delete) operations for ma
     ```
 
 - **GET** `/v1/users/{userName}`
-  - **Description**: get user
- - **Path Parameter**: 
-    -  `userName` - user name.
-
-  - **Response**:  user or an error message if not found.
+  - **Description**: Get a specific user.
+  - **Path Parameter**:
+    - `userName` - The user name.
+  - **Response**: The user or an error message if not found.
     ```json
     {
-       "user": str 
+       "user": str
     }
     ```
-
-        

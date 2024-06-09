@@ -3,7 +3,7 @@
 
 ## Overview
 
-This API provides access to Kubernetes pod information, specifically retrieving the names of containers within a specified pod in a given namespace. It is intended for use in environments where Kubernetes pod management is essential. This document details the usage of the `//{namespace}/{pod_name}/containers` endpoint.
+This API provides access to Kubernetes pod information, specifically retrieving the names of containers within a specified pod in a given namespace. It is intended for use in environments where Kubernetes pod management is essential. This document details the usage of the `/{namespace}/{pod_name}/containers` endpoint.
 
 ## API Endpoint
 
@@ -13,9 +13,11 @@ This endpoint retrieves a list of container names within the specified pod in th
 
 #### Path Parameters
 
-- **namespace** (required): The Kubernetes namespace in which the pod resides.
-- **capp_name** (required):  The capp name is required for us to know which cluster to 
-- **pod_name** (required): The name of the pod from which to retrieve container names. This string should accurately match the pod name within the specified namespace.
+##### Required
+
+- **namespace**: The Kubernetes namespace in which the pod resides.
+- **capp_name**: The capp name is required for us to know which cluster to query.
+- **pod_name**: The name of the pod from which to retrieve container names. This string should accurately match the pod name within the specified namespace.
 
 #### Response
 

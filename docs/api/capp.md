@@ -1,18 +1,21 @@
-### Capp Namespaced
+### Capp Namespaced API
+
+## API Endpoints
+
 - **GET** `/v1/namespaces/{namespace}/capps`
-  - **Description**: get all capp of namespace
- - **Path Parameter**: 
-    -  `namespace` - namespace of the capp.
-  - **Query Params**: 
+  - **Description**: Get all capp of namespace.
+  - **Path Parameter**:
+    - `namespace` - The namespace of the capp.
+  - **Query Params**:
     ```json
     {
       "lables": {
-        "key": str,  
+        "key": str,
         "key1": str
       }
     }
     ```
-  - **Response**:  capp names  or an error message.
+  - **Response**: Capp names or an error message.
     ```json
     {
        "capps": []str,
@@ -20,17 +23,16 @@
     }
     ```
 
-
 - **GET** `/v1/namespaces/{namespace}/capps/{cappName}`
-  - **Description**: get all capps of namespace
- - **Path Parameter**: 
-    -  `namespace` - namespace of the capp.
-    -  `cappName` - The capp name to fetch.
+  - **Description**: Get all capps of namespace.
+  - **Path Parameter**:
+    - `namespace` - The namespace of the capp.
+    - `cappName` - The capp name to fetch.
   - **Query Params**: 
     ```json
     {
       "lables": {
-        "key": str,  
+        "key": str,
         "key1": str
       }
     }
@@ -43,16 +45,15 @@
     }
     ```
 
-
 - **GET** `/v1/namespaces/{namespace}/capps`
-  - **Description**: get all capps of namespace
- - **Path Parameter**: 
-    -  `namespace` - namespace of the capp.
-  - **Query Params**: 
+  - **Description**: Get all capps of namespace.
+  - **Path Parameter**:
+    -  `namespace` - The namespace of the capp.
+  - **Query Params**:
     ```json
     {
       "lables": {
-        "key": str,  
+        "key": str,
         "key1": str
       }
     }
@@ -65,12 +66,11 @@
     }
     ```
 
-
 - **POST** `/v1/namespaces/{namespace}/capps`
-  - **Description**: Create Cpp
-  - **Path Parameter**: 
-    -  `namespace` - namespace of the capp.
-  - **Body**: 
+  - **Description**: Create capp in a namespace.
+  - **Path Parameter**:
+    - `namespace` - The namespace of the capp.
+  - **Body**:
     ```json
     {
         Capp
@@ -83,21 +83,18 @@
     }
     ```
 
-
 - **PUT** `/v1/namespaces/{namespace}/capps`
-  - **Description**: Update capp
-  - **Path Parameter**: 
-    -  `namespace` - namespace of the capp.
-  - **Body**: 
+  - **Description**: Update capp in a namespace.
+  - **Path Parameter**:
+    - `namespace` - The namespace of the capp.
+  - **Body**:
 ```json
 {
  "capp": {
-
     "metadata": {
       "name": "string", // max length 53 char
       "namespace": "string"
-    }
-    ,
+    },
     "spec": {
       "scaleMetric": "concurrency",  // Available options: "cpu", "memory", "rps", "concurrency"
       "site": "example-cluster",     // Optional: specific cluster or placement name
@@ -117,7 +114,7 @@
     }
   }
 }
-
+```
   - **Response**: Confirmation of update or an error message.
 ```json
 {
@@ -127,8 +124,7 @@
     "metadata": {
       "name": "example-capp", // max length 53 char
       "namespace": "default"
-    }
-    ,
+    },
     "spec": {
       "scaleMetric": "concurrency",  // Available options: "cpu", "memory", "rps", "concurrency"
       "site": "example-cluster",     // Optional: specific cluster or placement name
@@ -150,12 +146,11 @@
 }
 ```
 
-
 - **DELETE** `/v1/namespaces/{namespace}/capps/{cappName}`
-  - **Description**: get all capps of namespace
- - **Path Parameter**: 
-    -  `namespace` - namespace of the capp.
-    -  `cappName` - The capp name to fetch.
+  - **Description**: Get all capps of namespace.
+  - **Path Parameter**: 
+    - `namespace` - The namespace of the capp.
+    - `cappName` - The capp name to fetch.
   - **Response**: Confirmation of deletion an error message.
     ```json
     {
