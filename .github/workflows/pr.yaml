@@ -1,30 +1,22 @@
-name: post-merge
+name: tests
 on:
-  push:
+  pull_request:
     branches:
       - main
-
-env:
-  REGISTRY: ghcr.io
-  REPOSITORY_NAME: ${{ github.repository }}
+    types: [opened, reopened, synchronize]
 
 jobs:
-  build-and-push-image:
-    name: Build and push image
+  unit-test:
+    name: unit-test
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Log in to the Container registry
-        uses: docker/login-action@0d4c9c5ea7693da7b068278f7b52bda2a190a446
+      - name: Setup Go
+        uses: actions/setup-go@v5
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          go-version-file: go.mod
 
-      - name: Build and push docker image
-        run: make docker-build docker-push IMG=${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}:main
+      - name: Run unit-tests
+        run: make test
