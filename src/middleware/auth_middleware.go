@@ -2,15 +2,16 @@ package middleware
 
 import (
 	"fmt"
+	"net/http"
+	"os"
+	"strings"
+
 	"github.com/dana-team/platform-backend/src/auth"
 	"github.com/dana-team/platform-backend/src/utils"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"net/http"
-	"os"
-	"strings"
 )
 
 // TokenAuthMiddleware validates the Authorization header and sets up Kubernetes client.
@@ -73,7 +74,7 @@ func validateToken(c *gin.Context) (string, error) {
 }
 
 // createKubernetesClient creates a Kubernetes client using the provided token.
-func createKubernetesClient(token, kube_api_server string) (*kubernetes.Clientset, error) {
+func createKubernetesClient(token, kube_api_server string) (kubernetes.Interface, error) {
 	skipTlsVerify, err := utils.GetEnvBool("INSECURE_SKIP_VERIFY", true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse INSECURE_SKIP_VERIFY: %v", err)

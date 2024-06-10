@@ -2,8 +2,9 @@ package v1
 
 import (
 	"fmt"
-	"go.uber.org/zap"
 	"net/http"
+
+	"go.uber.org/zap"
 
 	"github.com/dana-team/platform-backend/src/controllers"
 	"github.com/dana-team/platform-backend/src/types"
@@ -27,10 +28,10 @@ func namespaceHandler(handler func(controller controllers.NamespaceController, c
 		}
 
 		logger := ctxLogger.(*zap.Logger)
-		kubeClient := client.(*kubernetes.Clientset)
+		kubeClient := client.(*kubernetes.Interface)
 		context := c.Request.Context()
 
-		namespaceController := controllers.New(kubeClient, context, logger)
+		namespaceController := controllers.NewNamespaceController(*kubeClient, context, logger)
 		result, err := handler(namespaceController, c)
 		if err != nil {
 			c.AbortWithStatusJSON(int(err.(*k8serrors.StatusError).ErrStatus.Code), gin.H{"error": "Operation failed", "details": err.Error()})
