@@ -4,7 +4,7 @@ type Namespace struct {
 	Name string `json:"name"  binding:"required"`
 }
 
-type OutputNamespaces struct {
+type NamespaceList struct {
 	Namespaces []Namespace `json:"namespaces"`
 	Count      int         `json:"count"`
 }
