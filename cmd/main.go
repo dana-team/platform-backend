@@ -1,55 +1,51 @@
 package main
 
 import (
-	"log"
-	"net/http"
-
-	"github.com/dana-team/platform-backend/src/routes"
+	"github.com/dana-team/platform-backend/src/auth"
+	"github.com/dana-team/platform-backend/src/middleware"
+	"github.com/dana-team/platform-backend/src/routes/v1"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"go.uber.org/zap"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
+	"log"
 )
 
-// TODO: Refactor main into smaller functions
 func main() {
-	// TODO: Use environment variable to get path
-	config, err := clientcmd.BuildConfigFromFlags("", "/home/user/.kube/config")
-	if err != nil {
-		panic(err.Error())
+	if err := godotenv.Load(); err != nil {
+		log.Fatalf("Error loading .env file")
 	}
 
-	client, err := kubernetes.NewForConfig(config)
-	if err != nil {
+	logger := initializeLogger()
+	defer syncLogger(logger)
+
+	tokenProvider := auth.DefaultTokenProvider{}
+	engine := initializeRouter(logger, tokenProvider)
+	if err := engine.Run(); err != nil {
 		panic(err.Error())
 	}
+}
 
+// initializeLogger initializes a new Zap logger instance.
+func initializeLogger() *zap.Logger {
 	logger, err := zap.NewProduction()
 	if err != nil {
 		log.Fatalf("Can't initialize zap logger: %v", err)
 	}
-	defer func() {
-		if err := logger.Sync(); err != nil {
-			log.Fatalf("Error syncing logger: %v", err)
-		}
-	}()
+	return logger
+}
 
+// syncLogger syncs the logger to ensure all pending logs are written before shutdown.
+func syncLogger(logger *zap.Logger) {
+	if err := logger.Sync(); err != nil {
+		log.Fatalf("Error syncing logger: %v", err)
+	}
+}
+
+// initializeRouter initializes the Gin router with routes for API v1.
+func initializeRouter(logger *zap.Logger, tokenProvider auth.TokenProvider) *gin.Engine {
 	engine := gin.Default()
-	engine.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "pong",
-		})
-	})
+	engine.Use(middleware.LoggerMiddleware(logger))
+	v1.SetupRoutes(engine, tokenProvider)
 
-	namespacesGroup := engine.Group("/namespaces")
-	{
-		namespacesGroup.GET("/", routes.ListNamespaces(client, logger))
-		namespacesGroup.GET("/:name", routes.GetNamespace(client, logger))
-		namespacesGroup.POST("/", routes.CreateNamespace(client, logger))
-		namespacesGroup.DELETE("/:name", routes.DeleteNamespace(client, logger))
-	}
-
-	if err := engine.Run(); err != nil {
-		panic(err.Error())
-	}
+	return engine
 }
