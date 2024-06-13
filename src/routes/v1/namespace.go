@@ -28,10 +28,10 @@ func namespaceHandler(handler func(controller controllers.NamespaceController, c
 		}
 
 		logger := ctxLogger.(*zap.Logger)
-		kubeClient := client.(*kubernetes.Interface)
+		kubeClient := client.(kubernetes.Interface)
 		context := c.Request.Context()
 
-		namespaceController := controllers.NewNamespaceController(*kubeClient, context, logger)
+		namespaceController := controllers.NewNamespaceController(kubeClient, context, logger)
 		result, err := handler(namespaceController, c)
 		if err != nil {
 			c.AbortWithStatusJSON(int(err.(*k8serrors.StatusError).ErrStatus.Code), gin.H{"error": "Operation failed", "details": err.Error()})
@@ -50,9 +50,8 @@ func ListNamespaces() gin.HandlerFunc {
 
 func GetNamespace() gin.HandlerFunc {
 	return namespaceHandler(func(controller controllers.NamespaceController, c *gin.Context) (interface{}, error) {
-		// TODO: Validate parameter
-		name := c.Param("name")
-		return controller.GetNamespace(name)
+		namespaceName := c.Param("namespaceName")
+		return controller.GetNamespace(namespaceName)
 	})
 }
 
@@ -70,8 +69,7 @@ func CreateNamespace() gin.HandlerFunc {
 
 func DeleteNamespace() gin.HandlerFunc {
 	return namespaceHandler(func(controller controllers.NamespaceController, c *gin.Context) (interface{}, error) {
-		// TODO: Validate parameter
-		name := c.Param("name")
-		return gin.H{"message": fmt.Sprintf("Deleted namespace successfully %s", name)}, controller.DeleteNamespace(name)
+		namespaceName := c.Param("namespaceName")
+		return gin.H{"message": fmt.Sprintf("Deleted namespace successfully %s", namespaceName)}, controller.DeleteNamespace(namespaceName)
 	})
 }

@@ -26,9 +26,9 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider) {
 	namespacesGroup.Use(middleware.TokenAuthMiddleware(tokenProvider))
 	{
 		namespacesGroup.GET("/", ListNamespaces())
-		namespacesGroup.GET("/:name", GetNamespace())
+		namespacesGroup.GET("/:namespaceName", GetNamespace())
 		namespacesGroup.POST("/", CreateNamespace())
-		namespacesGroup.DELETE("/:name", DeleteNamespace())
+		namespacesGroup.DELETE("/:namespaceName", DeleteNamespace())
 	}
 
 	secretsGroup := namespacesGroup.Group("/:namespace/secrets")
@@ -36,8 +36,8 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider) {
 	{
 		secretsGroup.POST("/", CreateSecret())
 		secretsGroup.GET("/", GetSecrets())
-		secretsGroup.GET("/:name", GetSecret())
-		secretsGroup.PATCH("/:name", PatchSecret())
-		secretsGroup.DELETE("/:name", DeleteSecret())
+		secretsGroup.GET("/:secretName", GetSecret())
+		secretsGroup.PATCH("/:secretName", PatchSecret())
+		secretsGroup.DELETE("/:secretName", DeleteSecret())
 	}
 }
