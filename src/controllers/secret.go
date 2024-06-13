@@ -48,10 +48,10 @@ func NewSecretController(client kubernetes.Interface, context context.Context, l
 }
 
 func (n *secretController) CreateSecret(namespace string, request types.CreateSecretRequest) (types.CreateSecretResponse, error) {
-	n.logger.Debug(fmt.Sprintf("Trying to create secret: %q", request.Name))
+	n.logger.Debug(fmt.Sprintf("Trying to create secret: %q", request.SecretName))
 
 	response := types.CreateSecretResponse{}
-	name := request.Name
+	name := request.SecretName
 
 	secret, err := newSecretFromRequest(namespace, request)
 	if err != nil {
@@ -67,8 +67,8 @@ func (n *secretController) CreateSecret(namespace string, request types.CreateSe
 	n.logger.Debug(fmt.Sprintf("Created secret %q successfully", name))
 
 	response.Type = string(newSecret.Type)
-	response.Name = newSecret.Name
-	response.Namespace = newSecret.Namespace
+	response.SecretName = newSecret.Name
+	response.NamespaceName = newSecret.Namespace
 	return response, err
 }
 
@@ -89,9 +89,9 @@ func (n *secretController) GetSecrets(namespace string) (types.GetSecretsRespons
 		response.Secrets = append(
 			response.Secrets,
 			types.Secret{
-				Type:      string(secret.Type),
-				Name:      secret.Name,
-				Namespace: secret.Namespace,
+				Type:          string(secret.Type),
+				SecretName:    secret.Name,
+				NamespaceName: secret.Namespace,
 			})
 	}
 	return response, nil
@@ -111,7 +111,7 @@ func (n *secretController) GetSecret(namespace string, name string) (types.GetSe
 
 	response.Id = string(secret.UID)
 	response.Type = string(secret.Type)
-	response.Name = secret.Name
+	response.SecretName = secret.Name
 	for k, v := range secret.Data {
 		value, err := base64.StdEncoding.DecodeString(string(v))
 		if err != nil {
@@ -152,7 +152,7 @@ func (n *secretController) PatchSecret(namespace string, name string, request ty
 
 	response.Id = string(result.UID)
 	response.Type = string(result.Type)
-	response.Name = result.Name
+	response.SecretName = result.Name
 	for k, v := range secret.Data {
 		value, err := base64.StdEncoding.DecodeString(string(v))
 		if err != nil {
@@ -186,7 +186,7 @@ func (n *secretController) DeleteSecret(namespace string, name string) (types.De
 func newSecretFromRequest(namespace string, request types.CreateSecretRequest) (*v1.Secret, error) {
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      request.Name,
+			Name:      request.SecretName,
 			Namespace: namespace,
 		},
 	}
