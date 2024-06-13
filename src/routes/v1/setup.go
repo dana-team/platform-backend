@@ -1,10 +1,11 @@
 package v1
 
 import (
+	"net/http"
+
 	"github.com/dana-team/platform-backend/src/auth"
 	"github.com/dana-team/platform-backend/src/middleware"
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider) {
@@ -28,5 +29,15 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider) {
 		namespacesGroup.GET("/:name", GetNamespace())
 		namespacesGroup.POST("/", CreateNamespace())
 		namespacesGroup.DELETE("/:name", DeleteNamespace())
+	}
+
+	secretsGroup := namespacesGroup.Group("/:namespace/secrets")
+	secretsGroup.Use(middleware.TokenAuthMiddleware(tokenProvider))
+	{
+		secretsGroup.POST("/", CreateSecret())
+		secretsGroup.GET("/", GetSecrets())
+		secretsGroup.GET("/:name", GetSecret())
+		secretsGroup.PATCH("/:name", PatchSecret())
+		secretsGroup.DELETE("/:name", DeleteSecret())
 	}
 }

@@ -2,11 +2,12 @@ package v1
 
 import (
 	"errors"
+	"net/http"
+
 	"github.com/dana-team/platform-backend/src/auth"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	"net/http"
 )
 
 // Login handles user authentication and issues a token on successful login.

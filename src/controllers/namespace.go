@@ -19,12 +19,12 @@ type NamespaceController interface {
 }
 
 type namespaceController struct {
-	client *kubernetes.Clientset
+	client kubernetes.Interface
 	ctx    context.Context
 	logger *zap.Logger
 }
 
-func New(client *kubernetes.Clientset, context context.Context, logger *zap.Logger) NamespaceController {
+func NewNamespaceController(client kubernetes.Interface, context context.Context, logger *zap.Logger) NamespaceController {
 	return &namespaceController{
 		logger: logger,
 		client: client,
