@@ -38,12 +38,43 @@
     }
     ```
   - **Response**: Capp info or an error message.
-    ```json
-    {
-       "capps": []str,
-       "count": int
+
+```json
+{
+  "capp": {
+    "metadata": {
+      "name": "string",  // max length 53 char
+    },
+    "annotations": [
+      {
+        "key": "string",
+        // Key
+        "value": "string"
+        // Value
+      },
+      {
+        "key": "string",
+        "value": "string"
+      }
+    ],
+    "labels": [
+      {
+        "key": "string",
+        // Key
+        "value": "string"
+        // Value
+      },
+      {
+        "key": "string",
+        "value": "string"
+      }
+    ],
+    "spec": {
+      // [CappSpec] (https://github.com/dana-team/container-app-operator/blob/v0.2.0/api/v1alpha1/capp_types.go#L29
     }
-    ```
+  }
+}
+```
 
 - **GET** `/v1/namespaces/{namespace}/capps`
   - **Description**: Get all capps of namespace.
@@ -71,76 +102,167 @@
   - **Path Parameter**:
     - `namespace` - The namespace of the capp.
   - **Body**:
-    ```json
-    {
-        Capp
-    }
-    ```
-  - **Response**: Confirmation of creation or an error message.
-    ```json
-    {
-       Capp,
-    }
-    ```
 
-- **PUT** `/v1/namespaces/{namespace}/capps`
-  - **Description**: Update capp in a namespace.
-  - **Path Parameter**:
-    - `namespace` - The namespace of the capp.
-  - **Body**:
 ```json
 {
- "capp": {
+  "capp": {
     "metadata": {
-      "name": "string", // max length 53 char
-      "namespace": "string"
+      "name": "string",  // max length 53 char
     },
-    "spec": {
-      "scaleMetric": "concurrency",  // Available options: "cpu", "memory", "rps", "concurrency"
-      "site": "example-cluster",     // Optional: specific cluster or placement name
-      "state": "enabled",            // Optional: "enabled" (default) or "disabled"
-      "configurationSpec": {
-        // Configuration details specific to the Capp
+    "annotations": [
+      {
+        "key": "string",
+        // Key
+        "value": "string"
+        // Value
       },
-      "routeSpec": {
-        // Routing specifications for the Capp
-      },
-      "logSpec": {
-        // Log configuration for the Capp
-      },
-      "volumesSpec": {
-        // Volume specifications for the Capp
+      {
+        "key": "string",
+        "value": "string"
       }
+    ],
+    "labels": [
+      {
+        "key": "string",
+        // Key
+        "value": "string"
+        // Value
+      },
+      {
+        "key": "string",
+        "value": "string"
+      }
+    ],
+    "spec": {
+      // [CappSpec] (https://github.com/dana-team/container-app-operator/blob/v0.2.0/api/v1alpha1/capp_types.go#L29
     }
   }
 }
 ```
-  - **Response**: Confirmation of update or an error message.
+    ```
+  - **Response**: Confirmation of creation or an error message.
 ```json
 {
   "capp": {
-    "apiVersion": "yourdomain.com/v1",
-    "kind": "Capp",
     "metadata": {
-      "name": "example-capp", // max length 53 char
-      "namespace": "default"
+      "name": "string",  // max length 53 char
+      "namespace": "string"
     },
-    "spec": {
-      "scaleMetric": "concurrency",  // Available options: "cpu", "memory", "rps", "concurrency"
-      "site": "example-cluster",     // Optional: specific cluster or placement name
-      "state": "enabled",            // Optional: "enabled" (default) or "disabled"
-      "configurationSpec": {
-        // Configuration details specific to the Capp
+    "annotations": [
+      {
+        "key": "string",
+        // Key
+        "value": "string"
+        // Value
       },
-      "routeSpec": {
-        // Routing specifications for the Capp
-      },
-      "logSpec": {
-        // Log configuration for the Capp
-      },
-      "volumesSpec": {
-        // Volume specifications for the Capp
+      {
+        "key": "string",
+        "value": "string"
       }
+    ],
+    "labels": [
+      {
+        "key": "string",
+        // Key
+        "value": "string"
+        // Value
+      },
+      {
+        "key": "string",
+        "value": "string"
+      }
+    ],
+    "spec": {
+      // [CappSpec] (https://github.com/dana-team/container-app-operator/blob/v0.2.0/api/v1alpha1/capp_types.go#L29
+    },
+    "status": {
+      // [CappStatus] (https://github.com/dana-team/container-app-operator/blob/v0.2.0/api/v1alpha1/capp_types.go#L202
+    }
+  }
+}
+```
+
+- **PUT** `/v1/namespaces/{namespace}/capps/{capa_name}`
+  - **Description**: Update capp in a namespace.
+  - **Path Parameter**:
+    - `namespace` - The namespace of the capp.
+    - `capp_name` - The name of the capp you want to update.
+  - **Body**:
+
+```json
+{
+  "capp": {
+    "metadata": {
+      "name": "string"   // max length 53 char
+    },
+    "annotations": [
+      {
+        "key": "string",
+        // Key
+        "value": "string"
+        // Value
+      },
+      {
+        "key": "string",
+        "value": "string"
+      }
+    ],
+    "labels": [
+      {
+        "key": "string",
+        // Key
+        "value": "string"
+        // Value
+      },
+      {
+        "key": "string",
+        "value": "string"
+      }
+    ],
+    "spec": {
+      // [CappSpec] (https://github.com/dana-team/container-app-operator/blob/v0.2.0/api/v1alpha1/capp_types.go#L29
+    }
+  }
+}
+```
+
+- **Response**: Confirmation of update or an error message.
+```json
+{
+  "capp": {
+    "metadata": {
+      "name": "string",  // max length 53 char
+      "namespace": "string"
+    },
+    "annotations": [
+      {
+        "key": "string",
+        // Key
+        "value": "string"
+        // Value
+      },
+      {
+        "key": "string",
+        "value": "string"
+      }
+    ],
+    "labels": [
+      {
+        "key": "string",
+        // Key
+        "value": "string"
+        // Value
+      },
+      {
+        "key": "string",
+        "value": "string"
+      }
+    ],
+    "spec": {
+      // [CappSpec] (https://github.com/dana-team/container-app-operator/blob/v0.2.0/api/v1alpha1/capp_types.go#L29
+    },
+    "status": {
+      // [CappStatus] (https://github.com/dana-team/container-app-operator/blob/v0.2.0/api/v1alpha1/capp_types.go#L202
     }
   }
 }
