@@ -1,17 +1,17 @@
 package types
 
 type CreateSecretRequest struct {
-	Type string     `json:"type" binding:"required"`
-	Name string     `json:"name" binding:"required"`
-	Cert string     `json:"cert"`
-	Key  string     `json:"key"`
-	Data []KeyValue `json:"data"`
+	Type       string     `json:"type" binding:"required"`
+	SecretName string     `json:"secretName" binding:"required"`
+	Cert       string     `json:"cert"`
+	Key        string     `json:"key"`
+	Data       []KeyValue `json:"data"`
 }
 
 type CreateSecretResponse struct {
-	Type      string `json:"type"`
-	Name      string `json:"name"`
-	Namespace string `json:"namespace"`
+	Type          string `json:"type"`
+	SecretName    string `json:"secretName"`
+	NamespaceName string `json:"namespaceName"`
 }
 
 type KeyValue struct {
@@ -25,16 +25,16 @@ type GetSecretsResponse struct {
 }
 
 type Secret struct {
-	Type      string `json:"type"`
-	Name      string `json:"name"`
-	Namespace string `json:"namespace"`
+	Type          string `json:"type"`
+	SecretName    string `json:"secretName"`
+	NamespaceName string `json:"namespaceName"`
 }
 
 type GetSecretResponse struct {
-	Id   string     `json:"id"`
-	Type string     `json:"type"`
-	Name string     `json:"name"`
-	Data []KeyValue `json:"data"`
+	Id         string     `json:"id"`
+	Type       string     `json:"type"`
+	SecretName string     `json:"secretName"`
+	Data       []KeyValue `json:"data"`
 }
 
 type PatchSecretRequest struct {
@@ -42,11 +42,11 @@ type PatchSecretRequest struct {
 }
 
 type PatchSecretResponse struct {
-	Id        string     `json:"id"`
-	Type      string     `json:"type"`
-	Name      string     `json:"name"`
-	Namespace string     `json:"namespace"`
-	Data      []KeyValue `json:"data"`
+	Id            string     `json:"id"`
+	Type          string     `json:"type"`
+	SecretName    string     `json:"secretName"`
+	NamespaceName string     `json:"namespaceName"`
+	Data          []KeyValue `json:"data"`
 }
 
 type DeleteSecretResponse struct {

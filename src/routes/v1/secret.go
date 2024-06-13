@@ -44,7 +44,7 @@ func secretHandler(handler func(controller controllers.SecretController, c *gin.
 // CreateSecret creates a new secret in a specific namespace.
 func CreateSecret() gin.HandlerFunc {
 	return secretHandler(func(controller controllers.SecretController, c *gin.Context) (interface{}, error) {
-		namespace := c.Param("namespace")
+		namespaceName := c.Param("namespaceName")
 
 		var request types.CreateSecretRequest
 		if err := c.ShouldBindJSON(&request); err != nil {
@@ -52,32 +52,32 @@ func CreateSecret() gin.HandlerFunc {
 			return nil, err
 		}
 
-		return controller.CreateSecret(namespace, request)
+		return controller.CreateSecret(namespaceName, request)
 	})
 }
 
 // GetSecrets gets all secrets in a specific namespace.
 func GetSecrets() gin.HandlerFunc {
 	return secretHandler(func(controller controllers.SecretController, c *gin.Context) (interface{}, error) {
-		namespace := c.Param("namespace")
-		return controller.GetSecrets(namespace)
+		namespaceName := c.Param("namespaceName")
+		return controller.GetSecrets(namespaceName)
 	})
 }
 
 // GetSecret gets a specific secret from a specific namespace.
 func GetSecret() gin.HandlerFunc {
 	return secretHandler(func(controller controllers.SecretController, c *gin.Context) (interface{}, error) {
-		namespace := c.Param("namespace")
-		name := c.Param("name")
-		return controller.GetSecret(namespace, name)
+		namespaceName := c.Param("namespaceName")
+		secretName := c.Param("secretName")
+		return controller.GetSecret(namespaceName, secretName)
 	})
 }
 
 // PatchSecret patches a specific secret in a specific namespace.
 func PatchSecret() gin.HandlerFunc {
 	return secretHandler(func(controller controllers.SecretController, c *gin.Context) (interface{}, error) {
-		namespace := c.Param("namespace")
-		name := c.Param("name")
+		namespaceName := c.Param("namespaceName")
+		secretName := c.Param("secretName")
 
 		var request types.PatchSecretRequest
 		if err := c.ShouldBindJSON(&request); err != nil {
@@ -85,15 +85,15 @@ func PatchSecret() gin.HandlerFunc {
 			return nil, err
 		}
 
-		return controller.PatchSecret(namespace, name, request)
+		return controller.PatchSecret(namespaceName, secretName, request)
 	})
 }
 
 // DeleteSecret deletes a specific secret in a specific namespace.
 func DeleteSecret() gin.HandlerFunc {
 	return secretHandler(func(controller controllers.SecretController, c *gin.Context) (interface{}, error) {
-		namespace := c.Param("namespace")
-		name := c.Param("name")
-		return controller.DeleteSecret(namespace, name)
+		namespaceName := c.Param("namespaceName")
+		secretName := c.Param("secretName")
+		return controller.DeleteSecret(namespaceName, secretName)
 	})
 }
