@@ -19,7 +19,7 @@ vet: ## Run go vet against code.
 
 .PHONY: test
 test:  fmt vet ## Run tests.
-	go test $$(go list ./...) -coverprofile cover.out
+	go test -v $$(go list ./...) -coverprofile cover.out
 
 .PHONY: lint
 lint: golangci-lint ## Run golangci-lint linter & yamllint
