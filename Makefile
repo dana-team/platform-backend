@@ -35,7 +35,7 @@ build: fmt vet ## Build binary.
 
 .PHONY: run
 run: fmt vet ## Run on your host.
-	go run ./main.go
+	go run ./cmd/main.go
 
 .PHONY: docker-build
 docker-build: ## Build docker image with the manager.

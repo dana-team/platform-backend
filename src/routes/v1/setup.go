@@ -31,7 +31,7 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider) {
 		namespacesGroup.DELETE("/:namespaceName", DeleteNamespace())
 	}
 
-	secretsGroup := namespacesGroup.Group("/:namespace/secrets")
+	secretsGroup := namespacesGroup.Group("/:namespaceName/secrets")
 	secretsGroup.Use(middleware.TokenAuthMiddleware(tokenProvider))
 	{
 		secretsGroup.POST("/", CreateSecret())
