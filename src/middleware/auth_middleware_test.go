@@ -25,8 +25,8 @@ func (m MockTokenProvider) ObtainUsername(token string, logger *zap.Logger) (str
 }
 
 func TestTokenAuthMiddleware(t *testing.T) {
-	os.Setenv("KUBE_API_SERVER", "https://example.com/api")
-	os.Setenv("INSECURE_SKIP_VERIFY", "true")
+	_ = os.Setenv(envKubeAPIServer, "https://example.com/api")
+	_ = os.Setenv(envInsecureSkipVerify, "true")
 
 	logger, _ := zap.NewDevelopment()
 	router := gin.New()
@@ -63,7 +63,7 @@ func TestTokenAuthMiddleware(t *testing.T) {
 	}{
 		"ShouldSuccessWithValidToken": {
 			args: args{
-				authHeader: "Bearer valid_token",
+				authHeader: httpBearerTokenPrefix + " valid_token",
 			},
 			want: want{
 				expectedStatus: http.StatusOK,
@@ -91,7 +91,7 @@ func TestTokenAuthMiddleware(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "/ping", nil)
 			if tc.args.authHeader != "" {
-				req.Header.Set("Authorization", tc.args.authHeader)
+				req.Header.Set(httpAuthorizationHeader, tc.args.authHeader)
 			}
 
 			w := httptest.NewRecorder()
