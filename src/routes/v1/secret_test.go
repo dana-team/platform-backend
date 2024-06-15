@@ -13,9 +13,10 @@ import (
 
 func TestCreateSecret(t *testing.T) {
 	secretRequest := types.CreateSecretRequest{
-		Type:       "Opaque",
-		SecretName: "new-secret",
-		Data:       []types.KeyValue{{Key: "key1", Value: "ZmFrZQ=="}},
+		Type:          "Opaque",
+		NamespaceName: "default",
+		SecretName:    "new-secret",
+		Data:          []types.KeyValue{{Key: "key1", Value: "ZmFrZQ=="}},
 	}
 	body, _ := json.Marshal(secretRequest)
 	request, _ := http.NewRequest("POST", "/v1/namespaces/default/secrets/", bytes.NewBuffer(body))
@@ -57,7 +58,9 @@ func TestGetSpecificSecret(t *testing.T) {
 
 func TestPatchSecret(t *testing.T) {
 	patchRequest := types.PatchSecretRequest{
-		Data: []types.KeyValue{{Key: "key2", Value: "ZmFrZQ=="}},
+		NamespaceName: "default",
+		SecretName:    "test-secret",
+		Data:          []types.KeyValue{{Key: "key2", Value: "ZmFrZQ=="}},
 	}
 	body, _ := json.Marshal(patchRequest)
 	request, _ := http.NewRequest("PATCH", "/v1/namespaces/default/secrets/test-secret", bytes.NewBuffer(body))

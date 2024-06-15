@@ -49,27 +49,42 @@ func ListNamespaces() gin.HandlerFunc {
 }
 
 func GetNamespace() gin.HandlerFunc {
-	return namespaceHandler(func(controller controllers.NamespaceController, c *gin.Context) (interface{}, error) {
-		namespaceName := c.Param("namespaceName")
-		return controller.GetNamespace(namespaceName)
-	})
+	return func(c *gin.Context) {
+		var namespaceUri types.NamespaceUri
+		if err := c.BindUri(&namespaceUri); err != nil {
+			return
+		}
+
+		namespaceHandler(func(controller controllers.NamespaceController, c *gin.Context) (interface{}, error) {
+			return controller.GetNamespace(namespaceUri.NamespaceName)
+		})(c)
+	}
 }
 
 func CreateNamespace() gin.HandlerFunc {
-	return namespaceHandler(func(controller controllers.NamespaceController, c *gin.Context) (interface{}, error) {
+	return func(c *gin.Context) {
 		var namespace types.Namespace
-
 		if err := c.BindJSON(&namespace); err != nil {
-			return nil, err
+			return
 		}
 
-		return controller.CreateNamespace(namespace.Name)
-	})
+		namespaceHandler(func(controller controllers.NamespaceController, c *gin.Context) (interface{}, error) {
+			return controller.CreateNamespace(namespace.Name)
+		})(c)
+	}
 }
 
 func DeleteNamespace() gin.HandlerFunc {
-	return namespaceHandler(func(controller controllers.NamespaceController, c *gin.Context) (interface{}, error) {
-		namespaceName := c.Param("namespaceName")
-		return gin.H{"message": fmt.Sprintf("Deleted namespace successfully %s", namespaceName)}, controller.DeleteNamespace(namespaceName)
-	})
+	return func(c *gin.Context) {
+		var namespaceUri types.NamespaceUri
+		if err := c.BindUri(&namespaceUri); err != nil {
+			return
+		}
+
+		namespaceHandler(func(controller controllers.NamespaceController, c *gin.Context) (interface{}, error) {
+			name := namespaceUri.NamespaceName
+			message := fmt.Sprintf("Deleted namespace successfully %s", name)
+			return gin.H{"message": message}, controller.DeleteNamespace(name)
+		})(c)
+	}
 }
