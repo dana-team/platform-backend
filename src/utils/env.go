@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 )
@@ -15,7 +16,7 @@ func GetEnvBool(key string, defaultValue bool) (bool, error) {
 
 	valBool, err := strconv.ParseBool(valStr)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to parse %q", valStr)
 	}
 
 	return valBool, nil

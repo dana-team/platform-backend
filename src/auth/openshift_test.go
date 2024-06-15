@@ -12,8 +12,8 @@ import (
 )
 
 func TestObtainOpenshiftToken(t *testing.T) {
-	os.Setenv("INSECURE_SKIP_VERIFY", "true")
-	os.Setenv("KUBE_CLIENT_ID", "clientid")
+	_ = os.Setenv(envInsecureSkipVerify, "true")
+	_ = os.Setenv(envKubeClientID, "clientid")
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/auth" {
@@ -34,8 +34,8 @@ func TestObtainOpenshiftToken(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	os.Setenv("KUBE_AUTH_URL", ts.URL+"/auth")
-	os.Setenv("KUBE_TOKEN_URL", ts.URL+"/token")
+	_ = os.Setenv(envKubeAuthURL, ts.URL+"/auth")
+	_ = os.Setenv(envKubeTokenURL, ts.URL+"/token")
 
 	type args struct {
 		username string
@@ -132,8 +132,8 @@ func TestObtainOpenshiftUsername(t *testing.T) {
 	defer ts.Close()
 
 	// Set environment variables
-	os.Setenv("INSECURE_SKIP_VERIFY", "true")
-	os.Setenv("KUBE_USERINFO_URL", ts.URL+"/apis/user.openshift.io/v1/users/~")
+	_ = os.Setenv(envInsecureSkipVerify, "true")
+	_ = os.Setenv(envKubeUserInfoURL, ts.URL+"/apis/user.openshift.io/v1/users/~")
 
 	type args struct {
 		token string

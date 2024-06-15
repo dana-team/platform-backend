@@ -14,6 +14,19 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+const (
+	httpAuthorizationHeader     = "Authorization"
+	httpBearerTokenPrefix       = "Bearer"
+	validBearerTokenPartsLength = 2
+	httpBearerTokenPrefixIndex  = 0
+	httpBearerTokenIndex        = 1
+)
+
+const (
+	envKubeAPIServer      = "KUBE_API_SERVER"
+	envInsecureSkipVerify = "INSECURE_SKIP_VERIFY"
+)
+
 // TokenAuthMiddleware validates the Authorization header and sets up Kubernetes client.
 func TokenAuthMiddleware(tokenProvider auth.TokenProvider) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -39,7 +52,7 @@ func TokenAuthMiddleware(tokenProvider auth.TokenProvider) gin.HandlerFunc {
 		}
 		userLogger := logger.With(zap.String("user", username))
 
-		client, err := createKubernetesClient(token, os.Getenv("KUBE_API_SERVER"))
+		client, err := createKubernetesClient(token, os.Getenv(envKubeAPIServer))
 		if err != nil {
 			userLogger.Error("Failed to create Kubernetes client", zap.Error(err))
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to create Kubernetes client"})
@@ -56,33 +69,31 @@ func TokenAuthMiddleware(tokenProvider auth.TokenProvider) gin.HandlerFunc {
 
 // validateToken validates the format and presence of the Authorization token.
 func validateToken(c *gin.Context) (string, error) {
-	token := c.GetHeader("Authorization")
+	token := c.GetHeader(httpAuthorizationHeader)
 	if token == "" {
 		return "", fmt.Errorf("authorization token not provided")
 	}
 
 	tokenParts := strings.Split(token, " ")
+
 	// Check if the token is in the format "Bearer <token>"
-	if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
-		// len(tokenParts) != 2 ensures the token is split into exactly two parts: "Bearer" and the actual token
-		// tokenParts[0] != BearerTokenPrefix ensures the token starts with the prefix "Bearer"
+	if len(tokenParts) != validBearerTokenPartsLength || tokenParts[httpBearerTokenPrefixIndex] != httpBearerTokenPrefix {
 		return "", fmt.Errorf("invalid authentication token")
 	}
 
-	// Return the actual token part, which is the second element in the split parts
-	return tokenParts[1], nil
+	return tokenParts[httpBearerTokenIndex], nil
 }
 
 // createKubernetesClient creates a Kubernetes client using the provided token.
-func createKubernetesClient(token, kube_api_server string) (kubernetes.Interface, error) {
-	skipTlsVerify, err := utils.GetEnvBool("INSECURE_SKIP_VERIFY", true)
+func createKubernetesClient(token, kubeApiServer string) (kubernetes.Interface, error) {
+	skipTlsVerify, err := utils.GetEnvBool(envInsecureSkipVerify, true)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse INSECURE_SKIP_VERIFY: %v", err)
+		return nil, err
 	}
 
 	config := &rest.Config{
 		BearerToken: token,
-		Host:        kube_api_server,
+		Host:        kubeApiServer,
 		TLSClientConfig: rest.TLSClientConfig{
 			Insecure: skipTlsVerify,
 		},
