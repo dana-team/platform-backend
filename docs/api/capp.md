@@ -1,7 +1,3 @@
-### Capp Namespaced API
-
-## API Endpoints
-
 - **GET** `/v1/namespaces/{namespace}/capps`
   - **Description**: Get all capp of namespace.
   - **Path Parameter**:
@@ -28,7 +24,7 @@
   - **Path Parameter**:
     - `namespace` - The namespace of the capp.
     - `cappName` - The capp name to fetch.
-  - **Query Params**: 
+  - **Query Params**:
     ```json
     {
       "lables": {
@@ -38,12 +34,46 @@
     }
     ```
   - **Response**: Capp info or an error message.
-    ```json
-    {
-       "capps": []str,
-       "count": int
+
+```json
+{
+  "capp": {
+    "metadata": {
+      "name": "string",  // max length 53 char
+    },
+    "annotations": [
+      {
+        "key": "string",
+        // Key
+        "value": "string"
+        // Value
+      },
+      {
+        "key": "string",
+        "value": "string"
+      }
+    ],
+    "labels": [
+      {
+        "key": "string",
+        // Key
+        "value": "string"
+        // Value
+      },
+      {
+        "key": "string",
+        "value": "string"
+      }
+    ],
+    "spec": {
+      // [CappSpec] https://github.com/dana-team/container-app-operator/blob/main/api/v1alpha1/capp_types.go#L31-L62
+    },
+    "status": {
+      // [CappStatus] https://github.com/dana-team/container-app-operator/blob/main/api/v1alpha1/capp_types.go#L208-L241
     }
-    ```
+  }
+}
+```
 
 - **GET** `/v1/namespaces/{namespace}/capps`
   - **Description**: Get all capps of namespace.
@@ -71,76 +101,167 @@
   - **Path Parameter**:
     - `namespace` - The namespace of the capp.
   - **Body**:
-    ```json
-    {
-        Capp
-    }
-    ```
-  - **Response**: Confirmation of creation or an error message.
-    ```json
-    {
-       Capp,
-    }
-    ```
 
-- **PUT** `/v1/namespaces/{namespace}/capps`
-  - **Description**: Update capp in a namespace.
-  - **Path Parameter**:
-    - `namespace` - The namespace of the capp.
-  - **Body**:
 ```json
 {
- "capp": {
+  "capp": {
     "metadata": {
-      "name": "string", // max length 53 char
-      "namespace": "string"
+      "name": "string",  // max length 53 char
     },
-    "spec": {
-      "scaleMetric": "concurrency",  // Available options: "cpu", "memory", "rps", "concurrency"
-      "site": "example-cluster",     // Optional: specific cluster or placement name
-      "state": "enabled",            // Optional: "enabled" (default) or "disabled"
-      "configurationSpec": {
-        // Configuration details specific to the Capp
+    "annotations": [
+      {
+        "key": "string",
+        // Key
+        "value": "string"
+        // Value
       },
-      "routeSpec": {
-        // Routing specifications for the Capp
-      },
-      "logSpec": {
-        // Log configuration for the Capp
-      },
-      "volumesSpec": {
-        // Volume specifications for the Capp
+      {
+        "key": "string",
+        "value": "string"
       }
+    ],
+    "labels": [
+      {
+        "key": "string",
+        // Key
+        "value": "string"
+        // Value
+      },
+      {
+        "key": "string",
+        "value": "string"
+      }
+    ],
+    "spec": {
+      // [CappSpec] https://github.com/dana-team/container-app-operator/blob/main/api/v1alpha1/capp_types.go#L31-L62
     }
   }
 }
 ```
-  - **Response**: Confirmation of update or an error message.
+    ```
+- **Response**: Confirmation of creation or an error message.
 ```json
 {
   "capp": {
-    "apiVersion": "yourdomain.com/v1",
-    "kind": "Capp",
     "metadata": {
-      "name": "example-capp", // max length 53 char
-      "namespace": "default"
+      "name": "string",  // max length 53 char
+      "namespace": "string"
     },
-    "spec": {
-      "scaleMetric": "concurrency",  // Available options: "cpu", "memory", "rps", "concurrency"
-      "site": "example-cluster",     // Optional: specific cluster or placement name
-      "state": "enabled",            // Optional: "enabled" (default) or "disabled"
-      "configurationSpec": {
-        // Configuration details specific to the Capp
+    "annotations": [
+      {
+        "key": "string",
+        // Key
+        "value": "string"
+        // Value
       },
-      "routeSpec": {
-        // Routing specifications for the Capp
-      },
-      "logSpec": {
-        // Log configuration for the Capp
-      },
-      "volumesSpec": {
-        // Volume specifications for the Capp
+      {
+        "key": "string",
+        "value": "string"
       }
+    ],
+    "labels": [
+      {
+        "key": "string",
+        // Key
+        "value": "string"
+        // Value
+      },
+      {
+        "key": "string",
+        "value": "string"
+      }
+    ],
+    "spec": {
+      // [CappSpec] https://github.com/dana-team/container-app-operator/blob/main/api/v1alpha1/capp_types.go#L31-L62
+    },
+    "status": {
+      // [CappStatus] https://github.com/dana-team/container-app-operator/blob/main/api/v1alpha1/capp_types.go#L208-L241
+    }
+  }
+}
+```
+
+- **PUT** `/v1/namespaces/{namespace}/capps/{capp_name}`
+  - **Description**: Update capp in a namespace.
+  - **Path Parameter**:
+    - `namespace` - The namespace of the capp.
+    - `capp_name` - The name of the capp you want to update.
+  - **Body**:
+
+```json
+{
+  "capp": {
+    "metadata": {
+      "name": "string"   // max length 53 char
+    },
+    "annotations": [
+      {
+        "key": "string",
+        // Key
+        "value": "string"
+        // Value
+      },
+      {
+        "key": "string",
+        "value": "string"
+      }
+    ],
+    "labels": [
+      {
+        "key": "string",
+        // Key
+        "value": "string"
+        // Value
+      },
+      {
+        "key": "string",
+        "value": "string"
+      }
+    ],
+    "spec": {
+      // [CappSpec] https://github.com/dana-team/container-app-operator/blob/main/api/v1alpha1/capp_types.go#L31-L62
+    }
+  }
+}
+```
+
+- **Response**: Confirmation of update or an error message.
+```json
+{
+  "capp": {
+    "metadata": {
+      "name": "string",  // max length 53 char
+      "namespace": "string"
+    },
+    "annotations": [
+      {
+        "key": "string",
+        // Key
+        "value": "string"
+        // Value
+      },
+      {
+        "key": "string",
+        "value": "string"
+      }
+    ],
+    "labels": [
+      {
+        "key": "string",
+        // Key
+        "value": "string"
+        // Value
+      },
+      {
+        "key": "string",
+        "value": "string"
+      }
+    ],
+    "spec": {
+      // [CappSpec] https://github.com/dana-team/container-app-operator/blob/main/api/v1alpha1/capp_types.go#L31-L62
+    },
+    "status": {
+      // [CappStatus] https://github.com/dana-team/container-app-operator/blob/main/api/v1alpha1/capp_types.go#L208-L241
     }
   }
 }
@@ -148,12 +269,12 @@
 
 - **DELETE** `/v1/namespaces/{namespace}/capps/{cappName}`
   - **Description**: Get all capps of namespace.
-  - **Path Parameter**: 
+  - **Path Parameter**:
     - `namespace` - The namespace of the capp.
     - `cappName` - The capp name to fetch.
   - **Response**: Confirmation of deletion an error message.
     ```json
     {
-       "message": "string",
+       "message": "string"
     }
     ```
