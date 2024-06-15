@@ -1,1 +1,101 @@
-# platform-backend
+# Platform Backend
+
+A Go-based API server built using the `Gin` framework. It serves as the backend for a serverless platform, simplifying the consumption of the `Capp` (a Kubernetes Custom Resource).
+
+It is part of the [`rcs-ocm-deployer`](https://github.com/dana-team/rcs-ocm-deployer) and [`container-app-operator`](https://github.com/dana-team/container-app-operator) ecosystem, and is a complementary project to the [`platform-frontend`](https://github.com/dana-team/platform-frontend) `React.js` application.
+
+## Documentation
+
+The API is documented in the [docs/api](./docs/api) directory of this repository. Refer to:
+
+- [ContainerApp API](./docs/api/capp.md)
+- [ContainerApp Revisions API](./docs/api/capp_revision.md)
+- [Containers API](./docs/api/containers.md)
+- [Namespace API](./docs/api/namespace.md)
+- [Secrets API](./docs/api/secrets.md)
+- [Users API](./docs/api/users.md)
+
+## Quickstart
+
+The backend uses `OpenShift`'s built-in `OAuth` Server to authenticate users. To run it, configure environment variables in a new `.env` file:
+
+```bash
+CLUSTER_NAME=ocp-rcs-example    # Change to match your own
+CLUSTER_DOMAIN=dana.com         # Change to match your own
+KUBE_AUTH_BASE_URL="https://oauth-openshift.apps.${CLUSTER_NAME}.${CLUSTER_DOMAIN}"
+KUBE_API_BASE_URL="https://api.${CLUSTER_NAME}.${CLUSTER_DOMAIN}:6443"
+
+INSECURE_SKIP_VERIFY=true
+KUBE_CLIENT_ID="openshift-challenging-client"
+KUBE_AUTH_URL="${KUBE_AUTH_BASE_URL}/oauth/authorize"
+KUBE_TOKEN_URL="${KUBE_AUTH_BASE_URL}/oauth/token"
+KUBE_USERINFO_URL="${KUBE_API_BASE_URL}/apis/user.openshift.io/v1/users/~"
+KUBE_API_SERVER="${KUBE_API_BASE_URL}"
+
+cat <<EOF > .env
+INSECURE_SKIP_VERIFY=${INSECURE_SKIP_VERIFY}
+KUBE_CLIENT_ID=${KUBE_CLIENT_ID}
+KUBE_AUTH_URL=${KUBE_AUTH_URL}
+KUBE_TOKEN_URL=${KUBE_TOKEN_URL}
+KUBE_USERINFO_URL=${KUBE_USERINFO_URL}
+KUBE_API_SERVER=${KUBE_API_SERVER}
+EOF
+```
+
+Then, use the following `Makefile` target in order to run the backend:
+
+```bash
+$ make run
+```
+
+Alternatively, to build the backend as a Docker image, use the following `Makefile` targets:
+
+```bash
+$ make docker-build docker-push IMG=<registry>/platform-backend:<tag>
+```
+
+## Routes Examples
+
+### Login Example
+
+#### Request
+
+```bash
+$ curl -X POST \
+-H "Content-Type: application/json" \
+-d '{"username": "<USERNAME>", "password": "<PASSWORD>"}' \
+"localhost:8080/v1/login/"
+```
+
+#### Response
+
+```bash
+{
+  "token": "<TOKEN_VALUE>"
+}
+```
+
+### Get All Namespaces Example
+
+#### Request
+
+```bash
+$ curl -H "Authorization: Bearer <TOKEN_VALUE>" \
+"localhost:8080/v1/namespaces/"
+```
+
+#### Response
+
+```bash
+{
+  "namespaces": [
+    {
+      "name": "project1"
+    },
+    {
+      "name": "project2"
+    }
+  ],
+  "count": 2
+}
+```
