@@ -16,19 +16,19 @@ import (
 
 type SecretController interface {
 	// CreateSecret creates a new secret in the specified namespace.
-	CreateSecret(namespace string, request types.CreateSecretRequest) (types.CreateSecretResponse, error)
+	CreateSecret(request types.CreateSecretRequest) (types.CreateSecretResponse, error)
 
 	// GetSecrets gets all secretes from the specified namespace.
-	GetSecrets(namespace string) (types.GetSecretsResponse, error)
+	GetSecrets(request types.GetSecretsRequest) (types.GetSecretsResponse, error)
 
 	// GetSecret gets a specific secret from the specified namespace.
-	GetSecret(namespace string, name string) (types.GetSecretResponse, error)
+	GetSecret(request types.GetSecretRequest) (types.GetSecretResponse, error)
 
 	// PatchSecret patches a specific secret in the specified namespace.
-	PatchSecret(namespace string, name string, request types.PatchSecretRequest) (types.PatchSecretResponse, error)
+	PatchSecret(request types.PatchSecretRequest) (types.PatchSecretResponse, error)
 
 	// DeleteSecret deletes a specific secret in the specified namespace.
-	DeleteSecret(namespace string, name string) (types.DeleteSecretResponse, error)
+	DeleteSecret(request types.DeleteSecretRequest) (types.DeleteSecretResponse, error)
 }
 
 type secretController struct {
@@ -47,13 +47,13 @@ func NewSecretController(client kubernetes.Interface, context context.Context, l
 	}
 }
 
-func (n *secretController) CreateSecret(namespace string, request types.CreateSecretRequest) (types.CreateSecretResponse, error) {
+func (n *secretController) CreateSecret(request types.CreateSecretRequest) (types.CreateSecretResponse, error) {
 	n.logger.Debug(fmt.Sprintf("Trying to create secret: %q", request.SecretName))
 
 	response := types.CreateSecretResponse{}
+	namespace := request.NamespaceName
 	name := request.SecretName
-
-	secret, err := newSecretFromRequest(namespace, request)
+	secret, err := newSecretFromRequest(request)
 	if err != nil {
 		return response, err
 	}
@@ -72,10 +72,11 @@ func (n *secretController) CreateSecret(namespace string, request types.CreateSe
 	return response, err
 }
 
-func (n *secretController) GetSecrets(namespace string) (types.GetSecretsResponse, error) {
-	n.logger.Debug(fmt.Sprintf("Trying to get all secrets in %q namespace", namespace))
+func (n *secretController) GetSecrets(request types.GetSecretsRequest) (types.GetSecretsResponse, error) {
+	n.logger.Debug(fmt.Sprintf("Trying to get all secrets in %q namespace", request.NamespaceName))
 
 	response := types.GetSecretsResponse{}
+	namespace := request.NamespaceName
 	secrets, err := n.client.CoreV1().Secrets(namespace).List(n.ctx, metav1.ListOptions{})
 	if err != nil {
 		n.logger.Error(fmt.Sprintf("Could not get secrets with error: %v", err.Error()))
@@ -97,10 +98,12 @@ func (n *secretController) GetSecrets(namespace string) (types.GetSecretsRespons
 	return response, nil
 }
 
-func (n *secretController) GetSecret(namespace string, name string) (types.GetSecretResponse, error) {
-	n.logger.Debug(fmt.Sprintf("Trying to get %q secret in %q namespace", name, namespace))
+func (n *secretController) GetSecret(request types.GetSecretRequest) (types.GetSecretResponse, error) {
+	n.logger.Debug(fmt.Sprintf("Trying to get %q secret in %q namespace", request.SecretName, request.NamespaceName))
 
 	response := types.GetSecretResponse{}
+	name := request.SecretName
+	namespace := request.NamespaceName
 	secret, err := n.client.CoreV1().Secrets(namespace).Get(n.ctx, name, metav1.GetOptions{})
 	if err != nil {
 		n.logger.Error(fmt.Sprintf("Could not get secret %q with error: %v", name, err.Error()))
@@ -127,20 +130,14 @@ func (n *secretController) GetSecret(namespace string, name string) (types.GetSe
 	return response, nil
 }
 
-func (n *secretController) PatchSecret(namespace string, name string, request types.PatchSecretRequest) (types.PatchSecretResponse, error) {
-	n.logger.Debug(fmt.Sprintf("Trying to patch an existing secret in %q namespace", namespace))
+func (n *secretController) PatchSecret(request types.PatchSecretRequest) (types.PatchSecretResponse, error) {
+	n.logger.Debug(fmt.Sprintf("Trying to patch an existing secret in %q namespace", request.NamespaceName))
 
 	response := types.PatchSecretResponse{}
-	secret := v1.Secret{
-		Data: map[string][]byte{},
-	}
-	for _, kv := range request.Data {
-		secret.Data[kv.Key] = []byte(kv.Value)
-	}
-
-	data, err := json.Marshal(secret)
+	name := request.SecretName
+	namespace := request.NamespaceName
+	data, err := newSecretDataFromRequest(request)
 	if err != nil {
-		n.logger.Error(fmt.Sprintf("Could not marshal secret %q with error: %v", name, err.Error()))
 		return response, err
 	}
 
@@ -153,10 +150,10 @@ func (n *secretController) PatchSecret(namespace string, name string, request ty
 	response.Id = string(result.UID)
 	response.Type = string(result.Type)
 	response.SecretName = result.Name
-	for k, v := range secret.Data {
+	for k, v := range result.Data {
 		value, err := base64.StdEncoding.DecodeString(string(v))
 		if err != nil {
-			n.logger.Error(fmt.Sprintf("Error decoding secret %q value: %v", name, err.Error()))
+			n.logger.Error(fmt.Sprintf("Error decoding secret %q value: %v", result.Name, err.Error()))
 			continue
 		}
 
@@ -168,10 +165,12 @@ func (n *secretController) PatchSecret(namespace string, name string, request ty
 	return response, nil
 }
 
-func (n *secretController) DeleteSecret(namespace string, name string) (types.DeleteSecretResponse, error) {
-	n.logger.Debug(fmt.Sprintf("Trying to delete an existing secret in %q namespace", namespace))
+func (n *secretController) DeleteSecret(request types.DeleteSecretRequest) (types.DeleteSecretResponse, error) {
+	n.logger.Debug(fmt.Sprintf("Trying to delete an existing secret in %q namespace", request.NamespaceName))
 
 	response := types.DeleteSecretResponse{}
+	name := request.SecretName
+	namespace := request.NamespaceName
 	if err := n.client.CoreV1().Secrets(namespace).Delete(n.ctx, name, metav1.DeleteOptions{}); err != nil {
 		n.logger.Error(fmt.Sprintf("Could not delete secret %q with error: %v", name, err.Error()))
 		return response, err
@@ -183,11 +182,11 @@ func (n *secretController) DeleteSecret(namespace string, name string) (types.De
 
 // createSecretFromRequest returns a new secret based on different secret
 // types, either TLS or Opaque.
-func newSecretFromRequest(namespace string, request types.CreateSecretRequest) (*v1.Secret, error) {
+func newSecretFromRequest(request types.CreateSecretRequest) (*v1.Secret, error) {
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      request.SecretName,
-			Namespace: namespace,
+			Namespace: request.NamespaceName,
 		},
 	}
 
@@ -214,4 +213,21 @@ func newSecretFromRequest(namespace string, request types.CreateSecretRequest) (
 		return secret, fmt.Errorf("unsupported secret type: %q", request.Type)
 	}
 	return secret, nil
+}
+
+// newSecretDataFromRequest returns a new secret data to patch an existing
+// secret data.
+func newSecretDataFromRequest(request types.PatchSecretRequest) ([]byte, error) {
+	secret := &v1.Secret{
+		Data: map[string][]byte{},
+	}
+	for _, kv := range request.Data {
+		secret.Data[kv.Key] = []byte(kv.Value)
+	}
+
+	data, err := json.Marshal(secret)
+	if err != nil {
+		return nil, fmt.Errorf("could not marshal secret %q with error: %v", request.SecretName, err.Error())
+	}
+	return data, nil
 }
