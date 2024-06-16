@@ -40,4 +40,14 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider) {
 		secretsGroup.PATCH("/:secretName", PatchSecret())
 		secretsGroup.DELETE("/:secretName", DeleteSecret())
 	}
+
+	containerAppGroup := namespacesGroup.Group("/:namespaceName/capps")
+	containerAppGroup.Use(middleware.TokenAuthMiddleware(tokenProvider))
+	{
+		containerAppGroup.POST("/", CreateContainerApp())
+		containerAppGroup.GET("/", GetContainerApps())
+		containerAppGroup.GET("/:cappName", GetContainerApp())
+		containerAppGroup.PATCH("/:cappName", PatchContainerApp())
+		containerAppGroup.DELETE("/:cappName", DeleteContainerApp())
+	}
 }
