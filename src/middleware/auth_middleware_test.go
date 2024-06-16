@@ -1,11 +1,12 @@
 package middleware
 
 import (
-	"go.uber.org/zap"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
+
+	"go.uber.org/zap"
 
 	"github.com/gin-gonic/gin"
 )
@@ -43,6 +44,12 @@ func TestTokenAuthMiddleware(t *testing.T) {
 		if !ok {
 			t.Error("Expected kubeClient to be set in context")
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "kubeClient not set in context"})
+			return
+		}
+		_, ok = c.Get("dynClient")
+		if !ok {
+			t.Error("Expected dynClient to be set in context")
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "dynClient not set in context"})
 			return
 		}
 
