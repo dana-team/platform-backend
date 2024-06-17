@@ -12,8 +12,8 @@ This document outlines the CRUD (Create, Read, Update, Delete) on CappRevision. 
     ```json
     {
       "lables": {
-        "key": str,
-        "key1": str
+        "key": "string",
+        "key1": "string"
       }
     }
     ```
@@ -29,6 +29,42 @@ This document outlines the CRUD (Create, Read, Update, Delete) on CappRevision. 
   - **Response**: CappRevision info or an error message.
     ```json
     {
-      CappRevision
+      "cappRevision": {
+        "metadata": {
+          "name": "string",
+          "namespace": "string",
+          "creationTimestamp": "string"
+        },
+        "annotations": [
+          {
+            "key": "string",
+            // Key
+            "value": "string"
+            // Value
+          },
+          {
+            "key": "string",
+            "value": "string"
+          }
+        ],
+        "labels": [
+          {
+            "key": "string",
+            // Key
+            "value": "string"
+            // Value
+          },
+          {
+            "key": "string",
+            "value": "string"
+          }
+        ],
+        "spec": {
+          // [CappRevisionSpec] https://github.com/dana-team/container-app-operator/blob/main/api/v1alpha1/capprevision_types.go#L23-L30
+        },
+        "status": {
+          // [CappRevisionSpec] https://github.com/dana-team/container-app-operator/blob/main/api/v1alpha1/capprevision_types.go#L32-L34
+        }
+      }
     }
     ```
