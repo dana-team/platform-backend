@@ -1,0 +1,40 @@
+package types
+
+import (
+	cappv1 "github.com/dana-team/container-app-operator/api/v1alpha1"
+)
+
+type Capp struct {
+	Metadata    Metadata          `json:"metadata" binding:"required"`
+	Annotations []KeyValue        `json:"annotations" binding:"required"`
+	Labels      []KeyValue        `json:"labels" binding:"required"`
+	Spec        cappv1.CappSpec   `json:"spec" binding:"required"`
+	Status      cappv1.CappStatus `json:"status" binding:"required"`
+}
+
+type Metadata struct {
+	Name      string `json:"name" binding:"required"`
+	Namespace string `json:"namespace" binding:"required"`
+}
+
+type CappQuery struct {
+	Labels []KeyValue `form:"labels"`
+}
+
+type CappList struct {
+	Capps []Capp `json:"capps"`
+	Count int    `json:"count"`
+}
+
+type CappNamespaceUri struct {
+	NamespaceName string `uri:"namespaceName" binding:"required"`
+}
+
+type CappUri struct {
+	NamespaceName string `uri:"namespaceName" binding:"required"`
+	CappName      string `uri:"cappName" binding:"required"`
+}
+
+type CappError struct {
+	Message string `json:"message"`
+}

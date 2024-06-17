@@ -6,12 +6,15 @@ import (
 	"os"
 	"strings"
 
+	cappv1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/auth"
 	"github.com/dana-team/platform-backend/src/utils"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -52,16 +55,38 @@ func TokenAuthMiddleware(tokenProvider auth.TokenProvider) gin.HandlerFunc {
 		}
 		userLogger := logger.With(zap.String("user", username))
 
-		client, err := createKubernetesClient(token, os.Getenv(envKubeAPIServer))
+		config, err := createKubernetesConfig(token, os.Getenv(envKubeAPIServer))
+		if err != nil {
+			userLogger.Error("Failed to create Kubernetes client config", zap.Error(err))
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to create Kubernetes client config"})
+			return
+		}
+
+		kubeClient, err := kubernetes.NewForConfig(config)
 		if err != nil {
 			userLogger.Error("Failed to create Kubernetes client", zap.Error(err))
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to create Kubernetes client"})
 			return
 		}
 
+		schema := scheme.Scheme
+		if err := cappv1.AddToScheme(scheme.Scheme); err != nil {
+			userLogger.Error("Failed to create Kubernetes dynamic client schema", zap.Error(err))
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to create Kubernetes dynamic client schema"})
+			return
+		}
+
+		dynClient, err := client.New(config, client.Options{Scheme: schema})
+		if err != nil {
+			userLogger.Error("Failed to create Kubernetes dynamic client", zap.Error(err))
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to create Kubernetes dynamic client"})
+			return
+		}
+
 		// Update the logger with the username
 		c.Set("logger", userLogger)
-		c.Set("kubeClient", client)
+		c.Set("kubeClient", kubeClient)
+		c.Set("dynClient", dynClient)
 
 		c.Next()
 	}
@@ -84,8 +109,8 @@ func validateToken(c *gin.Context) (string, error) {
 	return tokenParts[httpBearerTokenIndex], nil
 }
 
-// createKubernetesClient creates a Kubernetes client using the provided token.
-func createKubernetesClient(token, kubeApiServer string) (kubernetes.Interface, error) {
+// createKubernetesConfig creates a new Kubernetes client config using the provided token.
+func createKubernetesConfig(token, kubeApiServer string) (*rest.Config, error) {
 	skipTlsVerify, err := utils.GetEnvBool(envInsecureSkipVerify, true)
 	if err != nil {
 		return nil, err
@@ -98,11 +123,5 @@ func createKubernetesClient(token, kubeApiServer string) (kubernetes.Interface, 
 			Insecure: skipTlsVerify,
 		},
 	}
-
-	client, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Kubernetes client: %v", err)
-	}
-
-	return client, nil
+	return config, nil
 }
