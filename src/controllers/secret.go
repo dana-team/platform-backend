@@ -16,7 +16,7 @@ import (
 
 type SecretController interface {
 	// CreateSecret creates a new secret in the specified namespace.
-	CreateSecret(request types.CreateSecretRequest) (types.CreateSecretResponse, error)
+	CreateSecret(namespace string, request types.CreateSecretRequest) (types.CreateSecretResponse, error)
 
 	// GetSecrets gets all secretes from the specified namespace.
 	GetSecrets(request types.GetSecretsRequest) (types.GetSecretsResponse, error)
@@ -47,13 +47,12 @@ func NewSecretController(client kubernetes.Interface, context context.Context, l
 	}
 }
 
-func (n *secretController) CreateSecret(request types.CreateSecretRequest) (types.CreateSecretResponse, error) {
+func (n *secretController) CreateSecret(namespace string, request types.CreateSecretRequest) (types.CreateSecretResponse, error) {
 	n.logger.Debug(fmt.Sprintf("Trying to create secret: %q", request.SecretName))
 
 	response := types.CreateSecretResponse{}
-	namespace := request.NamespaceName
 	name := request.SecretName
-	secret, err := newSecretFromRequest(request)
+	secret, err := newSecretFromRequest(namespace, request)
 	if err != nil {
 		return response, err
 	}
@@ -182,11 +181,11 @@ func (n *secretController) DeleteSecret(request types.DeleteSecretRequest) (type
 
 // createSecretFromRequest returns a new secret based on different secret
 // types, either TLS or Opaque.
-func newSecretFromRequest(request types.CreateSecretRequest) (*v1.Secret, error) {
+func newSecretFromRequest(namespace string, request types.CreateSecretRequest) (*v1.Secret, error) {
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      request.SecretName,
-			Namespace: request.NamespaceName,
+			Namespace: namespace,
 		},
 	}
 

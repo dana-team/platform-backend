@@ -1,12 +1,15 @@
 package types
 
 type CreateSecretRequest struct {
-	Type          string     `json:"type" binding:"required"`
-	NamespaceName string     `json:"namespaceName" binding:"required"`
-	SecretName    string     `json:"secretName" binding:"required"`
-	Cert          string     `json:"cert"`
-	Key           string     `json:"key"`
-	Data          []KeyValue `json:"data"`
+	Type       string     `json:"type" binding:"required"`
+	SecretName string     `json:"secretName" binding:"required"`
+	Cert       string     `json:"cert"`
+	Key        string     `json:"key"`
+	Data       []KeyValue `json:"data"`
+}
+
+type CreateSecretUriRequest struct {
+	NamespaceName string `uri:"namespaceName" binding:"required"`
 }
 
 type CreateSecretResponse struct {

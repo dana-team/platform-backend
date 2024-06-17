@@ -13,10 +13,9 @@ import (
 
 func TestCreateSecret(t *testing.T) {
 	secretRequest := types.CreateSecretRequest{
-		Type:          "Opaque",
-		NamespaceName: "default",
-		SecretName:    "new-secret",
-		Data:          []types.KeyValue{{Key: "key1", Value: "ZmFrZQ=="}},
+		Type:       "Opaque",
+		SecretName: "new-secret",
+		Data:       []types.KeyValue{{Key: "key1", Value: "ZmFrZQ=="}},
 	}
 	body, _ := json.Marshal(secretRequest)
 	request, _ := http.NewRequest("POST", "/v1/namespaces/default/secrets/", bytes.NewBuffer(body))
