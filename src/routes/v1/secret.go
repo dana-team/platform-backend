@@ -44,14 +44,17 @@ func secretHandler(handler func(controller controllers.SecretController, c *gin.
 // CreateSecret creates a new secret in a specific namespace.
 func CreateSecret() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		var uriRequest types.SecretNamespaceUriRequest
+		if err := c.BindUri(&uriRequest); err != nil {
+			return
+		}
 		var request types.CreateSecretRequest
 		if err := c.BindJSON(&request); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
 			return
 		}
 
 		secretHandler(func(controller controllers.SecretController, c *gin.Context) (interface{}, error) {
-			return controller.CreateSecret(request)
+			return controller.CreateSecret(uriRequest.NamespaceName, request)
 		})(c)
 	}
 }
@@ -59,14 +62,13 @@ func CreateSecret() gin.HandlerFunc {
 // GetSecrets gets all secrets in a specific namespace.
 func GetSecrets() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var request types.GetSecretsRequest
+		var request types.SecretNamespaceUriRequest
 		if err := c.BindUri(&request); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
 			return
 		}
 
 		secretHandler(func(controller controllers.SecretController, c *gin.Context) (interface{}, error) {
-			return controller.GetSecrets(request)
+			return controller.GetSecrets(request.NamespaceName)
 		})(c)
 	}
 }
@@ -74,14 +76,13 @@ func GetSecrets() gin.HandlerFunc {
 // GetSecret gets a specific secret from a specific namespace.
 func GetSecret() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var request types.GetSecretRequest
+		var request types.SecretUriRequest
 		if err := c.BindUri(&request); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
 			return
 		}
 
 		secretHandler(func(controller controllers.SecretController, c *gin.Context) (interface{}, error) {
-			return controller.GetSecret(request)
+			return controller.GetSecret(request.NamespaceName, request.SecretName)
 		})(c)
 	}
 }
@@ -89,23 +90,17 @@ func GetSecret() gin.HandlerFunc {
 // PatchSecret patches a specific secret in a specific namespace.
 func PatchSecret() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var uriRequest types.PatchSecretUriRequest
+		var uriRequest types.SecretUriRequest
 		if err := c.BindUri(&uriRequest); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
 			return
 		}
-		var jsonRequest types.PatchSecretJsonRequest
-		if err := c.BindJSON(&jsonRequest); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+		var request types.PatchSecretRequest
+		if err := c.BindUri(&request); err != nil {
 			return
 		}
 
 		secretHandler(func(controller controllers.SecretController, c *gin.Context) (interface{}, error) {
-			return controller.PatchSecret(types.PatchSecretRequest{
-				NamespaceName: uriRequest.NamespaceName,
-				SecretName:    uriRequest.SecretName,
-				Data:          jsonRequest.Data,
-			})
+			return controller.PatchSecret(uriRequest.NamespaceName, uriRequest.SecretName, request)
 		})(c)
 	}
 }
@@ -113,14 +108,13 @@ func PatchSecret() gin.HandlerFunc {
 // DeleteSecret deletes a specific secret in a specific namespace.
 func DeleteSecret() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var request types.DeleteSecretRequest
+		var request types.SecretUriRequest
 		if err := c.BindUri(&request); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
 			return
 		}
 
 		secretHandler(func(controller controllers.SecretController, c *gin.Context) (interface{}, error) {
-			return controller.DeleteSecret(request)
+			return controller.DeleteSecret(request.NamespaceName, request.SecretName)
 		})(c)
 	}
 }
