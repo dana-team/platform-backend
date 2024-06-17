@@ -12,11 +12,6 @@ type Capp struct {
 	Status      cappv1.CappStatus `json:"status" binding:"required"`
 }
 
-type Metadata struct {
-	Name      string `json:"name" binding:"required"`
-	Namespace string `json:"namespace" binding:"required"`
-}
-
 type CappQuery struct {
 	Labels []KeyValue `form:"labels"`
 }

@@ -28,6 +28,7 @@ func TestMain(m *testing.M) {
 	CreateTestSecret()
 	CreateTestNamespace()
 	CreateTestContainerApp()
+	CreateTestContainerAppRevision()
 	m.Run()
 }
 
@@ -71,6 +72,12 @@ func SetupRouter(logger *zap.Logger) *gin.Engine {
 				containerAppGroup.GET("/:cappName", routev1.GetContainerApp())
 				containerAppGroup.PATCH("/:cappName", routev1.PatchContainerApp())
 				containerAppGroup.DELETE("/:cappName", routev1.DeleteContainerApp())
+			}
+
+			containerAppRevisionGroup := namespacesGroup.Group("/:namespaceName/capprevisions")
+			{
+				containerAppRevisionGroup.GET("/", routev1.GetContainerAppRevisions())
+				containerAppRevisionGroup.GET("/:cappRevisionName", routev1.GetContainerAppRevision())
 			}
 		}
 	}
@@ -116,6 +123,23 @@ func CreateTestContainerApp() {
 		},
 		Spec:   cappv1.CappSpec{},
 		Status: cappv1.CappStatus{},
+	}
+	err := dynClient.Create(context.TODO(), &capp)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func CreateTestContainerAppRevision() {
+	capp := cappv1.CappRevision{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "test-capprevision",
+			Namespace:   "test-namespace",
+			Annotations: map[string]string{},
+			Labels:      map[string]string{},
+		},
+		Spec:   cappv1.CappRevisionSpec{},
+		Status: cappv1.CappRevisionStatus{},
 	}
 	err := dynClient.Create(context.TODO(), &capp)
 	if err != nil {

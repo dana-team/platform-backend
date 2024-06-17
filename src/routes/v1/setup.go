@@ -50,4 +50,11 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider) {
 		containerAppGroup.PATCH("/:cappName", PatchContainerApp())
 		containerAppGroup.DELETE("/:cappName", DeleteContainerApp())
 	}
+
+	containerAppRevisionGroup := namespacesGroup.Group("/:namespaceName/capprevisions")
+	containerAppRevisionGroup.Use(middleware.TokenAuthMiddleware(tokenProvider))
+	{
+		containerAppRevisionGroup.GET("/", GetContainerAppRevisions())
+		containerAppRevisionGroup.GET("/:cappRevisionName", GetContainerAppRevision())
+	}
 }
