@@ -41,11 +41,11 @@ type Secret struct {
 	NamespaceName string `json:"namespaceName"`
 }
 
-type PatchSecretRequest struct {
+type UpdateSecretRequest struct {
 	Data []KeyValue `json:"data"`
 }
 
-type PatchSecretResponse struct {
+type UpdateSecretResponse struct {
 	Id            string     `json:"id"`
 	Type          string     `json:"type"`
 	SecretName    string     `json:"secretName"`

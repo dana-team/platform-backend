@@ -3,14 +3,12 @@ package controllers
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 
 	"github.com/dana-team/platform-backend/src/types"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -24,8 +22,8 @@ type SecretController interface {
 	// GetSecret gets a specific secret from the specified namespace.
 	GetSecret(namespace, name string) (types.GetSecretResponse, error)
 
-	// PatchSecret patches a specific secret in the specified namespace.
-	PatchSecret(namespace, name string, request types.PatchSecretRequest) (types.PatchSecretResponse, error)
+	// UpdateSecret updates a specific secret in the specified namespace.
+	UpdateSecret(namespace, name string, request types.UpdateSecretRequest) (types.UpdateSecretResponse, error)
 
 	// DeleteSecret deletes a specific secret in the specified namespace.
 	DeleteSecret(namespace, name string) (types.DeleteSecretResponse, error)
@@ -126,21 +124,26 @@ func (n *secretController) GetSecret(namespace, name string) (types.GetSecretRes
 	return response, nil
 }
 
-func (n *secretController) PatchSecret(namespace, name string, request types.PatchSecretRequest) (types.PatchSecretResponse, error) {
-	n.logger.Debug(fmt.Sprintf("Trying to patch an existing secret in %q namespace", namespace))
+func (n *secretController) UpdateSecret(namespace, name string, request types.UpdateSecretRequest) (types.UpdateSecretResponse, error) {
+	n.logger.Debug(fmt.Sprintf("Trying to update an existing secret in %q namespace", namespace))
 
-	data, err := newSecretDataFromRequest(name, request)
+	newSecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Data: map[string][]byte{},
+	}
+	for _, kv := range request.Data {
+		newSecret.Data[kv.Key] = []byte(kv.Value)
+	}
+	result, err := n.client.CoreV1().Secrets(namespace).Update(n.ctx, newSecret, metav1.UpdateOptions{})
 	if err != nil {
-		return types.PatchSecretResponse{}, err
+		n.logger.Error(fmt.Sprintf("Could not update secret %q with error: %v", name, err.Error()))
+		return types.UpdateSecretResponse{}, err
 	}
 
-	result, err := n.client.CoreV1().Secrets(namespace).Patch(n.ctx, name, k8stypes.StrategicMergePatchType, data, metav1.PatchOptions{})
-	if err != nil {
-		n.logger.Error(fmt.Sprintf("Could not patch secret %q with error: %v", name, err.Error()))
-		return types.PatchSecretResponse{}, err
-	}
-
-	response := types.PatchSecretResponse{
+	response := types.UpdateSecretResponse{
 		Id:         string(result.UID),
 		Type:       string(result.Type),
 		SecretName: result.Name,
@@ -206,21 +209,4 @@ func newSecretFromRequest(namespace string, request types.CreateSecretRequest) (
 		return secret, fmt.Errorf("unsupported secret type: %q", request.Type)
 	}
 	return secret, nil
-}
-
-// newSecretDataFromRequest returns a new secret data to patch an existing
-// secret data.
-func newSecretDataFromRequest(name string, request types.PatchSecretRequest) ([]byte, error) {
-	secret := &v1.Secret{
-		Data: map[string][]byte{},
-	}
-	for _, kv := range request.Data {
-		secret.Data[kv.Key] = []byte(kv.Value)
-	}
-
-	data, err := json.Marshal(secret)
-	if err != nil {
-		return nil, fmt.Errorf("could not marshal secret %q with error: %v", name, err.Error())
-	}
-	return data, nil
 }

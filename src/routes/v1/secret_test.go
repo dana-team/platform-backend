@@ -55,19 +55,19 @@ func TestGetSpecificSecret(t *testing.T) {
 	assert.Equal(t, "test-secret", response.SecretName)
 }
 
-func TestPatchSecret(t *testing.T) {
-	patchRequest := types.PatchSecretRequest{
+func TestUpdateSecret(t *testing.T) {
+	updateRequest := types.UpdateSecretRequest{
 		Data: []types.KeyValue{{Key: "key2", Value: "ZmFrZQ=="}},
 	}
-	body, _ := json.Marshal(patchRequest)
-	request, _ := http.NewRequest("PATCH", "/v1/namespaces/default/secrets/test-secret", bytes.NewBuffer(body))
+	body, _ := json.Marshal(updateRequest)
+	request, _ := http.NewRequest("PUT", "/v1/namespaces/default/secrets/test-secret", bytes.NewBuffer(body))
 	request.Header.Set("Content-Type", "application/json")
 
 	writer := httptest.NewRecorder()
 	router.ServeHTTP(writer, request)
 
 	assert.Equal(t, http.StatusOK, writer.Code)
-	var response types.PatchSecretResponse
+	var response types.UpdateSecretResponse
 	err := json.Unmarshal(writer.Body.Bytes(), &response)
 	assert.NoError(t, err)
 	assert.Equal(t, "test-secret", response.SecretName)

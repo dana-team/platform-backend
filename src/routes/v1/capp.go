@@ -85,7 +85,7 @@ func CreateCapp() gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
 			return
 		}
-		var capp types.Capp
+		var capp types.CreateCapp
 		if err := c.BindJSON(&capp); err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
 			return
@@ -97,21 +97,21 @@ func CreateCapp() gin.HandlerFunc {
 	}
 }
 
-func PatchCapp() gin.HandlerFunc {
+func UpdateCapp() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cappUri types.CappUri
 		if err := c.BindUri(&cappUri); err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
 			return
 		}
-		var capp types.Capp
+		var capp types.UpdateCapp
 		if err := c.BindJSON(&capp); err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
 			return
 		}
 
 		cappHandler(func(controller controllers.CappController, c *gin.Context) (interface{}, error) {
-			return controller.PatchCapp(cappUri.NamespaceName, cappUri.CappName, capp)
+			return controller.UpdateCapp(cappUri.NamespaceName, cappUri.CappName, capp)
 		})(c)
 	}
 }

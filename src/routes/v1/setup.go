@@ -37,7 +37,7 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider) {
 		secretsGroup.POST("/", CreateSecret())
 		secretsGroup.GET("/", GetSecrets())
 		secretsGroup.GET("/:secretName", GetSecret())
-		secretsGroup.PATCH("/:secretName", PatchSecret())
+		secretsGroup.PUT("/:secretName", UpdateSecret())
 		secretsGroup.DELETE("/:secretName", DeleteSecret())
 	}
 
@@ -47,7 +47,7 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider) {
 		cappGroup.POST("/", CreateCapp())
 		cappGroup.GET("/", GetCapps())
 		cappGroup.GET("/:cappName", GetCapp())
-		cappGroup.PATCH("/:cappName", PatchCapp())
+		cappGroup.PUT("/:cappName", UpdateCapp())
 		cappGroup.DELETE("/:cappName", DeleteCapp())
 	}
 

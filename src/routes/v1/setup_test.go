@@ -61,7 +61,7 @@ func SetupRouter(logger *zap.Logger) *gin.Engine {
 				secretsGroup.POST("/", routev1.CreateSecret())
 				secretsGroup.GET("/", routev1.GetSecrets())
 				secretsGroup.GET("/:secretName", routev1.GetSecret())
-				secretsGroup.PATCH("/:secretName", routev1.PatchSecret())
+				secretsGroup.PUT("/:secretName", routev1.UpdateSecret())
 				secretsGroup.DELETE("/:secretName", routev1.DeleteSecret())
 			}
 
@@ -70,7 +70,7 @@ func SetupRouter(logger *zap.Logger) *gin.Engine {
 				cappGroup.POST("/", routev1.CreateCapp())
 				cappGroup.GET("/", routev1.GetCapps())
 				cappGroup.GET("/:cappName", routev1.GetCapp())
-				cappGroup.PATCH("/:cappName", routev1.PatchCapp())
+				cappGroup.PUT("/:cappName", routev1.UpdateCapp())
 				cappGroup.DELETE("/:cappName", routev1.DeleteCapp())
 			}
 

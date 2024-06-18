@@ -12,6 +12,23 @@ type Capp struct {
 	Status      cappv1.CappStatus `json:"status" binding:"required"`
 }
 
+type CreateCapp struct {
+	Metadata    CreateMetadata  `json:"metadata" binding:"required"`
+	Annotations []KeyValue      `json:"annotations" binding:"required"`
+	Labels      []KeyValue      `json:"labels" binding:"required"`
+	Spec        cappv1.CappSpec `json:"spec" binding:"required"`
+}
+
+type CreateMetadata struct {
+	Name string `json:"name" binding:"required"`
+}
+
+type UpdateCapp struct {
+	Annotations []KeyValue      `json:"annotations" binding:"required"`
+	Labels      []KeyValue      `json:"labels" binding:"required"`
+	Spec        cappv1.CappSpec `json:"spec" binding:"required"`
+}
+
 type CappQuery struct {
 	Labels []KeyValue `form:"labels"`
 }
