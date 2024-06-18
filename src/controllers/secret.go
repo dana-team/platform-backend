@@ -9,9 +9,15 @@ import (
 	"github.com/dana-team/platform-backend/src/types"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
+)
+
+const (
+	TLSType    = "tls"
+	OpaqueType = "opaque"
 )
 
 type SecretController interface {
@@ -184,18 +190,18 @@ func newSecretFromRequest(namespace string, request types.CreateSecretRequest) (
 	}
 
 	switch request.Type {
-	case string(v1.SecretTypeTLS):
+	case TLSType:
 		if request.Cert == "" || request.Key == "" {
-			return secret, fmt.Errorf("cert and key are required for TLS secrets")
+			return secret, k8serrors.NewBadRequest("cert and key are required for TLS secrets")
 		}
 		secret.Type = v1.SecretTypeTLS
 		secret.Data = map[string][]byte{
 			"tls.crt": []byte(base64.StdEncoding.EncodeToString([]byte(request.Cert))),
 			"tls.key": []byte(base64.StdEncoding.EncodeToString([]byte(request.Key))),
 		}
-	case string(v1.SecretTypeOpaque):
+	case OpaqueType:
 		if len(request.Data) == 0 {
-			return secret, fmt.Errorf("data is required for Opaque secrets")
+			return secret, k8serrors.NewBadRequest("data is required for Opaque secrets")
 		}
 		secret.Type = v1.SecretTypeOpaque
 		secret.Data = map[string][]byte{}
@@ -203,7 +209,7 @@ func newSecretFromRequest(namespace string, request types.CreateSecretRequest) (
 			secret.Data[kv.Key] = []byte(base64.StdEncoding.EncodeToString([]byte(kv.Value)))
 		}
 	default:
-		return secret, fmt.Errorf("unsupported secret type: %q", request.Type)
+		return secret, k8serrors.NewBadRequest("unsupported secret type")
 	}
 	return secret, nil
 }
