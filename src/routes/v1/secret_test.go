@@ -13,7 +13,7 @@ import (
 
 func TestCreateSecret(t *testing.T) {
 	secretRequest := types.CreateSecretRequest{
-		Type:       "Opaque",
+		Type:       "opaque",
 		SecretName: "new-secret",
 		Data:       []types.KeyValue{{Key: "key1", Value: "ZmFrZQ=="}},
 	}
