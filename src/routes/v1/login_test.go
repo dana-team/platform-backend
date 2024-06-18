@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"github.com/dana-team/platform-backend/src/auth"
@@ -31,23 +30,22 @@ func (m MockTokenProvider) ObtainUsername(token string, logger *zap.Logger) (str
 func Test_Login(t *testing.T) {
 	type args struct {
 		tokenProvider auth.TokenProvider
+		username      string
+		password      string
 	}
 	type want struct {
 		statusCode int
 		response   map[string]string
 	}
 	cases := map[string]struct {
-		args    args
-		request interface{}
-		want    want
+		args args
+		want want
 	}{
 		"ShouldSuccessObtainingToken": {
 			args: args{
 				tokenProvider: MockTokenProvider{Token: "valid_token", Err: nil},
-			},
-			request: map[string]string{
-				"username": "valid_user",
-				"password": "valid_password",
+				username:      "valid_user",
+				password:      "valid_password",
 			},
 			want: want{
 				statusCode: http.StatusOK,
@@ -58,19 +56,16 @@ func Test_Login(t *testing.T) {
 			args: args{
 				tokenProvider: MockTokenProvider{},
 			},
-			request: `invalid payload`,
 			want: want{
 				statusCode: http.StatusBadRequest,
-				response:   map[string]string{"error": "Invalid request payload"},
+				response:   map[string]string{"error": "Authorization header not found"},
 			},
 		},
 		"ShouldFailWithInvalidCredentials": {
 			args: args{
 				tokenProvider: MockTokenProvider{Err: auth.ErrInvalidCredentials},
-			},
-			request: map[string]string{
-				"username": "invalid_user",
-				"password": "invalid_password",
+				username:      "invalid_user",
+				password:      "invalid_password",
 			},
 			want: want{
 				statusCode: http.StatusUnauthorized,
@@ -80,10 +75,8 @@ func Test_Login(t *testing.T) {
 		"ShouldFailWithInternalServerError": {
 			args: args{
 				tokenProvider: MockTokenProvider{Err: errors.New("some internal error")},
-			},
-			request: map[string]string{
-				"username": "user",
-				"password": "password",
+				username:      "user",
+				password:      "password",
 			},
 			want: want{
 				statusCode: http.StatusInternalServerError,
@@ -100,10 +93,11 @@ func Test_Login(t *testing.T) {
 			r.Use(middleware.LoggerMiddleware(mockLogger))
 			r.POST("/login", Login(tc.args.tokenProvider))
 
-			payload, _ := json.Marshal(tc.request)
-
-			req, _ := http.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(payload))
+			req, _ := http.NewRequest(http.MethodPost, "/login", nil)
 			req.Header.Set("Content-Type", "application/json")
+			if tc.args.username != "" {
+				req.SetBasicAuth(tc.args.username, tc.args.password)
+			}
 
 			w := httptest.NewRecorder()
 			r.ServeHTTP(w, req)
