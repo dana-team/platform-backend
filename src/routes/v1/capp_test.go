@@ -68,7 +68,7 @@ func TestGetCapp(t *testing.T) {
 	assert.Equal(t, "test-namespace", response.Metadata.Namespace)
 }
 
-func TestPatchCapp(t *testing.T) {
+func TestUpdateCapp(t *testing.T) {
 	cappRequest := types.Capp{
 		Metadata: types.Metadata{
 			Name:      "test-capp",
@@ -84,7 +84,7 @@ func TestPatchCapp(t *testing.T) {
 		Status: cappv1.CappStatus{},
 	}
 	body, _ := json.Marshal(cappRequest)
-	request, _ := http.NewRequest("PATCH", "/v1/namespaces/test-namespace/capps/test-capp", bytes.NewBuffer(body))
+	request, _ := http.NewRequest("PUT", "/v1/namespaces/test-namespace/capps/test-capp", bytes.NewBuffer(body))
 	request.Header.Set("Content-Type", "application/json")
 
 	writer := httptest.NewRecorder()

@@ -87,20 +87,20 @@ func GetSecret() gin.HandlerFunc {
 	}
 }
 
-// PatchSecret patches a specific secret in a specific namespace.
-func PatchSecret() gin.HandlerFunc {
+// UpdateSecret updates a specific secret in a specific namespace.
+func UpdateSecret() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var uriRequest types.SecretUriRequest
 		if err := c.BindUri(&uriRequest); err != nil {
 			return
 		}
-		var request types.PatchSecretRequest
+		var request types.UpdateSecretRequest
 		if err := c.BindUri(&request); err != nil {
 			return
 		}
 
 		secretHandler(func(controller controllers.SecretController, c *gin.Context) (interface{}, error) {
-			return controller.PatchSecret(uriRequest.NamespaceName, uriRequest.SecretName, request)
+			return controller.UpdateSecret(uriRequest.NamespaceName, uriRequest.SecretName, request)
 		})(c)
 	}
 }

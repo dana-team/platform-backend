@@ -13,7 +13,7 @@ import (
 
 type CappController interface {
 	// CreateCapp creates a new container app in the specified namespace.
-	CreateCapp(namespace string, capp types.Capp) (types.Capp, error)
+	CreateCapp(namespace string, capp types.CreateCapp) (types.Capp, error)
 
 	// GetCapps gets all container apps from a specific namespace.
 	GetCapps(namespace string, cappQuery types.CappQuery) (types.CappList, error)
@@ -21,8 +21,8 @@ type CappController interface {
 	// GetCapp gets a specific container app from the specified namespace.
 	GetCapp(namespace, name string) (types.Capp, error)
 
-	// PatchCapp patches a specific container app in the specified namespace.
-	PatchCapp(namespace, name string, capp types.Capp) (types.Capp, error)
+	// UpdateCapp updates a specific container app in the specified namespace.
+	UpdateCapp(namespace, name string, capp types.UpdateCapp) (types.Capp, error)
 
 	// DeleteCapp deletes a specific container app in the specified namespace.
 	DeleteCapp(namespace, name string) (types.CappError, error)
@@ -42,16 +42,46 @@ func NewCappController(client client.Client, context context.Context, logger *za
 	}, nil
 }
 
-func (c *cappController) CreateCapp(namespace string, capp types.Capp) (types.Capp, error) {
+func (c *cappController) CreateCapp(namespace string, capp types.CreateCapp) (types.Capp, error) {
 	c.logger.Debug(fmt.Sprintf("Trying to create capp in namespace: %q", namespace))
 
-	newCapp := createCappFromType(capp)
+	newCapp := createCappFromType(namespace, capp)
 	if err := c.client.Create(c.ctx, &newCapp); err != nil {
 		c.logger.Error(fmt.Sprintf("Could not create capp in namespace %q with error: %v", namespace, err.Error()))
 		return types.Capp{}, err
 	}
 
-	return capp, nil
+	return createCappFromV1Capp(newCapp), nil
+}
+
+func createCappFromV1Capp(capp v1alpha1.Capp) types.Capp {
+	return types.Capp{
+		Metadata: types.Metadata{
+			Name:      capp.Name,
+			Namespace: capp.Namespace,
+		},
+		Annotations: convertMapToKeyValue(capp.Annotations),
+		Labels:      convertMapToKeyValue(capp.Labels),
+		Spec: v1alpha1.CappSpec{
+			ScaleMetric:       capp.Spec.ScaleMetric,
+			Site:              capp.Spec.Site,
+			State:             capp.Spec.State,
+			ConfigurationSpec: capp.Spec.ConfigurationSpec,
+			RouteSpec:         capp.Spec.RouteSpec,
+			LogSpec:           capp.Spec.LogSpec,
+			VolumesSpec:       capp.Spec.VolumesSpec,
+		},
+		Status: v1alpha1.CappStatus{
+			ApplicationLinks:    capp.Status.ApplicationLinks,
+			KnativeObjectStatus: capp.Status.KnativeObjectStatus,
+			RevisionInfo:        capp.Status.RevisionInfo,
+			StateStatus:         capp.Status.StateStatus,
+			LoggingStatus:       capp.Status.LoggingStatus,
+			RouteStatus:         capp.Status.RouteStatus,
+			VolumesStatus:       capp.Status.VolumesStatus,
+			Conditions:          capp.Status.Conditions,
+		},
+	}
 }
 
 func (c *cappController) GetCapps(namespace string, cappQuery types.CappQuery) (types.CappList, error) {
@@ -96,24 +126,26 @@ func (c *cappController) GetCapp(namespace, name string) (types.Capp, error) {
 	return convertCappToType(*capp), nil
 }
 
-func (c *cappController) PatchCapp(namespace, name string, capp types.Capp) (types.Capp, error) {
-	c.logger.Debug(fmt.Sprintf("Trying to patch capp %q in namespace %q", name, namespace))
+func (c *cappController) UpdateCapp(namespace, name string, newCapp types.UpdateCapp) (types.Capp, error) {
+	c.logger.Debug(fmt.Sprintf("Trying to update capp %q in namespace %q", name, namespace))
 
-	oldCapp := &v1alpha1.Capp{}
-	err := c.client.Get(c.ctx, client.ObjectKey{Namespace: namespace, Name: name}, oldCapp)
+	capp := &v1alpha1.Capp{}
+	err := c.client.Get(c.ctx, client.ObjectKey{Namespace: namespace, Name: name}, capp)
 	if err != nil {
 		c.logger.Error(fmt.Sprintf("Could not fetch capp %q in namespace %q with error: %v", name, namespace, err.Error()))
 		return types.Capp{}, err
 	}
 
-	newCapp := createCappFromType(capp)
-	err = c.client.Patch(c.ctx, oldCapp, client.MergeFrom(newCapp.DeepCopy()))
-	if err != nil {
-		c.logger.Error(fmt.Sprintf("Could not patch capp %q in namespace %q with error: %v", name, namespace, err.Error()))
+	capp.Annotations = convertKeyValueToMap(newCapp.Annotations)
+	capp.Labels = convertKeyValueToMap(newCapp.Labels)
+	capp.Spec = newCapp.Spec
+
+	if err := c.client.Update(c.ctx, capp); err != nil {
+		c.logger.Error(fmt.Sprintf("Could not update capp %q in namespace %q with error: %v", name, namespace, err.Error()))
 		return types.Capp{}, err
 	}
 
-	return convertCappToType(newCapp), nil
+	return convertCappToType(*capp), nil
 }
 
 func (c *cappController) DeleteCapp(namespace, name string) (types.CappError, error) {
@@ -135,11 +167,11 @@ func (c *cappController) DeleteCapp(namespace, name string) (types.CappError, er
 	}, nil
 }
 
-func createCappFromType(capp types.Capp) v1alpha1.Capp {
+func createCappFromType(namespace string, capp types.CreateCapp) v1alpha1.Capp {
 	return v1alpha1.Capp{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        capp.Metadata.Name,
-			Namespace:   capp.Metadata.Namespace,
+			Namespace:   namespace,
 			Annotations: convertKeyValueToMap(capp.Annotations),
 			Labels:      convertKeyValueToMap(capp.Labels),
 		},
@@ -151,16 +183,6 @@ func createCappFromType(capp types.Capp) v1alpha1.Capp {
 			RouteSpec:         capp.Spec.RouteSpec,
 			LogSpec:           capp.Spec.LogSpec,
 			VolumesSpec:       capp.Spec.VolumesSpec,
-		},
-		Status: v1alpha1.CappStatus{
-			ApplicationLinks:    capp.Status.ApplicationLinks,
-			KnativeObjectStatus: capp.Status.KnativeObjectStatus,
-			RevisionInfo:        capp.Status.RevisionInfo,
-			StateStatus:         capp.Status.StateStatus,
-			LoggingStatus:       capp.Status.LoggingStatus,
-			RouteStatus:         capp.Status.RouteStatus,
-			VolumesStatus:       capp.Status.VolumesStatus,
-			Conditions:          capp.Status.Conditions,
 		},
 	}
 }
