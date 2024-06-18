@@ -63,7 +63,7 @@ $ make docker-build docker-push IMG=<registry>/platform-backend:<tag>
 ```bash
 $ curl -X POST \
 -H "Content-Type: application/json" \
--d '{"username": "<USERNAME>", "password": "<PASSWORD>"}' \
+-H "Authorization: Basic <base64('username:password')>" \
 "localhost:8080/v1/login/"
 ```
 
