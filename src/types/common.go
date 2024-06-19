@@ -7,6 +7,6 @@ type KeyValue struct {
 
 type Metadata struct {
 	Name              string `json:"name" binding:"required"`
-	Namespace         string `json:"namespace" binding:"required"`
+	Namespace         string `json:"namespace"`
 	CreationTimestamp string `json:"creationTimestamp"`
 }

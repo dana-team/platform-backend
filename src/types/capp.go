@@ -24,9 +24,9 @@ type CreateMetadata struct {
 }
 
 type UpdateCapp struct {
-	Annotations []KeyValue      `json:"annotations" binding:"required"`
-	Labels      []KeyValue      `json:"labels" binding:"required"`
-	Spec        cappv1.CappSpec `json:"spec" binding:"required"`
+	Annotations []KeyValue      `json:"annotations"`
+	Labels      []KeyValue      `json:"labels"`
+	Spec        cappv1.CappSpec `json:"spec"`
 }
 
 type CappQuery struct {
