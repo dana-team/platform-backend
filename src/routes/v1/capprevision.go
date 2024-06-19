@@ -53,7 +53,7 @@ func GetCappRevisions() gin.HandlerFunc {
 			return
 		}
 		var cappRevisionQuery types.CappRevisionQuery
-		if err := c.BindUri(&cappRevisionQuery); err != nil {
+		if err := c.BindQuery(&cappRevisionQuery); err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
 			return
 		}

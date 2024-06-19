@@ -53,7 +53,7 @@ func GetCapps() gin.HandlerFunc {
 			return
 		}
 		var cappQuery types.CappQuery
-		if err := c.BindUri(&cappQuery); err != nil {
+		if err := c.BindQuery(&cappQuery); err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
 			return
 		}
