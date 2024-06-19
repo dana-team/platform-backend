@@ -85,7 +85,8 @@ func TokenAuthMiddleware(tokenProvider auth.TokenProvider) gin.HandlerFunc {
 			return
 		}
 
-		log.SetLogger(logr.New(logr.Discard().GetSink()))
+		var logrLogger logr.Logger
+		log.SetLogger(logrLogger)
 
 		// Update the logger with the username
 		c.Set("logger", userLogger)
