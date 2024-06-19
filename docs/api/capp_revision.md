@@ -9,14 +9,9 @@ This document outlines the CRUD (Create, Read, Update, Delete) on CappRevision. 
 - **GET** `/v1/namespaces/{namespace}/cappRevisions`
   - **Description**: Get all cappRevision of namespace.
   - **Query Params**:
-    ```json
-    {
-      "lables": {
-        "key": "string",
-        "key1": "string"
-      }
-    }
-    ```
+    - `limit`: (optional) Specifies the maximum number of namespaces to return per page. Defaults to 9.
+    - `continue`: (optional) Used for fetching the next set of results.
+    - `labels`: (optional) Used for filtering namespaces by labels.
   - **Response**: Capp revisions or an error message.
     ```json
     {
