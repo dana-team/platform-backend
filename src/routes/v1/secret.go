@@ -95,7 +95,7 @@ func UpdateSecret() gin.HandlerFunc {
 			return
 		}
 		var request types.UpdateSecretRequest
-		if err := c.BindUri(&request); err != nil {
+		if err := c.BindJSON(&request); err != nil {
 			return
 		}
 
