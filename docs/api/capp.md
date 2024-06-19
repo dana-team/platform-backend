@@ -3,14 +3,9 @@
   - **Path Parameter**:
     - `namespace` - The namespace of the capp.
   - **Query Params**:
-    ```json
-    {
-      "lables": {
-        "key": str,
-        "key1": str
-      }
-    }
-    ```
+    - `limit`: (optional) Specifies the maximum number of namespaces to return per page. Defaults to 9.
+    - `continue`: (optional) Used for fetching the next set of results.
+    - `labels`: (optional) Used for filtering namespaces by labels.
   - **Response**: Capp names or an error message.
     ```json
     {
