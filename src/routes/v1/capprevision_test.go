@@ -11,7 +11,7 @@ import (
 )
 
 func TestGetCappRevisions(t *testing.T) {
-	request, _ := http.NewRequest("GET", "/v1/namespaces/test-namespace/capprevisions/", nil)
+	request, _ := http.NewRequest("GET", "/v1/namespaces/test-namespace/capprevisions", nil)
 	writer := httptest.NewRecorder()
 	router.ServeHTTP(writer, request)
 
@@ -21,6 +21,8 @@ func TestGetCappRevisions(t *testing.T) {
 	assert.NoError(t, err)
 	assert.GreaterOrEqual(t, len(response.CappRevisions), 1)
 	assert.GreaterOrEqual(t, response.Count, 1)
+	assert.NotNil(t, response.ContinueToken)
+	assert.NotNil(t, response.RemainingCount)
 }
 
 func TestGetCappRevision(t *testing.T) {

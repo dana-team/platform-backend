@@ -12,7 +12,7 @@ import (
 )
 
 func TestListNamespaces(t *testing.T) {
-	request, _ := http.NewRequest("GET", "/v1/namespaces/", nil)
+	request, _ := http.NewRequest("GET", "/v1/namespaces", nil)
 	writer := httptest.NewRecorder()
 	router.ServeHTTP(writer, request)
 
@@ -22,6 +22,8 @@ func TestListNamespaces(t *testing.T) {
 	assert.NoError(t, err)
 	assert.GreaterOrEqual(t, len(response.Namespaces), 1)
 	assert.GreaterOrEqual(t, response.Count, 1)
+	assert.NotNil(t, response.ContinueToken)
+	assert.NotNil(t, response.RemainingCount)
 }
 
 func TestGetNamespace(t *testing.T) {

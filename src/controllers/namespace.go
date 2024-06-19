@@ -3,8 +3,8 @@ package controllers
 import (
 	"context"
 	"fmt"
-
 	"github.com/dana-team/platform-backend/src/types"
+	"github.com/dana-team/platform-backend/src/utils"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -12,7 +12,7 @@ import (
 )
 
 type NamespaceController interface {
-	GetNamespaces() (types.NamespaceList, error)
+	GetNamespaces(limitStr, continueToken, search string) (types.NamespaceList, error)
 	GetNamespace(name string) (types.Namespace, error)
 	CreateNamespace(name string) (types.Namespace, error)
 	DeleteNamespace(name string) error
@@ -32,22 +32,30 @@ func NewNamespaceController(client kubernetes.Interface, context context.Context
 	}
 }
 
-func (n *namespaceController) GetNamespaces() (types.NamespaceList, error) {
+func (n *namespaceController) GetNamespaces(limitStr, continueToken, search string) (types.NamespaceList, error) {
 	n.logger.Debug("Trying to fetch all namespaces")
 
 	namespaceList := types.NamespaceList{}
-	namespaces, err := n.client.CoreV1().Namespaces().List(n.ctx, metav1.ListOptions{})
+	listOptions, err := utils.GetPaginatedListOptions(limitStr, continueToken, search)
+	if err != nil {
+		n.logger.Error(fmt.Sprintf("Could not fetch namespaces with error: %s", err.Error()))
+		return namespaceList, err
+	}
+
+	namespaces, err := n.client.CoreV1().Namespaces().List(n.ctx, listOptions)
 	if err != nil {
 		n.logger.Error(fmt.Sprintf("Could not fetch namespaces with error: %s", err.Error()))
 		return namespaceList, err
 	}
 
 	n.logger.Debug("Fetched namespaces successfully")
-
 	for _, namespace := range namespaces.Items {
 		namespaceList.Namespaces = append(namespaceList.Namespaces, types.Namespace{Name: namespace.Name})
 	}
-	namespaceList.Count = len(namespaceList.Namespaces)
+
+	listMetadata := utils.SetPaginationMetadata(namespaceList.Namespaces, namespaces.ListMeta)
+	namespaceList.ListMetadata = listMetadata
+
 	return namespaceList, nil
 }
 

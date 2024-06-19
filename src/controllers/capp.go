@@ -3,11 +3,12 @@ package controllers
 import (
 	"context"
 	"fmt"
-
 	"github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/types"
+	"github.com/dana-team/platform-backend/src/utils"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -16,7 +17,7 @@ type CappController interface {
 	CreateCapp(namespace string, capp types.CreateCapp) (types.Capp, error)
 
 	// GetCapps gets all container apps from a specific namespace.
-	GetCapps(namespace string, cappQuery types.CappQuery) (types.CappList, error)
+	GetCapps(limitStr, continueToken, namespace string, cappQuery types.CappQuery, search string) (types.CappList, error)
 
 	// GetCapp gets a specific container app from the specified namespace.
 	GetCapp(namespace, name string) (types.Capp, error)
@@ -84,22 +85,38 @@ func createCappFromV1Capp(capp v1alpha1.Capp) types.Capp {
 	}
 }
 
-func (c *cappController) GetCapps(namespace string, cappQuery types.CappQuery) (types.CappList, error) {
+func (c *cappController) GetCapps(limitStr, continueToken, namespace string, cappQuery types.CappQuery, search string) (types.CappList, error) {
 	c.logger.Debug(fmt.Sprintf("Trying to fetch all capps in namespace: %q", namespace))
+
+	listOptions, err := utils.GetPaginatedListOptions(limitStr, continueToken, search)
+	if err != nil {
+		c.logger.Error(fmt.Sprintf("Could not fetch namespaces with error: %s", err.Error()))
+		return types.CappList{}, err
+	}
 
 	cappList := &v1alpha1.CappList{}
 	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
 		MatchLabels: convertKeyValueToMap(cappQuery.Labels),
 	})
+
 	if err != nil {
 		c.logger.Error(fmt.Sprintf("Could not create label selector with error: %v", err.Error()))
 		return types.CappList{}, err
 	}
 
-	err = c.client.List(c.ctx, cappList, &client.ListOptions{
+	cappListOptions := &client.ListOptions{
 		Namespace:     namespace,
 		LabelSelector: selector,
-	})
+		Limit:         listOptions.Limit,
+		Continue:      listOptions.Continue,
+	}
+
+	if listOptions.FieldSelector != "" {
+		cappListOptions.FieldSelector = fields.ParseSelectorOrDie(listOptions.FieldSelector)
+	}
+
+	err = c.client.List(c.ctx, cappList, cappListOptions)
+
 	if err != nil {
 		c.logger.Error(fmt.Sprintf("Could not fetch capps in namespace %q with error: %v", namespace, err.Error()))
 		return types.CappList{}, err
@@ -109,7 +126,10 @@ func (c *cappController) GetCapps(namespace string, cappQuery types.CappQuery) (
 	for _, item := range cappList.Items {
 		result.Capps = append(result.Capps, convertCappToType(item))
 	}
-	result.Count = len(cappList.Items)
+
+	listMetadata := utils.SetPaginationMetadata(result.Capps, cappList.ListMeta)
+	result.ListMetadata = listMetadata
+
 	return result, nil
 }
 

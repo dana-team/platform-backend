@@ -14,7 +14,7 @@ type CappRevision struct {
 
 type CappRevisionList struct {
 	CappRevisions []cappv1.CappRevision `json:"capprevisions"`
-	Count         int                   `json:"count"`
+	ListMetadata
 }
 
 type CappRevisionNamespaceUri struct {

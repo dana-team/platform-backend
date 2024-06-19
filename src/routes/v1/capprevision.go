@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"github.com/dana-team/platform-backend/src/utils"
 	"net/http"
 
 	"github.com/dana-team/platform-backend/src/controllers"
@@ -59,7 +60,8 @@ func GetCappRevisions() gin.HandlerFunc {
 		}
 
 		cappRevisionHandler(func(controller controllers.CappRevisionController, c *gin.Context) (interface{}, error) {
-			return controller.GetCappRevisions(cappUri.NamespaceName, cappRevisionQuery)
+			limit, continueToken, search := utils.GetListQueryParameters(c)
+			return controller.GetCappRevisions(limit, continueToken, cappUri.NamespaceName, cappRevisionQuery, search)
 		})(c)
 	}
 }

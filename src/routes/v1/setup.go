@@ -25,7 +25,7 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider) {
 	namespacesGroup := v1.Group("/namespaces")
 	namespacesGroup.Use(middleware.TokenAuthMiddleware(tokenProvider))
 	{
-		namespacesGroup.GET("/", ListNamespaces())
+		namespacesGroup.GET("", ListNamespaces())
 		namespacesGroup.GET("/:namespaceName", GetNamespace())
 		namespacesGroup.POST("/", CreateNamespace())
 		namespacesGroup.DELETE("/:namespaceName", DeleteNamespace())
@@ -35,7 +35,7 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider) {
 	secretsGroup.Use(middleware.TokenAuthMiddleware(tokenProvider))
 	{
 		secretsGroup.POST("/", CreateSecret())
-		secretsGroup.GET("/", GetSecrets())
+		secretsGroup.GET("", GetSecrets())
 		secretsGroup.GET("/:secretName", GetSecret())
 		secretsGroup.PUT("/:secretName", UpdateSecret())
 		secretsGroup.DELETE("/:secretName", DeleteSecret())
@@ -45,7 +45,7 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider) {
 	cappGroup.Use(middleware.TokenAuthMiddleware(tokenProvider))
 	{
 		cappGroup.POST("/", CreateCapp())
-		cappGroup.GET("/", GetCapps())
+		cappGroup.GET("", GetCapps())
 		cappGroup.GET("/:cappName", GetCapp())
 		cappGroup.PUT("/:cappName", UpdateCapp())
 		cappGroup.DELETE("/:cappName", DeleteCapp())
@@ -54,7 +54,7 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider) {
 	cappRevisionGroup := namespacesGroup.Group("/:namespaceName/capprevisions")
 	cappRevisionGroup.Use(middleware.TokenAuthMiddleware(tokenProvider))
 	{
-		cappRevisionGroup.GET("/", GetCappRevisions())
+		cappRevisionGroup.GET("", GetCappRevisions())
 		cappRevisionGroup.GET("/:cappRevisionName", GetCappRevision())
 	}
 }

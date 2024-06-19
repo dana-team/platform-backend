@@ -10,3 +10,9 @@ type Metadata struct {
 	Namespace         string `json:"namespace" binding:"required"`
 	CreationTimestamp string `json:"creationTimestamp"`
 }
+
+type ListMetadata struct {
+	Count          int    `json:"count"`
+	RemainingCount int    `json:"remaining_count"`
+	ContinueToken  string `json:"continue"`
+}

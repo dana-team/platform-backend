@@ -23,9 +23,9 @@ type SecretNamespaceUriRequest struct {
 	NamespaceName string `uri:"namespaceName" binding:"required"`
 }
 
-type GetSecretsResponse struct {
-	Count   int      `json:"count"`
-	Secrets []Secret `json:"namespaces"`
+type SecretsList struct {
+	Secrets []Secret `json:"secrets"`
+	ListMetadata
 }
 
 type GetSecretResponse struct {

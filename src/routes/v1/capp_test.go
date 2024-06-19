@@ -43,7 +43,7 @@ func TestCreateCapp(t *testing.T) {
 }
 
 func TestGetCapps(t *testing.T) {
-	request, _ := http.NewRequest("GET", "/v1/namespaces/test-namespace/capps/", nil)
+	request, _ := http.NewRequest("GET", "/v1/namespaces/test-namespace/capps", nil)
 	writer := httptest.NewRecorder()
 	router.ServeHTTP(writer, request)
 
@@ -53,6 +53,8 @@ func TestGetCapps(t *testing.T) {
 	assert.NoError(t, err)
 	assert.GreaterOrEqual(t, len(response.Capps), 1)
 	assert.GreaterOrEqual(t, response.Count, 1)
+	assert.NotNil(t, response.ContinueToken)
+	assert.NotNil(t, response.RemainingCount)
 }
 
 func TestGetCapp(t *testing.T) {
