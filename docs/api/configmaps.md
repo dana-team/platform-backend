@@ -1,5 +1,9 @@
 # ConfigMaps Management API
 
+## API Endpoints
+
+### ConfigMap
+
 - **GET** `/v1/namespaces/{namespace}/{configMapName}`
   - **Description**: Gets data from the specified config map.
   - **Path Parameter**:

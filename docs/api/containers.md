@@ -1,4 +1,3 @@
-
 # Kubernetes Pod Containers API
 
 ## Overview

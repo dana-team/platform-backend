@@ -1,5 +1,8 @@
-
 # Namespace Management API
+
+## API Endpoints
+
+### Namespace
 
 This document outlines the CRUD (Create, Read, Update, Delete) operations for managing namespaces.
 
@@ -47,7 +50,7 @@ This document outlines the CRUD (Create, Read, Update, Delete) operations for ma
   - **Body**:
     ```json
     {
-      name: str
+      "name": str
     }
     ```
   - **Response**: Confirmation of creation or an error message.
@@ -64,7 +67,7 @@ This document outlines the CRUD (Create, Read, Update, Delete) operations for ma
   - **Body**:
     ```json
     {
-      userNames: []str
+      "userNames": []str
     }
     ```
   - **Response**: Confirmation of creation or an error message.

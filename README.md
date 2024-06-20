@@ -14,6 +14,7 @@ The API is documented in the [docs/api](./docs/api) directory of this repository
 - [Namespace API](./docs/api/namespace.md)
 - [Secrets API](./docs/api/secrets.md)
 - [Users API](./docs/api/users.md)
+- [Token API](./docs/api/token.md)
 
 ## Quickstart
 

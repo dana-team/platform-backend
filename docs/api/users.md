@@ -1,7 +1,10 @@
-
 # Namespace Management CRUD API
 
 This document outlines the CRUD (Create, Read, Update, Delete) operations for managing Users.
+
+## API Endpoints
+
+### Users
 
 - **GET** `/v1/namespaces/{namespace}/users`
   - **Description**: Get users of namespace.
@@ -24,7 +27,7 @@ This document outlines the CRUD (Create, Read, Update, Delete) operations for ma
   - **Body**:
     ```json
     {
-      userNames: []str
+      "userNames": []str
     }
     ```
   - **Response**: Confirmation of creation or an error message.

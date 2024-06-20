@@ -1,5 +1,9 @@
 # Token Management API
 
+## API Endpoints
+
+### Token
+
 - **POST** `/v1/namespaces/{namespace}/serviceaccounts`
   - **Description**: Creates a new service account.
   - **Path Parameter**:
