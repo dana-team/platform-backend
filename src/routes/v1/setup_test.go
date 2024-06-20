@@ -2,8 +2,9 @@ package v1_test
 
 import (
 	"context"
-	rbacv1 "k8s.io/api/rbac/v1"
 	"testing"
+
+	rbacv1 "k8s.io/api/rbac/v1"
 
 	cappv1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	routev1 "github.com/dana-team/platform-backend/src/routes/v1"
@@ -30,6 +31,7 @@ func TestMain(m *testing.M) {
 	CreateTestNamespace("test-namespace")
 	CreateTestCapp()
 	CreateTestCappRevision()
+	CreateConfigMap()
 	m.Run()
 }
 
@@ -88,6 +90,11 @@ func SetupRouter(logger *zap.Logger) *gin.Engine {
 				usersGroup.GET("/:userName", routev1.GetUser())
 				usersGroup.PUT("/:userName", routev1.UpdateUser())
 				usersGroup.DELETE("/:userName", routev1.DeleteUser())
+			}
+
+			configMapGroup := namespacesGroup.Group("/:namespaceName/configmaps")
+			{
+				configMapGroup.GET("/:configMapName", routev1.GetConfigMap())
 			}
 		}
 	}
@@ -178,6 +185,23 @@ func CreateTestCappRevision() {
 		Status: cappv1.CappRevisionStatus{},
 	}
 	err := dynClient.Create(context.TODO(), &capp)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func CreateConfigMap() {
+	configMap := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-configmap",
+			Namespace: "test-namespace",
+		},
+		Data: map[string]string{
+			"key1": "value1",
+			"key2": "value2",
+		},
+	}
+	_, err := client.CoreV1().ConfigMaps("test-namespace").Create(context.TODO(), configMap, metav1.CreateOptions{})
 	if err != nil {
 		panic(err)
 	}
