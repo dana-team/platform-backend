@@ -4,7 +4,7 @@
 
 ### ConfigMap
 
-- **GET** `/v1/namespaces/{namespace}/{configMapName}`
+- **GET** `/v1/namespaces/{namespace}/configmaps/{configMapName}`
   - **Description**: Gets data from the specified config map.
   - **Path Parameter**:
     - `namespace` - The namespace of the config map.

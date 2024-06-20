@@ -67,4 +67,10 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider) {
 		usersGroup.PUT("/:userName", UpdateUser())
 		usersGroup.DELETE("/:userName", DeleteUser())
 	}
+
+	configMapGroup := namespacesGroup.Group("/:namespaceName/configmaps")
+	configMapGroup.Use(middleware.TokenAuthMiddleware(tokenProvider))
+	{
+		configMapGroup.GET("/:configMapName", GetConfigMap())
+	}
 }
