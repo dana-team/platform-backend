@@ -2,6 +2,7 @@ package v1_test
 
 import (
 	"context"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"testing"
 
 	cappv1 "github.com/dana-team/container-app-operator/api/v1alpha1"
@@ -26,7 +27,7 @@ var (
 func TestMain(m *testing.M) {
 	Setup()
 	CreateTestSecret()
-	CreateTestNamespace()
+	CreateTestNamespace("test-namespace")
 	CreateTestCapp()
 	CreateTestCappRevision()
 	m.Run()
@@ -79,15 +80,24 @@ func SetupRouter(logger *zap.Logger) *gin.Engine {
 				cappRevisionGroup.GET("/", routev1.GetCappRevisions())
 				cappRevisionGroup.GET("/:cappRevisionName", routev1.GetCappRevision())
 			}
+
+			usersGroup := namespacesGroup.Group("/:namespaceName/users")
+			{
+				usersGroup.POST("/", routev1.CreateUser())
+				usersGroup.GET("/", routev1.GetUsers())
+				usersGroup.GET("/:userName", routev1.GetUser())
+				usersGroup.PUT("/:userName", routev1.UpdateUser())
+				usersGroup.DELETE("/:userName", routev1.DeleteUser())
+			}
 		}
 	}
 	return engine
 }
 
-func CreateTestNamespace() {
+func CreateTestNamespace(name string) {
 	namespace := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-namespace",
+			Name: name,
 		},
 	}
 	_, err := client.CoreV1().Namespaces().Create(context.TODO(), namespace, metav1.CreateOptions{})
@@ -125,6 +135,32 @@ func CreateTestCapp() {
 		Status: cappv1.CappStatus{},
 	}
 	err := dynClient.Create(context.TODO(), &capp)
+	if err != nil {
+		panic(err)
+	}
+}
+
+// createRoleBinding creates a RoleBinding in the specified namespace
+func createRoleBinding(namespace string, userName string) {
+	roleBinding := &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      userName,
+			Namespace: namespace,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:     rbacv1.UserKind,
+				Name:     userName,
+				APIGroup: rbacv1.GroupName,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			Kind: "ClusterRole", // Could be "Role" or "ClusterRole"
+			Name: "capp-user-admin",
+		},
+	}
+
+	_, err := client.RbacV1().RoleBindings(namespace).Create(context.TODO(), roleBinding, metav1.CreateOptions{})
 	if err != nil {
 		panic(err)
 	}
