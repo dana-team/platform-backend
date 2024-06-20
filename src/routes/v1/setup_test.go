@@ -10,11 +10,13 @@ import (
 	routev1 "github.com/dana-team/platform-backend/src/routes/v1"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	authenticationv1 "k8s.io/api/authentication/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
+	k8sTesting "k8s.io/client-go/testing"
 	runtimeClient "sigs.k8s.io/controller-runtime/pkg/client"
 	runtimeFake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -32,11 +34,20 @@ func TestMain(m *testing.M) {
 	CreateTestCapp()
 	CreateTestCappRevision()
 	CreateConfigMap()
+	CreateTestServiceAccount()
 	m.Run()
 }
 
 func Setup() {
 	client = fake.NewSimpleClientset()
+	client.PrependReactor("create", "serviceaccounts/token", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+		createAction := action.(k8sTesting.CreateAction)
+		namespace := createAction.GetNamespace()
+		tokenRequest := createAction.GetObject().(*authenticationv1.TokenRequest)
+		tokenRequest.Status = authenticationv1.TokenRequestStatus{Token: "fake-token"}
+		tokenRequest.ObjectMeta.Namespace = namespace
+		return true, tokenRequest, nil
+	})
 	dynClient = runtimeFake.NewClientBuilder().WithScheme(setupScheme()).Build()
 	logger, _ := zap.NewProduction()
 	router = SetupRouter(logger)
@@ -95,6 +106,16 @@ func SetupRouter(logger *zap.Logger) *gin.Engine {
 			configMapGroup := namespacesGroup.Group("/:namespaceName/configmaps")
 			{
 				configMapGroup.GET("/:configMapName", routev1.GetConfigMap())
+			}
+
+			serviceAccountsGroup := namespacesGroup.Group("/:namespaceName/serviceaccounts")
+			{
+				serviceAccountsGroup.POST("/", routev1.CreateServiceAccount())
+			}
+
+			tokenGroup := namespacesGroup.Group("/:namespaceName/token")
+			{
+				tokenGroup.GET("/", routev1.GetToken())
 			}
 		}
 	}
@@ -202,6 +223,19 @@ func CreateConfigMap() {
 		},
 	}
 	_, err := client.CoreV1().ConfigMaps("test-namespace").Create(context.TODO(), configMap, metav1.CreateOptions{})
+	if err != nil {
+		panic(err)
+	}
+}
+
+func CreateTestServiceAccount() {
+	serviceAccount := &v1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-sa",
+			Namespace: "test-namespace",
+		},
+	}
+	_, err := client.CoreV1().ServiceAccounts("test-namespace").Create(context.TODO(), serviceAccount, metav1.CreateOptions{})
 	if err != nil {
 		panic(err)
 	}
