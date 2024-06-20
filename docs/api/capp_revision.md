@@ -21,6 +21,7 @@ This document outlines the CRUD (Create, Read, Update, Delete) on CappRevision. 
     ```
 
 - **GET** `/v1/namepaces/{namespace}/cappRevisions/{cappRevisionName}`
+  - **Description**: Gets a specific cappRevision in a namespace.
   - **Response**: CappRevision info or an error message.
     ```json
     {
