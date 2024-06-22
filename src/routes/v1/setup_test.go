@@ -6,7 +6,7 @@ import (
 
 	rbacv1 "k8s.io/api/rbac/v1"
 
-	cappv1 "github.com/dana-team/container-app-operator/api/v1alpha1"
+	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	routev1 "github.com/dana-team/platform-backend/src/routes/v1"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -131,15 +131,15 @@ func CreateTestSecret() {
 }
 
 func CreateTestCapp() {
-	capp := cappv1.Capp{
+	capp := cappv1alpha1.Capp{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "test-capp",
 			Namespace:   "test-namespace",
 			Annotations: map[string]string{},
 			Labels:      map[string]string{},
 		},
-		Spec:   cappv1.CappSpec{},
-		Status: cappv1.CappStatus{},
+		Spec:   cappv1alpha1.CappSpec{},
+		Status: cappv1alpha1.CappStatus{},
 	}
 	err := dynClient.Create(context.TODO(), &capp)
 	if err != nil {
@@ -174,15 +174,15 @@ func createRoleBinding(namespace string, userName string) {
 }
 
 func CreateTestCappRevision() {
-	capp := cappv1.CappRevision{
+	capp := cappv1alpha1.CappRevision{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "test-capprevision",
 			Namespace:   "test-namespace",
 			Annotations: map[string]string{},
 			Labels:      map[string]string{},
 		},
-		Spec:   cappv1.CappRevisionSpec{},
-		Status: cappv1.CappRevisionStatus{},
+		Spec:   cappv1alpha1.CappRevisionSpec{},
+		Status: cappv1alpha1.CappRevisionStatus{},
 	}
 	err := dynClient.Create(context.TODO(), &capp)
 	if err != nil {
@@ -209,6 +209,6 @@ func CreateConfigMap() {
 
 func setupScheme() *runtime.Scheme {
 	schema := scheme.Scheme
-	_ = cappv1.AddToScheme(schema)
+	_ = cappv1alpha1.AddToScheme(schema)
 	return schema
 }
