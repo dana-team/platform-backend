@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	cappv1 "github.com/dana-team/container-app-operator/api/v1alpha1"
+	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/auth"
 	"github.com/dana-team/platform-backend/src/utils"
 	"github.com/gin-gonic/gin"
@@ -72,7 +72,7 @@ func TokenAuthMiddleware(tokenProvider auth.TokenProvider) gin.HandlerFunc {
 		}
 
 		schema := scheme.Scheme
-		if err := cappv1.AddToScheme(scheme.Scheme); err != nil {
+		if err := cappv1alpha1.AddToScheme(scheme.Scheme); err != nil {
 			userLogger.Error("Failed to create Kubernetes dynamic client schema", zap.Error(err))
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to create Kubernetes dynamic client schema"})
 			return
