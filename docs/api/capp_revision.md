@@ -11,7 +11,7 @@ This document outlines the CRUD (Create, Read, Update, Delete) on CappRevision. 
   - **Query Params**:
     - `limit`: (optional) Specifies the maximum number of namespaces to return per page. Defaults to 9.
     - `continue`: (optional) Used for fetching the next set of results.
-    - `labels`: (optional) Used for filtering namespaces by labels.
+    - `labelSelector`: (optional) Used for filtering by labels.
   - **Response**: Capp revisions or an error message.
     ```json
     {

@@ -1,6 +1,8 @@
 package controllers
 
-import "github.com/dana-team/platform-backend/src/types"
+import (
+	"github.com/dana-team/platform-backend/src/types"
+)
 
 // convertKeyValueToMap converts a slice of KeyValue pairs to a map
 // with string keys and values.

@@ -27,5 +27,5 @@ type CappRevisionUri struct {
 }
 
 type CappRevisionQuery struct {
-	Labels []KeyValue `form:"labels"`
+	LabelSelector string `form:"labelSelector"`
 }

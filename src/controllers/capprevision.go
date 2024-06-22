@@ -3,11 +3,11 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/labels"
 
 	"github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/types"
 	"go.uber.org/zap"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -49,11 +49,9 @@ func (c *cappRevisionController) GetCappRevisions(namespace string, cappQuery ty
 	c.logger.Debug(fmt.Sprintf("Trying to fetch all capp revisions in namespace: %q", namespace))
 
 	cappRevisionList := &v1alpha1.CappRevisionList{}
-	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
-		MatchLabels: convertKeyValueToMap(cappQuery.Labels),
-	})
+	selector, err := labels.Parse(cappQuery.LabelSelector)
 	if err != nil {
-		c.logger.Error(fmt.Sprintf("Could not create label selector with error: %v", err.Error()))
+		c.logger.Error(fmt.Sprintf("Could not parse labelSelector with error: %v", err.Error()))
 		return types.CappRevisionList{}, err
 	}
 
