@@ -2,7 +2,6 @@ package v1_test
 
 import (
 	"context"
-	"github.com/dana-team/platform-backend/src/utils"
 	"testing"
 
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -11,7 +10,7 @@ import (
 	routev1 "github.com/dana-team/platform-backend/src/routes/v1"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
@@ -36,8 +35,8 @@ func TestMain(m *testing.M) {
 	createTestSecret()
 	createTestNamespace(testNamespace)
 	setupCappRevisions()
+	setupConfigMap()
 	createTestCapp()
-	createConfigMap()
 	m.Run()
 }
 
@@ -108,7 +107,7 @@ func setupRouter(logger *zap.Logger) *gin.Engine {
 }
 
 func createTestNamespace(name string) {
-	namespace := &v1.Namespace{
+	namespace := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
@@ -120,12 +119,12 @@ func createTestNamespace(name string) {
 }
 
 func createTestSecret() {
-	secret := &v1.Secret{
+	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-secret",
 			Namespace: "default",
 		},
-		Type: v1.SecretTypeOpaque,
+		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
 			"key1": []byte("ZmFrZQ=="),
 		},
@@ -174,32 +173,6 @@ func createRoleBinding(namespace string, userName string) {
 	}
 
 	_, err := client.RbacV1().RoleBindings(namespace).Create(context.TODO(), roleBinding, metav1.CreateOptions{})
-	if err != nil {
-		panic(err)
-	}
-}
-
-// createTestCappRevision creates a test CappRevision object
-func createTestCappRevision(name, namespace string, labels, annotations map[string]string) {
-	cappRevision := utils.GetBareCappRevision(name, namespace, labels, annotations)
-	err := dynClient.Create(context.TODO(), &cappRevision)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func createConfigMap() {
-	configMap := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-configmap",
-			Namespace: "test-namespace",
-		},
-		Data: map[string]string{
-			"key1": "value1",
-			"key2": "value2",
-		},
-	}
-	_, err := client.CoreV1().ConfigMaps("test-namespace").Create(context.TODO(), configMap, metav1.CreateOptions{})
 	if err != nil {
 		panic(err)
 	}

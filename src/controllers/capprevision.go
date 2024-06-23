@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/dana-team/platform-backend/src/utils"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 
@@ -81,8 +82,8 @@ func convertCappRevisionToType(cappRevision v1alpha1.CappRevision) types.CappRev
 			Name:      cappRevision.Name,
 			Namespace: cappRevision.Namespace,
 		},
-		Annotations: convertMapToKeyValue(cappRevision.Annotations),
-		Labels:      convertMapToKeyValue(cappRevision.Labels),
+		Annotations: utils.ConvertMapToKeyValue(cappRevision.Annotations),
+		Labels:      utils.ConvertMapToKeyValue(cappRevision.Labels),
 		Spec: v1alpha1.CappRevisionSpec{
 			RevisionNumber: cappRevision.Spec.RevisionNumber,
 			CappTemplate:   cappRevision.Spec.CappTemplate,

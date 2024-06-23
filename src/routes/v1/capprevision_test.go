@@ -1,6 +1,7 @@
 package v1_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/dana-team/platform-backend/src/types"
@@ -24,6 +25,15 @@ func setupCappRevisions() {
 	createTestNamespace(cappRevisionNamespace)
 	createTestCappRevision(cappRevisionName+"-1", cappRevisionNamespace, map[string]string{labelKey + "-1": labelValue + "-1"}, map[string]string{})
 	createTestCappRevision(cappRevisionName+"-2", cappRevisionNamespace, map[string]string{labelKey + "-2": labelValue + "-2"}, map[string]string{})
+}
+
+// createTestCappRevision creates a test CappRevision object.
+func createTestCappRevision(name, namespace string, labels, annotations map[string]string) {
+	cappRevision := utils.GetStubCappRevision(name, namespace, labels, annotations)
+	err := dynClient.Create(context.TODO(), &cappRevision)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func TestGetCappRevisions(t *testing.T) {
@@ -156,13 +166,14 @@ func TestGetCappRevision(t *testing.T) {
 			},
 			want: want{
 				statusCode: http.StatusOK,
-				response: utils.GetBareCappRevisionType(cappRevisionName+"-1", cappRevisionNamespace,
+				response: utils.GetStubCappRevisionType(cappRevisionName+"-1", cappRevisionNamespace,
 					[]types.KeyValue{{Key: "key1", Value: "value-1"}}, []types.KeyValue{}),
 			},
 		},
 		"ShouldFailWithBadRequestInvalidURI": {
 			requestParams: requestParams{
 				namespace: "",
+				name:      cappRevisionName + "-1",
 			},
 			want: want{
 				statusCode: http.StatusBadRequest,

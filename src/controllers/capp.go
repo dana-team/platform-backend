@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/dana-team/platform-backend/src/utils"
 	"k8s.io/apimachinery/pkg/labels"
 
 	"github.com/dana-team/container-app-operator/api/v1alpha1"
@@ -61,8 +62,8 @@ func createCappFromV1Capp(capp v1alpha1.Capp) types.Capp {
 			Name:      capp.Name,
 			Namespace: capp.Namespace,
 		},
-		Annotations: convertMapToKeyValue(capp.Annotations),
-		Labels:      convertMapToKeyValue(capp.Labels),
+		Annotations: utils.ConvertMapToKeyValue(capp.Annotations),
+		Labels:      utils.ConvertMapToKeyValue(capp.Labels),
 		Spec: v1alpha1.CappSpec{
 			ScaleMetric:       capp.Spec.ScaleMetric,
 			Site:              capp.Spec.Site,
@@ -135,8 +136,8 @@ func (c *cappController) UpdateCapp(namespace, name string, newCapp types.Update
 		return types.Capp{}, err
 	}
 
-	capp.Annotations = convertKeyValueToMap(newCapp.Annotations)
-	capp.Labels = convertKeyValueToMap(newCapp.Labels)
+	capp.Annotations = utils.ConvertKeyValueToMap(newCapp.Annotations)
+	capp.Labels = utils.ConvertKeyValueToMap(newCapp.Labels)
 	capp.Spec = newCapp.Spec
 
 	if err := c.client.Update(c.ctx, capp); err != nil {
@@ -171,8 +172,8 @@ func createCappFromType(namespace string, capp types.CreateCapp) v1alpha1.Capp {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        capp.Metadata.Name,
 			Namespace:   namespace,
-			Annotations: convertKeyValueToMap(capp.Annotations),
-			Labels:      convertKeyValueToMap(capp.Labels),
+			Annotations: utils.ConvertKeyValueToMap(capp.Annotations),
+			Labels:      utils.ConvertKeyValueToMap(capp.Labels),
 		},
 		Spec: v1alpha1.CappSpec{
 			ScaleMetric:       capp.Spec.ScaleMetric,
@@ -192,8 +193,8 @@ func convertCappToType(capp v1alpha1.Capp) types.Capp {
 			Name:      capp.Name,
 			Namespace: capp.Namespace,
 		},
-		Annotations: convertMapToKeyValue(capp.Annotations),
-		Labels:      convertMapToKeyValue(capp.Labels),
+		Annotations: utils.ConvertMapToKeyValue(capp.Annotations),
+		Labels:      utils.ConvertMapToKeyValue(capp.Labels),
 		Spec: v1alpha1.CappSpec{
 			ScaleMetric:       capp.Spec.ScaleMetric,
 			Site:              capp.Spec.Site,
