@@ -2,11 +2,12 @@ package v1_test
 
 import (
 	"context"
+	"github.com/dana-team/platform-backend/src/utils"
 	"testing"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 
-	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
+	cappv1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	routev1 "github.com/dana-team/platform-backend/src/routes/v1"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -25,24 +26,29 @@ var (
 	dynClient runtimeClient.WithWatch
 )
 
+const (
+	testNamespace = "test-namespace"
+	testName      = "test"
+)
+
 func TestMain(m *testing.M) {
-	Setup()
-	CreateTestSecret()
-	CreateTestNamespace("test-namespace")
-	CreateTestCapp()
-	CreateTestCappRevision()
-	CreateConfigMap()
+	setup()
+	createTestSecret()
+	createTestNamespace(testNamespace)
+	setupCappRevisions()
+	createTestCapp()
+	createConfigMap()
 	m.Run()
 }
 
-func Setup() {
+func setup() {
 	client = fake.NewSimpleClientset()
 	dynClient = runtimeFake.NewClientBuilder().WithScheme(setupScheme()).Build()
 	logger, _ := zap.NewProduction()
-	router = SetupRouter(logger)
+	router = setupRouter(logger)
 }
 
-func SetupRouter(logger *zap.Logger) *gin.Engine {
+func setupRouter(logger *zap.Logger) *gin.Engine {
 	engine := gin.Default()
 	engine.Use(func(c *gin.Context) {
 		c.Set("logger", logger)
@@ -101,7 +107,7 @@ func SetupRouter(logger *zap.Logger) *gin.Engine {
 	return engine
 }
 
-func CreateTestNamespace(name string) {
+func createTestNamespace(name string) {
 	namespace := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
@@ -113,7 +119,7 @@ func CreateTestNamespace(name string) {
 	}
 }
 
-func CreateTestSecret() {
+func createTestSecret() {
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-secret",
@@ -130,16 +136,16 @@ func CreateTestSecret() {
 	}
 }
 
-func CreateTestCapp() {
-	capp := cappv1alpha1.Capp{
+func createTestCapp() {
+	capp := cappv1.Capp{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "test-capp",
 			Namespace:   "test-namespace",
 			Annotations: map[string]string{},
 			Labels:      map[string]string{},
 		},
-		Spec:   cappv1alpha1.CappSpec{},
-		Status: cappv1alpha1.CappStatus{},
+		Spec:   cappv1.CappSpec{},
+		Status: cappv1.CappStatus{},
 	}
 	err := dynClient.Create(context.TODO(), &capp)
 	if err != nil {
@@ -173,24 +179,16 @@ func createRoleBinding(namespace string, userName string) {
 	}
 }
 
-func CreateTestCappRevision() {
-	capp := cappv1alpha1.CappRevision{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        "test-capprevision",
-			Namespace:   "test-namespace",
-			Annotations: map[string]string{},
-			Labels:      map[string]string{},
-		},
-		Spec:   cappv1alpha1.CappRevisionSpec{},
-		Status: cappv1alpha1.CappRevisionStatus{},
-	}
-	err := dynClient.Create(context.TODO(), &capp)
+// createTestCappRevision creates a test CappRevision object
+func createTestCappRevision(name, namespace string, labels, annotations map[string]string) {
+	cappRevision := utils.GetBareCappRevision(name, namespace, labels, annotations)
+	err := dynClient.Create(context.TODO(), &cappRevision)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func CreateConfigMap() {
+func createConfigMap() {
 	configMap := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-configmap",
@@ -209,6 +207,6 @@ func CreateConfigMap() {
 
 func setupScheme() *runtime.Scheme {
 	schema := scheme.Scheme
-	_ = cappv1alpha1.AddToScheme(schema)
+	_ = cappv1.AddToScheme(schema)
 	return schema
 }

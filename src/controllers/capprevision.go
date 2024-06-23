@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 
 	"github.com/dana-team/container-app-operator/api/v1alpha1"
@@ -52,7 +53,7 @@ func (c *cappRevisionController) GetCappRevisions(namespace string, cappQuery ty
 	selector, err := labels.Parse(cappQuery.LabelSelector)
 	if err != nil {
 		c.logger.Error(fmt.Sprintf("Could not parse labelSelector with error: %v", err.Error()))
-		return types.CappRevisionList{}, err
+		return types.CappRevisionList{}, k8serrors.NewBadRequest(err.Error())
 	}
 
 	err = c.client.List(c.ctx, cappRevisionList, &client.ListOptions{
