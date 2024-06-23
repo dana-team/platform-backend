@@ -3,7 +3,10 @@ package v1_test
 import (
 	"context"
 	"fmt"
+	"github.com/dana-team/platform-backend/src/utils"
 	"testing"
+
+	rbacv1 "k8s.io/api/rbac/v1"
 
 	cappv1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	routev1 "github.com/dana-team/platform-backend/src/routes/v1"
@@ -24,23 +27,29 @@ var (
 	dynClient runtimeClient.WithWatch
 )
 
+const (
+	testNamespace = "test-namespace"
+	testName      = "test"
+)
+
 func TestMain(m *testing.M) {
-	Setup()
-	CreateTestSecret()
-	CreateTestNamespace()
-	CreateTestCapp()
-	CreateTestCappRevision()
+	setup()
+	createTestSecret()
+	createTestNamespace(testNamespace)
+	setupCappRevisions()
+	createTestCapp()
+	createConfigMap()
 	m.Run()
 }
 
-func Setup() {
+func setup() {
 	client = fake.NewSimpleClientset()
 	dynClient = runtimeFake.NewClientBuilder().WithScheme(setupScheme()).Build()
 	logger, _ := zap.NewProduction()
-	router = SetupRouter(logger)
+	router = setupRouter(logger)
 }
 
-func SetupRouter(logger *zap.Logger) *gin.Engine {
+func setupRouter(logger *zap.Logger) *gin.Engine {
 	engine := gin.Default()
 	engine.Use(func(c *gin.Context) {
 		c.Set("logger", logger)
@@ -80,15 +89,29 @@ func SetupRouter(logger *zap.Logger) *gin.Engine {
 				cappRevisionGroup.GET("", routev1.GetCappRevisions())
 				cappRevisionGroup.GET("/:cappRevisionName", routev1.GetCappRevision())
 			}
+
+			usersGroup := namespacesGroup.Group("/:namespaceName/users")
+			{
+				usersGroup.POST("/", routev1.CreateUser())
+				usersGroup.GET("/", routev1.GetUsers())
+				usersGroup.GET("/:userName", routev1.GetUser())
+				usersGroup.PUT("/:userName", routev1.UpdateUser())
+				usersGroup.DELETE("/:userName", routev1.DeleteUser())
+			}
+
+			configMapGroup := namespacesGroup.Group("/:namespaceName/configmaps")
+			{
+				configMapGroup.GET("/:configMapName", routev1.GetConfigMap())
+			}
 		}
 	}
 	return engine
 }
 
-func CreateTestNamespace() {
+func createTestNamespace(name string) {
 	namespace := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-namespace",
+			Name: name,
 		},
 	}
 	_, err := client.CoreV1().Namespaces().Create(context.TODO(), namespace, metav1.CreateOptions{})
@@ -97,7 +120,7 @@ func CreateTestNamespace() {
 	}
 }
 
-func CreateTestSecret() {
+func createTestSecret() {
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-secret",
@@ -114,7 +137,7 @@ func CreateTestSecret() {
 	}
 }
 
-func CreateTestCapp() {
+func createTestCapp() {
 	capp := cappv1.Capp{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "test-capp",
@@ -131,18 +154,53 @@ func CreateTestCapp() {
 	}
 }
 
-func CreateTestCappRevision() {
-	capp := cappv1.CappRevision{
+// createRoleBinding creates a RoleBinding in the specified namespace
+func createRoleBinding(namespace string, userName string) {
+	roleBinding := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        "test-capprevision",
-			Namespace:   "test-namespace",
-			Annotations: map[string]string{},
-			Labels:      map[string]string{},
+			Name:      userName,
+			Namespace: namespace,
 		},
-		Spec:   cappv1.CappRevisionSpec{},
-		Status: cappv1.CappRevisionStatus{},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:     rbacv1.UserKind,
+				Name:     userName,
+				APIGroup: rbacv1.GroupName,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			Kind: "ClusterRole", // Could be "Role" or "ClusterRole"
+			Name: "capp-user-admin",
+		},
 	}
-	err := dynClient.Create(context.TODO(), &capp)
+
+	_, err := client.RbacV1().RoleBindings(namespace).Create(context.TODO(), roleBinding, metav1.CreateOptions{})
+	if err != nil {
+		panic(err)
+	}
+}
+
+// createTestCappRevision creates a test CappRevision object
+func createTestCappRevision(name, namespace string, labels, annotations map[string]string) {
+	cappRevision := utils.GetBareCappRevision(name, namespace, labels, annotations)
+	err := dynClient.Create(context.TODO(), &cappRevision)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func createConfigMap() {
+	configMap := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-configmap",
+			Namespace: "test-namespace",
+		},
+		Data: map[string]string{
+			"key1": "value1",
+			"key2": "value2",
+		},
+	}
+	_, err := client.CoreV1().ConfigMaps("test-namespace").Create(context.TODO(), configMap, metav1.CreateOptions{})
 	if err != nil {
 		panic(err)
 	}

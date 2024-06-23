@@ -1,16 +1,19 @@
+# Capp Management API
+
+This document outlines the CRUD (Create, Read, Update, Delete) on Capp.
+
+## API Endpoints
+
+### Capp
+
 - **GET** `/v1/namespaces/{namespace}/capps`
   - **Description**: Get all capp of namespace.
   - **Path Parameter**:
     - `namespace` - The namespace of the capp.
   - **Query Params**:
-    ```json
-    {
-      "lables": {
-        "key": str,
-        "key1": str
-      }
-    }
-    ```
+    - `limit`: (optional) Specifies the maximum number of namespaces to return per page. Defaults to 9.
+    - `continue`: (optional) Used for fetching the next set of results.
+    - `labelSelector`: (optional) Used for filtering by labels.
   - **Response**: Capp names or an error message.
     ```json
     {
@@ -20,7 +23,7 @@
     ```
 
 - **GET** `/v1/namespaces/{namespace}/capps/{cappName}`
-  - **Description**: Get all capps of namespace.
+  - **Description**: Get a specific capp in a namespace.
   - **Path Parameter**:
     - `namespace` - The namespace of the capp.
     - `cappName` - The capp name to fetch.
@@ -34,7 +37,6 @@
     }
     ```
   - **Response**: Capp info or an error message.
-
 ```json
 {
   "capp": {
@@ -101,7 +103,6 @@
   - **Path Parameter**:
     - `namespace` - The namespace of the capp.
   - **Body**:
-
 ```json
 {
   "capp": {
@@ -138,8 +139,7 @@
   }
 }
 ```
-    ```
-- **Response**: Confirmation of creation or an error message.
+  - **Response**: Confirmation of creation or an error message.
 ```json
 {
   "capp": {
@@ -187,7 +187,6 @@
     - `namespace` - The namespace of the capp.
     - `capp_name` - The name of the capp you want to update.
   - **Body**:
-
 ```json
 {
   "capp": {
@@ -224,8 +223,7 @@
   }
 }
 ```
-
-- **Response**: Confirmation of update or an error message.
+  - **Response**: Confirmation of update or an error message.
 ```json
 {
   "capp": {
@@ -268,7 +266,7 @@
 ```
 
 - **DELETE** `/v1/namespaces/{namespace}/capps/{cappName}`
-  - **Description**: Get all capps of namespace.
+  - **Description**: Delete capp in a namespace.
   - **Path Parameter**:
     - `namespace` - The namespace of the capp.
     - `cappName` - The capp name to fetch.

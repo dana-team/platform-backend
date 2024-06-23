@@ -57,4 +57,20 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider) {
 		cappRevisionGroup.GET("", GetCappRevisions())
 		cappRevisionGroup.GET("/:cappRevisionName", GetCappRevision())
 	}
+
+	usersGroup := namespacesGroup.Group("/:namespaceName/users")
+	usersGroup.Use(middleware.TokenAuthMiddleware(tokenProvider))
+	{
+		usersGroup.POST("/", CreateUser())
+		usersGroup.GET("/", GetUsers())
+		usersGroup.GET("/:userName", GetUser())
+		usersGroup.PUT("/:userName", UpdateUser())
+		usersGroup.DELETE("/:userName", DeleteUser())
+	}
+
+	configMapGroup := namespacesGroup.Group("/:namespaceName/configmaps")
+	configMapGroup.Use(middleware.TokenAuthMiddleware(tokenProvider))
+	{
+		configMapGroup.GET("/:configMapName", GetConfigMap())
+	}
 }

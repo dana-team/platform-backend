@@ -143,17 +143,14 @@ func (n *secretController) GetSecret(namespace, name string) (types.GetSecretRes
 func (n *secretController) UpdateSecret(namespace, name string, request types.UpdateSecretRequest) (types.UpdateSecretResponse, error) {
 	n.logger.Debug(fmt.Sprintf("Trying to update an existing secret in %q namespace", namespace))
 
-	newSecret := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		Data: map[string][]byte{},
+	secret, err := n.client.CoreV1().Secrets(namespace).Get(n.ctx, name, metav1.GetOptions{})
+	if err != nil {
+		n.logger.Error(fmt.Sprintf("Could not get secret %q with error: %v", name, err.Error()))
+		return types.UpdateSecretResponse{}, err
 	}
-	for _, kv := range request.Data {
-		newSecret.Data[kv.Key] = []byte(kv.Value)
-	}
-	result, err := n.client.CoreV1().Secrets(namespace).Update(n.ctx, newSecret, metav1.UpdateOptions{})
+	secret.Data = convertKeyValueToByteMap(request.Data)
+
+	result, err := n.client.CoreV1().Secrets(namespace).Update(n.ctx, secret, metav1.UpdateOptions{})
 	if err != nil {
 		n.logger.Error(fmt.Sprintf("Could not update secret %q with error: %v", name, err.Error()))
 		return types.UpdateSecretResponse{}, err

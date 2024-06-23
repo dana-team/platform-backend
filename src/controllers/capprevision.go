@@ -4,14 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/dana-team/platform-backend/src/utils"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/fields"
-
-	//"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
 
 	"github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/types"
 	"go.uber.org/zap"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -59,13 +58,10 @@ func (c *cappRevisionController) GetCappRevisions(limitStr, continueToken, names
 		return types.CappRevisionList{}, err
 	}
 
-	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
-		MatchLabels: convertKeyValueToMap(cappQuery.Labels),
-	})
-
+	selector, err := labels.Parse(cappQuery.LabelSelector)
 	if err != nil {
-		c.logger.Error(fmt.Sprintf("Could not create label selector with error: %v", err.Error()))
-		return types.CappRevisionList{}, err
+		c.logger.Error(fmt.Sprintf("Could not parse labelSelector with error: %v", err.Error()))
+		return types.CappRevisionList{}, k8serrors.NewBadRequest(err.Error())
 	}
 
 	cappRevisionListOptions := &client.ListOptions{

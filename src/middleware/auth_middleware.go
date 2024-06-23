@@ -6,15 +6,17 @@ import (
 	"os"
 	"strings"
 
-	cappv1 "github.com/dana-team/container-app-operator/api/v1alpha1"
+	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/auth"
 	"github.com/dana-team/platform-backend/src/utils"
 	"github.com/gin-gonic/gin"
+	"github.com/go-logr/logr"
 	"go.uber.org/zap"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -70,7 +72,7 @@ func TokenAuthMiddleware(tokenProvider auth.TokenProvider) gin.HandlerFunc {
 		}
 
 		schema := scheme.Scheme
-		if err := cappv1.AddToScheme(scheme.Scheme); err != nil {
+		if err := cappv1alpha1.AddToScheme(scheme.Scheme); err != nil {
 			userLogger.Error("Failed to create Kubernetes dynamic client schema", zap.Error(err))
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to create Kubernetes dynamic client schema"})
 			return
@@ -82,6 +84,9 @@ func TokenAuthMiddleware(tokenProvider auth.TokenProvider) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to create Kubernetes dynamic client"})
 			return
 		}
+
+		var logrLogger logr.Logger
+		log.SetLogger(logrLogger)
 
 		// Update the logger with the username
 		c.Set("logger", userLogger)

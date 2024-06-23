@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	client "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func cappRevisionHandler(handler func(controller controllers.CappRevisionController, c *gin.Context) (interface{}, error)) gin.HandlerFunc {
@@ -48,20 +48,20 @@ func cappRevisionHandler(handler func(controller controllers.CappRevisionControl
 
 func GetCappRevisions() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var cappUri types.CappRevisionNamespaceUri
-		if err := c.BindUri(&cappUri); err != nil {
+		var cappRevisionUri types.CappRevisionNamespaceUri
+		if err := c.BindUri(&cappRevisionUri); err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
 			return
 		}
 		var cappRevisionQuery types.CappRevisionQuery
-		if err := c.BindUri(&cappRevisionQuery); err != nil {
+		if err := c.BindQuery(&cappRevisionQuery); err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
 			return
 		}
 
 		cappRevisionHandler(func(controller controllers.CappRevisionController, c *gin.Context) (interface{}, error) {
 			limit, continueToken, search := utils.GetListQueryParameters(c)
-			return controller.GetCappRevisions(limit, continueToken, cappUri.NamespaceName, cappRevisionQuery, search)
+			return controller.GetCappRevisions(limit, continueToken, cappRevisionUri.NamespaceName, cappRevisionQuery, search)
 		})(c)
 	}
 }

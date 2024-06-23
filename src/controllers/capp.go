@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -95,12 +96,9 @@ func (c *cappController) GetCapps(limitStr, continueToken, namespace string, cap
 	}
 
 	cappList := &v1alpha1.CappList{}
-	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
-		MatchLabels: convertKeyValueToMap(cappQuery.Labels),
-	})
-
+	selector, err := labels.Parse(cappQuery.LabelSelector)
 	if err != nil {
-		c.logger.Error(fmt.Sprintf("Could not create label selector with error: %v", err.Error()))
+		c.logger.Error(fmt.Sprintf("Could not parse labelSelector with error: %v", err.Error()))
 		return types.CappList{}, err
 	}
 

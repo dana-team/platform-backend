@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	cappv1 "github.com/dana-team/container-app-operator/api/v1alpha1"
+	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/stretchr/testify/assert"
 )
@@ -24,8 +24,8 @@ func TestCreateCapp(t *testing.T) {
 		Labels: []types.KeyValue{
 			{Key: "label1", Value: "value1"},
 		},
-		Spec:   cappv1.CappSpec{},
-		Status: cappv1.CappStatus{},
+		Spec:   cappv1alpha1.CappSpec{},
+		Status: cappv1alpha1.CappStatus{},
 	}
 	body, _ := json.Marshal(cappRequest)
 	request, _ := http.NewRequest("POST", "/v1/namespaces/test-namespace/capps/", bytes.NewBuffer(body))
@@ -82,8 +82,8 @@ func TestUpdateCapp(t *testing.T) {
 		Labels: []types.KeyValue{
 			{Key: "label1", Value: "updated-value"},
 		},
-		Spec:   cappv1.CappSpec{},
-		Status: cappv1.CappStatus{},
+		Spec:   cappv1alpha1.CappSpec{},
+		Status: cappv1alpha1.CappStatus{},
 	}
 	body, _ := json.Marshal(cappRequest)
 	request, _ := http.NewRequest("PUT", "/v1/namespaces/test-namespace/capps/test-capp", bytes.NewBuffer(body))
