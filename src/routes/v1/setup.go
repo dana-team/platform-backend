@@ -73,4 +73,16 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider) {
 	{
 		configMapGroup.GET("/:configMapName", GetConfigMap())
 	}
+
+	serviceAccountsGroup := namespacesGroup.Group("/:namespaceName/serviceaccounts")
+	serviceAccountsGroup.Use(middleware.TokenAuthMiddleware(tokenProvider))
+	{
+		serviceAccountsGroup.POST("/", CreateServiceAccount())
+	}
+
+	tokenGroup := namespacesGroup.Group("/:namespaceName/token")
+	tokenGroup.Use(middleware.TokenAuthMiddleware(tokenProvider))
+	{
+		tokenGroup.GET("/", GetToken())
+	}
 }
