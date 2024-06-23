@@ -3,7 +3,9 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/dana-team/platform-backend/src/utils"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 
 	"github.com/dana-team/container-app-operator/api/v1alpha1"
@@ -14,7 +16,7 @@ import (
 
 type CappRevisionController interface {
 	// GetCappRevisions gets all container app revisions from a specific namespace.
-	GetCappRevisions(namespace string, cappRevisionQuery types.CappRevisionQuery) (types.CappRevisionList, error)
+	GetCappRevisions(limitStr, continueToken, namespace string, cappRevisionQuery types.CappRevisionQuery, search string) (types.CappRevisionList, error)
 
 	// GetCappRevision gets a specific container app revision from the specified namespace.
 	GetCappRevision(namespace, name string) (types.CappRevision, error)
@@ -46,20 +48,36 @@ func (c *cappRevisionController) GetCappRevision(namespace string, name string) 
 	return convertCappRevisionToType(cappRevision), nil
 }
 
-func (c *cappRevisionController) GetCappRevisions(namespace string, cappQuery types.CappRevisionQuery) (types.CappRevisionList, error) {
+func (c *cappRevisionController) GetCappRevisions(limitStr, continueToken, namespace string, cappQuery types.CappRevisionQuery, search string) (types.CappRevisionList, error) {
 	c.logger.Debug(fmt.Sprintf("Trying to fetch all capp revisions in namespace: %q", namespace))
 
 	cappRevisionList := &v1alpha1.CappRevisionList{}
+	listOptions, err := utils.GetPaginatedListOptions(limitStr, continueToken, search)
+	if err != nil {
+		c.logger.Error(fmt.Sprintf("Could not fetch namespaces with error: %s", err.Error()))
+		return types.CappRevisionList{}, err
+	}
+
 	selector, err := labels.Parse(cappQuery.LabelSelector)
 	if err != nil {
 		c.logger.Error(fmt.Sprintf("Could not parse labelSelector with error: %v", err.Error()))
 		return types.CappRevisionList{}, k8serrors.NewBadRequest(err.Error())
 	}
 
-	err = c.client.List(c.ctx, cappRevisionList, &client.ListOptions{
+	cappRevisionListOptions := &client.ListOptions{
 		Namespace:     namespace,
 		LabelSelector: selector,
-	})
+		Limit:         listOptions.Limit,
+		Continue:      listOptions.Continue,
+	}
+
+	if listOptions.FieldSelector != "" {
+		cappRevisionListOptions.FieldSelector = fields.ParseSelectorOrDie(listOptions.FieldSelector)
+
+	}
+
+	err = c.client.List(c.ctx, cappRevisionList, cappRevisionListOptions)
+
 	if err != nil {
 		c.logger.Error(fmt.Sprintf("Could not fetch capp revisions in namespace %q with error: %v", namespace, err.Error()))
 		return types.CappRevisionList{}, err
@@ -67,7 +85,10 @@ func (c *cappRevisionController) GetCappRevisions(namespace string, cappQuery ty
 
 	result := types.CappRevisionList{}
 	result.CappRevisions = append(result.CappRevisions, cappRevisionList.Items...)
-	result.Count = len(cappRevisionList.Items)
+
+	listMetadata := utils.SetPaginationMetadata(result.CappRevisions, cappRevisionList.ListMeta)
+	result.ListMetadata = listMetadata
+
 	return result, nil
 }
 

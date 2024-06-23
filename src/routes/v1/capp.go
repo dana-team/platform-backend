@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"github.com/dana-team/platform-backend/src/utils"
 	"net/http"
 
 	"github.com/dana-team/platform-backend/src/controllers"
@@ -59,7 +60,8 @@ func GetCapps() gin.HandlerFunc {
 		}
 
 		cappHandler(func(controller controllers.CappController, c *gin.Context) (interface{}, error) {
-			return controller.GetCapps(cappUri.NamespaceName, cappQuery)
+			limit, continueToken, search := utils.GetListQueryParameters(c)
+			return controller.GetCapps(limit, continueToken, cappUri.NamespaceName, cappQuery, search)
 		})(c)
 	}
 }

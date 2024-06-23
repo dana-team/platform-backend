@@ -2,9 +2,9 @@ package v1
 
 import (
 	"fmt"
-	"net/http"
-
+	"github.com/dana-team/platform-backend/src/utils"
 	"go.uber.org/zap"
+	"net/http"
 
 	"github.com/dana-team/platform-backend/src/controllers"
 	"github.com/dana-team/platform-backend/src/types"
@@ -44,7 +44,7 @@ func namespaceHandler(handler func(controller controllers.NamespaceController, c
 
 func ListNamespaces() gin.HandlerFunc {
 	return namespaceHandler(func(controller controllers.NamespaceController, c *gin.Context) (interface{}, error) {
-		return controller.GetNamespaces()
+		return controller.GetNamespaces(utils.GetListQueryParameters(c))
 	})
 }
 

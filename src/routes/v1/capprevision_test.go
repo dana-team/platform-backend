@@ -53,7 +53,7 @@ func TestGetCappRevisions(t *testing.T) {
 			},
 			want: want{
 				statusCode: http.StatusOK,
-				response: types.CappRevisionList{Count: 2, CappRevisions: []cappv1alpha1.CappRevision{
+				response: types.CappRevisionList{ListMetadata: types.ListMetadata{Count: 2}, CappRevisions: []cappv1alpha1.CappRevision{
 					utils.GetBareCappRevision(cappRevisionName+"-1", cappRevisionNamespace, map[string]string{labelKey + "-1": labelValue + "-1"}, map[string]string{}),
 					utils.GetBareCappRevision(cappRevisionName+"-2", cappRevisionNamespace, map[string]string{labelKey + "-2": labelValue + "-2"}, map[string]string{}),
 				}},
@@ -78,7 +78,7 @@ func TestGetCappRevisions(t *testing.T) {
 			},
 			want: want{
 				statusCode: http.StatusOK,
-				response: types.CappRevisionList{Count: 1, CappRevisions: []cappv1alpha1.CappRevision{
+				response: types.CappRevisionList{ListMetadata: types.ListMetadata{Count: 1}, CappRevisions: []cappv1alpha1.CappRevision{
 					utils.GetBareCappRevision(cappRevisionName+"-1", cappRevisionNamespace, map[string]string{labelKey + "-1": labelValue + "-1"}, map[string]string{}),
 				}},
 			},
@@ -106,7 +106,7 @@ func TestGetCappRevisions(t *testing.T) {
 			},
 			want: want{
 				statusCode: http.StatusOK,
-				response:   types.CappRevisionList{Count: 0, CappRevisions: []cappv1alpha1.CappRevision{}},
+				response:   types.CappRevisionList{ListMetadata: types.ListMetadata{Count: 0}, CappRevisions: []cappv1alpha1.CappRevision{}},
 			},
 		},
 	}
@@ -137,6 +137,8 @@ func TestGetCappRevisions(t *testing.T) {
 				for i, revision := range test.want.response.CappRevisions {
 					assert.Equal(t, revision.Name, response.CappRevisions[i].Name)
 					assert.Equal(t, revision.Namespace, response.CappRevisions[i].Namespace)
+					assert.NotNil(t, response.ContinueToken)
+					assert.NotNil(t, response.RemainingCount)
 				}
 			}
 		})

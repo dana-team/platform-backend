@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"github.com/dana-team/platform-backend/src/utils"
 	"net/http"
 
 	"github.com/dana-team/platform-backend/src/controllers"
@@ -68,7 +69,8 @@ func GetSecrets() gin.HandlerFunc {
 		}
 
 		secretHandler(func(controller controllers.SecretController, c *gin.Context) (interface{}, error) {
-			return controller.GetSecrets(request.NamespaceName)
+			limit, continueToken, search := utils.GetListQueryParameters(c)
+			return controller.GetSecrets(limit, continueToken, request.NamespaceName, search)
 		})(c)
 	}
 }

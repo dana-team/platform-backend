@@ -33,14 +33,18 @@ func TestCreateSecret(t *testing.T) {
 }
 
 func TestGetSecrets(t *testing.T) {
-	request, _ := http.NewRequest("GET", "/v1/namespaces/default/secrets/", nil)
+	request, _ := http.NewRequest("GET", "/v1/namespaces/default/secrets", nil)
 	writer := httptest.NewRecorder()
 	router.ServeHTTP(writer, request)
 
 	assert.Equal(t, http.StatusOK, writer.Code)
-	var response types.GetSecretsResponse
+	var response types.SecretsList
 	err := json.Unmarshal(writer.Body.Bytes(), &response)
 	assert.NoError(t, err)
+	assert.GreaterOrEqual(t, len(response.Secrets), 1)
+	assert.GreaterOrEqual(t, response.Count, 1)
+	assert.NotNil(t, response.ContinueToken)
+	assert.NotNil(t, response.RemainingCount)
 }
 
 func TestGetSpecificSecret(t *testing.T) {

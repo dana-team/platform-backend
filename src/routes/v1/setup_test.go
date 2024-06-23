@@ -2,6 +2,7 @@ package v1_test
 
 import (
 	"context"
+	"fmt"
 	"github.com/dana-team/platform-backend/src/utils"
 	"testing"
 
@@ -60,7 +61,7 @@ func setupRouter(logger *zap.Logger) *gin.Engine {
 	{
 		namespacesGroup := v1.Group("/namespaces")
 		{
-			namespacesGroup.GET("/", routev1.ListNamespaces())
+			namespacesGroup.GET("", routev1.ListNamespaces())
 			namespacesGroup.GET("/:namespaceName", routev1.GetNamespace())
 			namespacesGroup.POST("/", routev1.CreateNamespace())
 			namespacesGroup.DELETE("/:namespaceName", routev1.DeleteNamespace())
@@ -68,7 +69,7 @@ func setupRouter(logger *zap.Logger) *gin.Engine {
 			secretsGroup := namespacesGroup.Group("/:namespaceName/secrets")
 			{
 				secretsGroup.POST("/", routev1.CreateSecret())
-				secretsGroup.GET("/", routev1.GetSecrets())
+				secretsGroup.GET("", routev1.GetSecrets())
 				secretsGroup.GET("/:secretName", routev1.GetSecret())
 				secretsGroup.PUT("/:secretName", routev1.UpdateSecret())
 				secretsGroup.DELETE("/:secretName", routev1.DeleteSecret())
@@ -77,7 +78,7 @@ func setupRouter(logger *zap.Logger) *gin.Engine {
 			cappGroup := namespacesGroup.Group("/:namespaceName/capps")
 			{
 				cappGroup.POST("/", routev1.CreateCapp())
-				cappGroup.GET("/", routev1.GetCapps())
+				cappGroup.GET("", routev1.GetCapps())
 				cappGroup.GET("/:cappName", routev1.GetCapp())
 				cappGroup.PUT("/:cappName", routev1.UpdateCapp())
 				cappGroup.DELETE("/:cappName", routev1.DeleteCapp())
@@ -85,7 +86,7 @@ func setupRouter(logger *zap.Logger) *gin.Engine {
 
 			cappRevisionGroup := namespacesGroup.Group("/:namespaceName/capprevisions")
 			{
-				cappRevisionGroup.GET("/", routev1.GetCappRevisions())
+				cappRevisionGroup.GET("", routev1.GetCappRevisions())
 				cappRevisionGroup.GET("/:cappRevisionName", routev1.GetCappRevision())
 			}
 
@@ -207,6 +208,7 @@ func createConfigMap() {
 
 func setupScheme() *runtime.Scheme {
 	schema := scheme.Scheme
-	_ = cappv1.AddToScheme(schema)
+	err := cappv1.AddToScheme(schema)
+	fmt.Println(err)
 	return schema
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"github.com/dana-team/platform-backend/src/utils"
 
 	"github.com/dana-team/platform-backend/src/types"
 	"go.uber.org/zap"
@@ -23,7 +24,7 @@ type SecretController interface {
 	CreateSecret(namespace string, request types.CreateSecretRequest) (types.CreateSecretResponse, error)
 
 	// GetSecrets gets all secretes from the specified namespace.
-	GetSecrets(namespace string) (types.GetSecretsResponse, error)
+	GetSecrets(limitStr, continueToken, namespace, search string) (types.SecretsList, error)
 
 	// GetSecret gets a specific secret from the specified namespace.
 	GetSecret(namespace, name string) (types.GetSecretResponse, error)
@@ -74,29 +75,38 @@ func (n *secretController) CreateSecret(namespace string, request types.CreateSe
 	}, err
 }
 
-func (n *secretController) GetSecrets(namespace string) (types.GetSecretsResponse, error) {
+func (n *secretController) GetSecrets(limitStr, continueToken, namespace, search string) (types.SecretsList, error) {
 	n.logger.Debug(fmt.Sprintf("Trying to get all secrets in %q namespace", namespace))
 
-	secrets, err := n.client.CoreV1().Secrets(namespace).List(n.ctx, metav1.ListOptions{})
+	listOptions, err := utils.GetPaginatedListOptions(limitStr, continueToken, search)
+	if err != nil {
+		return types.SecretsList{}, err
+	}
+
+	secrets, err := n.client.CoreV1().Secrets(namespace).List(n.ctx, listOptions)
 	if err != nil {
 		n.logger.Error(fmt.Sprintf("Could not get secrets with error: %v", err.Error()))
-		return types.GetSecretsResponse{}, err
+		return types.SecretsList{}, err
 	}
 
 	n.logger.Debug("Fetched all secrets successfully")
 
-	response := types.GetSecretsResponse{}
-	response.Count = len(secrets.Items)
+	secretsList := types.SecretsList{}
+	secretsList.Count = len(secrets.Items)
 	for _, secret := range secrets.Items {
-		response.Secrets = append(
-			response.Secrets,
+		secretsList.Secrets = append(
+			secretsList.Secrets,
 			types.Secret{
 				Type:          string(secret.Type),
 				SecretName:    secret.Name,
 				NamespaceName: secret.Namespace,
 			})
 	}
-	return response, nil
+
+	listMetadata := utils.SetPaginationMetadata(secretsList.Secrets, secrets.ListMeta)
+	secretsList.ListMetadata = listMetadata
+
+	return secretsList, nil
 }
 
 func (n *secretController) GetSecret(namespace, name string) (types.GetSecretResponse, error) {

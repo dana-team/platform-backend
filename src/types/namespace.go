@@ -6,7 +6,7 @@ type Namespace struct {
 
 type NamespaceList struct {
 	Namespaces []Namespace `json:"namespaces"`
-	Count      int         `json:"count"`
+	ListMetadata
 }
 
 type NamespaceUri struct {
