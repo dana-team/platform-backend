@@ -67,7 +67,7 @@ func TestGetUser(t *testing.T) {
 			},
 		},
 	}
-	CreateTestNamespace(userNamespace)
+	createTestNamespace(userNamespace)
 	createRoleBinding(userNamespace, "test-user")
 
 	for name, test := range cases {
@@ -113,7 +113,7 @@ func TestGetUsers(t *testing.T) {
 			},
 		},
 	}
-	CreateTestNamespace(usesNamespace)
+	createTestNamespace(usesNamespace)
 	createRoleBinding(usesNamespace, "test-user1")
 	createRoleBinding(usesNamespace, "test-user2")
 
@@ -195,7 +195,7 @@ func TestUpdateUser(t *testing.T) {
 			requsetData: map[string]string{"role": "baladi"},
 		},
 	}
-	CreateTestNamespace(userNamespace)
+	createTestNamespace(userNamespace)
 	createRoleBinding(userNamespace, "test-user")
 
 	for name, test := range cases {
@@ -273,7 +273,7 @@ func TestCreateUser(t *testing.T) {
 		},
 	}
 
-	CreateTestNamespace(userNamespace)
+	createTestNamespace(userNamespace)
 	createRoleBinding(userNamespace, "exists-user")
 
 	for name, test := range cases {
@@ -352,7 +352,7 @@ func TestDeleteUser(t *testing.T) {
 			},
 		},
 	}
-	CreateTestNamespace(userNamespace)
+	createTestNamespace(userNamespace)
 	createRoleBinding(userNamespace, "test-user")
 
 	for name, test := range cases {
