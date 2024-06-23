@@ -3,7 +3,6 @@ package v1_test
 import (
 	"encoding/json"
 	"fmt"
-	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/dana-team/platform-backend/src/utils"
 	"github.com/stretchr/testify/assert"
@@ -53,10 +52,7 @@ func TestGetCappRevisions(t *testing.T) {
 			},
 			want: want{
 				statusCode: http.StatusOK,
-				response: types.CappRevisionList{Count: 2, CappRevisions: []cappv1alpha1.CappRevision{
-					utils.GetBareCappRevision(cappRevisionName+"-1", cappRevisionNamespace, map[string]string{labelKey + "-1": labelValue + "-1"}, map[string]string{}),
-					utils.GetBareCappRevision(cappRevisionName+"-2", cappRevisionNamespace, map[string]string{labelKey + "-2": labelValue + "-2"}, map[string]string{}),
-				}},
+				response:   types.CappRevisionList{Count: 2, CappRevisions: []string{cappRevisionName + "-1", cappRevisionName + "-2"}},
 			},
 		},
 		"ShouldFailWithBadRequestInvalidURI": {
@@ -78,9 +74,7 @@ func TestGetCappRevisions(t *testing.T) {
 			},
 			want: want{
 				statusCode: http.StatusOK,
-				response: types.CappRevisionList{Count: 1, CappRevisions: []cappv1alpha1.CappRevision{
-					utils.GetBareCappRevision(cappRevisionName+"-1", cappRevisionNamespace, map[string]string{labelKey + "-1": labelValue + "-1"}, map[string]string{}),
-				}},
+				response:   types.CappRevisionList{Count: 1, CappRevisions: []string{cappRevisionName + "-1"}},
 			},
 		},
 		"ShouldFailGettingCappRevisionsWithInvalidLabelSelector": {
@@ -106,7 +100,7 @@ func TestGetCappRevisions(t *testing.T) {
 			},
 			want: want{
 				statusCode: http.StatusOK,
-				response:   types.CappRevisionList{Count: 0, CappRevisions: []cappv1alpha1.CappRevision{}},
+				response:   types.CappRevisionList{Count: 0, CappRevisions: nil},
 			},
 		},
 	}
@@ -134,10 +128,7 @@ func TestGetCappRevisions(t *testing.T) {
 				}
 
 				assert.Equal(t, test.want.response.Count, response.Count)
-				for i, revision := range test.want.response.CappRevisions {
-					assert.Equal(t, revision.Name, response.CappRevisions[i].Name)
-					assert.Equal(t, revision.Namespace, response.CappRevisions[i].Namespace)
-				}
+				assert.Equal(t, test.want.response.CappRevisions, response.CappRevisions)
 			}
 		})
 	}

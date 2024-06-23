@@ -13,8 +13,8 @@ type CappRevision struct {
 }
 
 type CappRevisionList struct {
-	CappRevisions []cappv1alpha1.CappRevision `json:"capprevisions"`
-	Count         int                         `json:"count"`
+	CappRevisions []string `json:"capprevisions"`
+	Count         int      `json:"count"`
 }
 
 type CappRevisionNamespaceUri struct {

@@ -13,10 +13,10 @@ import (
 )
 
 type CappRevisionController interface {
-	// GetCappRevisions gets all container app revisions from a specific namespace.
+	// GetCappRevisions gets all CappRevision names and count from a specific namespace.
 	GetCappRevisions(namespace string, cappRevisionQuery types.CappRevisionQuery) (types.CappRevisionList, error)
 
-	// GetCappRevision gets a specific container app revision from the specified namespace.
+	// GetCappRevision gets a specific CappRevision from the specified namespace.
 	GetCappRevision(namespace, name string) (types.CappRevision, error)
 }
 
@@ -66,11 +66,15 @@ func (c *cappRevisionController) GetCappRevisions(namespace string, cappQuery ty
 	}
 
 	result := types.CappRevisionList{}
-	result.CappRevisions = append(result.CappRevisions, cappRevisionList.Items...)
+	for _, revision := range cappRevisionList.Items {
+		result.CappRevisions = append(result.CappRevisions, revision.Name)
+	}
 	result.Count = len(cappRevisionList.Items)
+
 	return result, nil
 }
 
+// convertCappRevisionToType converts an API CappRevision to a Type CappRevision.
 func convertCappRevisionToType(cappRevision v1alpha1.CappRevision) types.CappRevision {
 	return types.CappRevision{
 		Metadata: types.Metadata{
