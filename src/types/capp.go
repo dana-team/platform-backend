@@ -30,7 +30,7 @@ type UpdateCapp struct {
 }
 
 type CappQuery struct {
-	Labels []KeyValue `form:"labels"`
+	LabelSelector string `form:"labelSelector"`
 }
 
 type CappList struct {
