@@ -13,19 +13,19 @@ import (
 )
 
 type CappController interface {
-	// CreateCapp creates a new container app in the specified namespace.
+	// CreateCapp creates a new Capp in the specified namespace.
 	CreateCapp(namespace string, capp types.CreateCapp) (types.Capp, error)
 
-	// GetCapps gets all container apps from a specific namespace.
+	// GetCapps gets all Capps from a specific namespace.
 	GetCapps(namespace string, cappQuery types.CappQuery) (types.CappList, error)
 
-	// GetCapp gets a specific container app from the specified namespace.
+	// GetCapp gets a specific Capp from the specified namespace.
 	GetCapp(namespace, name string) (types.Capp, error)
 
-	// UpdateCapp updates a specific container app in the specified namespace.
+	// UpdateCapp updates a specific Capp in the specified namespace.
 	UpdateCapp(namespace, name string, capp types.UpdateCapp) (types.Capp, error)
 
-	// DeleteCapp deletes a specific container app in the specified namespace.
+	// DeleteCapp deletes a specific Capp in the specified namespace.
 	DeleteCapp(namespace, name string) (types.CappError, error)
 }
 
@@ -106,7 +106,7 @@ func (c *cappController) GetCapps(namespace string, cappQuery types.CappQuery) (
 
 	result := types.CappList{}
 	for _, item := range cappList.Items {
-		result.Capps = append(result.Capps, convertCappToType(item))
+		result.Capps = append(result.Capps, item.Name)
 	}
 	result.Count = len(cappList.Items)
 	return result, nil
