@@ -60,6 +60,7 @@ func ObtainOpenshiftToken(username, password string, logger *zap.Logger, ctx *gi
 		return "", err
 	}
 
+	logger.Debug(fmt.Sprintf("tyring to get auth code from: %q", authCodeReq.URL.String()))
 	authCodeResp, err := codeHTTPClient.Do(authCodeReq)
 	if err != nil {
 		logger.Error("failed to obtain auth code", zap.Error(err))
@@ -70,6 +71,7 @@ func ObtainOpenshiftToken(username, password string, logger *zap.Logger, ctx *gi
 		logger.Error("failed to check AuthCode response", zap.Error(err))
 		return "", err
 	}
+	logger.Debug(fmt.Sprintf("fetched auth code successfully from: %q with status: %q", authCodeResp.Request.URL.String(), authCodeResp.StatusCode))
 
 	code, err := parseAuthCode(authCodeResp)
 	if err != nil {
@@ -82,7 +84,7 @@ func ObtainOpenshiftToken(username, password string, logger *zap.Logger, ctx *gi
 
 // ObtainOpenshiftUsername fetches the username from the OpenShift userinfo endpoint.
 func ObtainOpenshiftUsername(token string, logger *zap.Logger) (string, error) {
-	userInfo, err := fetchOpenshiftUserInfo(token)
+	userInfo, err := fetchOpenshiftUserInfo(token, logger)
 	if err != nil {
 		logger.Error("failed to fetch Openshift user info", zap.Error(err))
 		return "", fmt.Errorf("failed to obtain OpenShift username: %v", err)
@@ -189,7 +191,7 @@ func exchangeCodeForToken(ctx context.Context, conf *oauth2.Config, code string)
 }
 
 // fetchOpenshiftUserInfo retrieves user information from the OpenShift userinfo endpoint.
-func fetchOpenshiftUserInfo(token string) (*OpenshiftUserInfo, error) {
+func fetchOpenshiftUserInfo(token string, logger *zap.Logger) (*OpenshiftUserInfo, error) {
 	userInfo := OpenshiftUserInfo{}
 
 	skipTlsVerify, err := utils.GetEnvBool(envInsecureSkipVerify, true)
@@ -198,11 +200,13 @@ func fetchOpenshiftUserInfo(token string) (*OpenshiftUserInfo, error) {
 	}
 
 	httpClient := createHTTPClient(skipTlsVerify)
+
 	req, err := createUserInfoRequest(token, os.Getenv(envKubeUserInfoURL))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user info request: %v", err)
 	}
 
+	logger.Debug(fmt.Sprintf("trying to fetch user info from: %q", req.URL.String()))
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch userinfo: %v", err)
@@ -212,6 +216,8 @@ func fetchOpenshiftUserInfo(token string) (*OpenshiftUserInfo, error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("failed to fetch userinfo, status code: %d", resp.StatusCode)
 	}
+
+	logger.Debug(fmt.Sprintf("fetched user info successfully from: %q with status: %q", resp.Request.URL.String(), resp.StatusCode))
 
 	if err := decodeUserInfoResponse(resp, &userInfo); err != nil {
 		return nil, fmt.Errorf("failed to decode userinfo response: %v", err)
