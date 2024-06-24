@@ -3,11 +3,14 @@ package controllers
 import (
 	"context"
 	"fmt"
-
 	"github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/types"
+	"github.com/dana-team/platform-backend/src/utils/terminal_utils"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/remotecommand"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -26,19 +29,25 @@ type CappController interface {
 
 	// DeleteCapp deletes a specific container app in the specified namespace.
 	DeleteCapp(namespace, name string) (types.CappError, error)
+
+	HandleStartTerminal(namespace, name, podName, containerName, shell string) (types.StartTerminalResponse, error)
 }
 
 type cappController struct {
-	client client.Client
-	ctx    context.Context
-	logger *zap.Logger
+	client    client.Client
+	clientSet kubernetes.Interface
+	config    *rest.Config
+	ctx       context.Context
+	logger    *zap.Logger
 }
 
-func NewCappController(client client.Client, context context.Context, logger *zap.Logger) (CappController, error) {
+func NewCappController(client client.Client, clientSet kubernetes.Interface, config *rest.Config, context context.Context, logger *zap.Logger) (CappController, error) {
 	return &cappController{
-		client: client,
-		ctx:    context,
-		logger: logger,
+		client:    client,
+		clientSet: clientSet,
+		config:    config,
+		ctx:       context,
+		logger:    logger,
 	}, nil
 }
 
@@ -215,4 +224,23 @@ func convertCappToType(capp v1alpha1.Capp) types.Capp {
 			Conditions:          capp.Status.Conditions,
 		},
 	}
+}
+
+// HandleStartTerminal Handles execute shell API call
+func (c *cappController) HandleStartTerminal(namespaceName, name, podName, containerName, shell string) (types.StartTerminalResponse, error) {
+	// TODO: verify input - check if the given capp is the owner of the given pod
+
+	sessionID, err := terminal_utils.GenTerminalSessionId()
+	if err != nil {
+		c.logger.Error(fmt.Sprintf("coundn't generate terminal_utils session for %s/%s capp with pod %s and container %s with err: %s", namespaceName, name, podName, containerName, err.Error()))
+	}
+
+	terminal_utils.TerminalSessions.Set(sessionID, terminal_utils.TerminalSession{
+		Id:       sessionID,
+		Bound:    make(chan error),
+		SizeChan: make(chan remotecommand.TerminalSize),
+	})
+
+	go terminal_utils.WaitForTerminal(c.clientSet, c.config, namespaceName, podName, containerName, shell, sessionID)
+	return types.StartTerminalResponse{ID: sessionID}, nil
 }

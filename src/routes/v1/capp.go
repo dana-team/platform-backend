@@ -8,6 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	client "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -25,11 +27,25 @@ func cappHandler(handler func(controller controllers.CappController, c *gin.Cont
 			return
 		}
 
+		rawKubeClientSet, exists := c.Get("kubeClient")
+		if !exists {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Kubernetes client not found"})
+			return
+		}
+
+		rawConfig, exists := c.Get("config")
+		if !exists {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Kubernetes client not found"})
+			return
+		}
+
 		logger := ctxLogger.(*zap.Logger)
 		kubeClient := dynClient.(client.Client)
+		kubeClientSet := rawKubeClientSet.(kubernetes.Interface)
+		config := rawConfig.(*rest.Config)
 		context := c.Request.Context()
 
-		cappController, err := controllers.NewCappController(kubeClient, context, logger)
+		cappController, err := controllers.NewCappController(kubeClient, kubeClientSet, config, context, logger)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to create controller"})
 			return
@@ -126,6 +142,25 @@ func DeleteCapp() gin.HandlerFunc {
 
 		cappHandler(func(controller controllers.CappController, c *gin.Context) (interface{}, error) {
 			return controller.DeleteCapp(cappUri.NamespaceName, cappUri.CappName)
+		})(c)
+	}
+}
+
+func StartTerminal() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var startTerminalUri types.StartTerminalUri
+		if err := c.BindUri(&startTerminalUri); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			return
+		}
+		var startTerminalBody types.StartTerminalBody
+		if err := c.BindJSON(&startTerminalBody); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			return
+		}
+
+		cappHandler(func(controller controllers.CappController, c *gin.Context) (interface{}, error) {
+			return controller.HandleStartTerminal(startTerminalUri.NamespaceName, startTerminalUri.CappName, startTerminalUri.PodName, startTerminalUri.ContainerName, startTerminalBody.Shell)
 		})(c)
 	}
 }

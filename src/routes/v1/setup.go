@@ -5,6 +5,7 @@ import (
 
 	"github.com/dana-team/platform-backend/src/auth"
 	"github.com/dana-team/platform-backend/src/middleware"
+	"github.com/dana-team/platform-backend/src/utils/terminal_utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,6 +16,11 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider) {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "pong",
 		})
+	})
+
+	engine.GET("/ws/terminal", func(c *gin.Context) {
+		handler := terminal_utils.CreateAttachHandler()
+		handler.ServeHTTP(c.Writer, c.Request)
 	})
 
 	authGroup := v1.Group("/login")
@@ -49,6 +55,7 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider) {
 		cappGroup.GET("/:cappName", GetCapp())
 		cappGroup.PUT("/:cappName", UpdateCapp())
 		cappGroup.DELETE("/:cappName", DeleteCapp())
+		cappGroup.POST("/:cappName/pods/:podName/containers/:containerName/terminal", StartTerminal())
 	}
 
 	cappRevisionGroup := namespacesGroup.Group("/:namespaceName/capprevisions")

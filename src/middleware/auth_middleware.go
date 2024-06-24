@@ -91,6 +91,7 @@ func TokenAuthMiddleware(tokenProvider auth.TokenProvider) gin.HandlerFunc {
 		c.Set("logger", userLogger)
 		c.Set("kubeClient", kubeClient)
 		c.Set("dynClient", dynClient)
+		c.Set("config", config)
 
 		c.Next()
 	}
