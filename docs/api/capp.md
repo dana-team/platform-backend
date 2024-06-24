@@ -17,7 +17,11 @@ This document outlines the CRUD (Create, Read, Update, Delete) on Capp.
   - **Response**: Capp names or an error message.
     ```json
     {
-       "capps": []str,
+       "capps": [{
+                    "name": "string",
+                    "url": "string",
+                    "image": "string"         
+                }, ...],
        "count": int
     }
     ```
