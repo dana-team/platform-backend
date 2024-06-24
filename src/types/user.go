@@ -2,7 +2,7 @@ package types
 
 type User struct {
 	Name string `json:"name" binding:"required"`
-	Role string `json:"role" binding:"required"  enum:"admin,viewer,contributor"`
+	Role string `json:"role" binding:"required,oneof=admin viewer contributor"`
 }
 
 type UserIdentifier struct {
@@ -11,12 +11,12 @@ type UserIdentifier struct {
 }
 
 type UserInput struct {
-	Namespace string `json:"namespace" binding:"required"`
+	Namespace string `json:"namespace" binding:"required,oneof=admin viewer contributor"`
 	User
 }
 
 type PatchUserData struct {
-	Role string `json:"role" binding:"required" validate:"one0f=admin viewer contributor"`
+	Role string `json:"role" binding:"required,oneof=admin viewer contributor"`
 }
 
 type UsersOutput struct {

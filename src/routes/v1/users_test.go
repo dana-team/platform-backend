@@ -186,9 +186,9 @@ func TestUpdateUser(t *testing.T) {
 				namespace: userNamespace,
 			},
 			want: want{
-				statusCode: http.StatusUnprocessableEntity,
+				statusCode: http.StatusBadRequest,
 				response: map[string]string{
-					"details": "role must be one of admin,viewer,contributor ",
+					"details": "Key: 'PatchUserData.Role' Error:Field validation for 'Role' failed on the 'oneof' tag",
 					"error":   "Invalid request",
 				},
 			},
@@ -263,9 +263,9 @@ func TestCreateUser(t *testing.T) {
 				namespace: userNamespace,
 			},
 			want: want{
-				statusCode: http.StatusUnprocessableEntity,
+				statusCode: http.StatusBadRequest,
 				response: map[string]string{
-					"details": "role must be one of admin,viewer,contributor ",
+					"details": "Key: 'User.Role' Error:Field validation for 'Role' failed on the 'oneof' tag",
 					"error":   "Invalid request",
 				},
 			},

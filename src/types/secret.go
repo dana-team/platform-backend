@@ -1,7 +1,7 @@
 package types
 
 type CreateSecretRequest struct {
-	Type       string     `json:"type" binding:"required" enum:"tls,opaque"`
+	Type       string     `json:"type" binding:"required,oneof=tls opaque"`
 	SecretName string     `json:"secretName" binding:"required"`
 	Cert       string     `json:"cert"`
 	Key        string     `json:"key"`
