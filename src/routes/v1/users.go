@@ -54,11 +54,6 @@ func CreateUser() gin.HandlerFunc {
 			return
 		}
 
-		if user.Role != "admin" && user.Role != "viewer" && user.Role != "contributor" {
-			c.AbortWithStatusJSON(http.StatusUnprocessableEntity, gin.H{"error": "Invalid request", "details": "role must be one of admin,viewer,contributor "})
-			return
-		}
-
 		usersHandler(func(controller controllers.UserController, c *gin.Context) (interface{}, error) {
 			return controller.AddUser(types.UserInput{Namespace: namespace.NamespaceName,
 				User: types.User{Name: user.Name, Role: user.Role}})
@@ -77,11 +72,6 @@ func UpdateUser() gin.HandlerFunc {
 		var userRole types.PatchUserData
 		if err := c.BindJSON(&userRole); err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
-			return
-		}
-
-		if userRole.Role != "admin" && userRole.Role != "viewer" && userRole.Role != "contributor" {
-			c.AbortWithStatusJSON(http.StatusUnprocessableEntity, gin.H{"error": "Invalid request", "details": "role must be one of admin,viewer,contributor "})
 			return
 		}
 
