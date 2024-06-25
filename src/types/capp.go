@@ -34,8 +34,14 @@ type CappQuery struct {
 }
 
 type CappList struct {
-	Capps []string `json:"capps"`
-	Count int      `json:"count"`
+	Capps []CappSummary `json:"capps"`
+	Count int           `json:"count"`
+}
+
+type CappSummary struct {
+	Name   string   `json:"name"`
+	URL    string   `json:"url"`
+	Images []string `json:"images"`
 }
 
 type CappNamespaceUri struct {
