@@ -106,9 +106,15 @@ func (c *cappController) GetCapps(namespace string, cappQuery types.CappQuery) (
 
 	result := types.CappList{}
 	for _, item := range cappList.Items {
-		result.Capps = append(result.Capps, item.Name)
+		summary := types.CappSummary{
+			Name:   item.Name,
+			URL:    getCappURL(item),
+			Images: getCappImages(item),
+		}
+		result.Capps = append(result.Capps, summary)
 	}
 	result.Count = len(cappList.Items)
+
 	return result, nil
 }
 
@@ -214,4 +220,26 @@ func convertCappToType(capp v1alpha1.Capp) types.Capp {
 			Conditions:          capp.Status.Conditions,
 		},
 	}
+}
+
+// getCappURL returns the URL of Capp; the shortened hostname is returned
+// if it exists, otherwise the default URL is returned.
+func getCappURL(capp v1alpha1.Capp) string {
+	if capp.Status.RouteStatus.DomainMappingObjectStatus.URL != nil {
+		return capp.Status.RouteStatus.DomainMappingObjectStatus.URL.URL().String()
+	} else if capp.Status.KnativeObjectStatus.URL != nil {
+		return capp.Status.KnativeObjectStatus.URL.URL().String()
+	}
+
+	return ""
+}
+
+// getCappImages returns the images of all containers of Capp.
+func getCappImages(capp v1alpha1.Capp) []string {
+	var images []string
+	for _, container := range capp.Spec.ConfigurationSpec.Template.Spec.Containers {
+		images = append(images, container.Image)
+	}
+
+	return images
 }
