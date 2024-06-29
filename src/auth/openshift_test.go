@@ -12,31 +12,6 @@ import (
 )
 
 func TestObtainOpenshiftToken(t *testing.T) {
-	_ = os.Setenv(envInsecureSkipVerify, "true")
-	_ = os.Setenv(envKubeClientID, "clientid")
-
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/auth" {
-			w.Header().Set("Location", "https://example.com/callback?code=testcode")
-			w.WriteHeader(http.StatusFound)
-			return
-		}
-
-		if r.URL.Path == "/token" {
-			if r.FormValue("code") == "testcode" {
-				w.Header().Set("Content-Type", "application/json")
-				_, _ = w.Write([]byte(`{"access_token": "test_access_token", "token_type": "bearer"}`))
-			} else {
-				w.WriteHeader(http.StatusBadRequest)
-			}
-			return
-		}
-	}))
-	defer ts.Close()
-
-	_ = os.Setenv(envKubeAuthURL, ts.URL+"/auth")
-	_ = os.Setenv(envKubeTokenURL, ts.URL+"/token")
-
 	type args struct {
 		username string
 		password string
@@ -84,8 +59,32 @@ func TestObtainOpenshiftToken(t *testing.T) {
 		},
 	}
 
+	_ = os.Setenv(envInsecureSkipVerify, "true")
+	_ = os.Setenv(envKubeClientID, "clientid")
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path == "/auth" {
+					w.Header().Set(httpLocationHeader, "https://example.com/callback?code=testcode")
+					w.WriteHeader(http.StatusFound)
+					return
+				}
+
+				if r.URL.Path == "/token" {
+					if r.FormValue(keyCodeParam) == "testcode" {
+						w.Header().Set("Content-Type", "application/json")
+						_, _ = w.Write([]byte(`{"access_token": "test_access_token", "token_type": "bearer"}`))
+					} else {
+						w.WriteHeader(http.StatusBadRequest)
+					}
+					return
+				}
+			}))
+			defer ts.Close()
+
+			_ = os.Setenv(envKubeAuthURL, ts.URL+"/auth")
+			_ = os.Setenv(envKubeTokenURL, ts.URL+"/token")
+
 			if tc.want.mockServerStatus != 0 {
 				ts.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(tc.want.mockServerStatus)
