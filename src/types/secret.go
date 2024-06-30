@@ -25,7 +25,7 @@ type SecretNamespaceUriRequest struct {
 
 type GetSecretsResponse struct {
 	Count   int      `json:"count"`
-	Secrets []Secret `json:"namespaces"`
+	Secrets []Secret `json:"secrets"`
 }
 
 type GetSecretResponse struct {
@@ -42,11 +42,10 @@ type Secret struct {
 }
 
 type UpdateSecretRequest struct {
-	Data []KeyValue `json:"data"`
+	Data []KeyValue `json:"data" binding:"required"`
 }
 
 type UpdateSecretResponse struct {
-	Id            string     `json:"id"`
 	Type          string     `json:"type"`
 	SecretName    string     `json:"secretName"`
 	NamespaceName string     `json:"namespaceName"`

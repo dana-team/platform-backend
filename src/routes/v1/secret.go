@@ -46,10 +46,12 @@ func CreateSecret() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var uriRequest types.SecretNamespaceUriRequest
 		if err := c.BindUri(&uriRequest); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
 			return
 		}
 		var request types.CreateSecretRequest
 		if err := c.BindJSON(&request); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
 			return
 		}
 
@@ -64,6 +66,7 @@ func GetSecrets() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var request types.SecretNamespaceUriRequest
 		if err := c.BindUri(&request); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
 			return
 		}
 
@@ -78,6 +81,7 @@ func GetSecret() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var request types.SecretUriRequest
 		if err := c.BindUri(&request); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
 			return
 		}
 
@@ -92,10 +96,12 @@ func UpdateSecret() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var uriRequest types.SecretUriRequest
 		if err := c.BindUri(&uriRequest); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
 			return
 		}
 		var request types.UpdateSecretRequest
 		if err := c.BindJSON(&request); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
 			return
 		}
 
@@ -110,6 +116,7 @@ func DeleteSecret() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var request types.SecretUriRequest
 		if err := c.BindUri(&request); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
 			return
 		}
 
