@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"github.com/dana-team/platform-backend/src/utils"
 
 	"github.com/dana-team/platform-backend/src/types"
 	"go.uber.org/zap"
@@ -138,7 +139,7 @@ func (n *secretController) UpdateSecret(namespace, name string, request types.Up
 		n.logger.Error(fmt.Sprintf("Could not get secret %q with error: %v", name, err.Error()))
 		return types.UpdateSecretResponse{}, err
 	}
-	secret.Data = convertKeyValueToByteMap(request.Data)
+	secret.Data = utils.ConvertKeyValueToByteMap(request.Data)
 
 	result, err := n.client.CoreV1().Secrets(namespace).Update(n.ctx, secret, metav1.UpdateOptions{})
 	if err != nil {

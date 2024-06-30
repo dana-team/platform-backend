@@ -3,6 +3,8 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/dana-team/platform-backend/src/utils"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 
 	"github.com/dana-team/container-app-operator/api/v1alpha1"
@@ -61,8 +63,8 @@ func createCappFromV1Capp(capp v1alpha1.Capp) types.Capp {
 			Name:      capp.Name,
 			Namespace: capp.Namespace,
 		},
-		Annotations: convertMapToKeyValue(capp.Annotations),
-		Labels:      convertMapToKeyValue(capp.Labels),
+		Annotations: utils.ConvertMapToKeyValue(capp.Annotations),
+		Labels:      utils.ConvertMapToKeyValue(capp.Labels),
 		Spec: v1alpha1.CappSpec{
 			ScaleMetric:       capp.Spec.ScaleMetric,
 			Site:              capp.Spec.Site,
@@ -92,7 +94,7 @@ func (c *cappController) GetCapps(namespace string, cappQuery types.CappQuery) (
 	selector, err := labels.Parse(cappQuery.LabelSelector)
 	if err != nil {
 		c.logger.Error(fmt.Sprintf("Could not parse labelSelector with error: %v", err.Error()))
-		return types.CappList{}, err
+		return types.CappList{}, k8serrors.NewBadRequest(err.Error())
 	}
 
 	err = c.client.List(c.ctx, cappList, &client.ListOptions{
@@ -141,8 +143,8 @@ func (c *cappController) UpdateCapp(namespace, name string, newCapp types.Update
 		return types.Capp{}, err
 	}
 
-	capp.Annotations = convertKeyValueToMap(newCapp.Annotations)
-	capp.Labels = convertKeyValueToMap(newCapp.Labels)
+	capp.Annotations = utils.ConvertKeyValueToMap(newCapp.Annotations)
+	capp.Labels = utils.ConvertKeyValueToMap(newCapp.Labels)
 	capp.Spec = newCapp.Spec
 
 	if err := c.client.Update(c.ctx, capp); err != nil {
@@ -164,7 +166,7 @@ func (c *cappController) DeleteCapp(namespace, name string) (types.CappError, er
 	}
 	if err := c.client.Delete(c.ctx, capp); err != nil {
 		c.logger.Error(fmt.Sprintf("Could not delete capp %q in namespace %q with error: %v", name, namespace, err.Error()))
-		return types.CappError{}, nil
+		return types.CappError{}, err
 	}
 
 	return types.CappError{
@@ -177,8 +179,8 @@ func createCappFromType(namespace string, capp types.CreateCapp) v1alpha1.Capp {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        capp.Metadata.Name,
 			Namespace:   namespace,
-			Annotations: convertKeyValueToMap(capp.Annotations),
-			Labels:      convertKeyValueToMap(capp.Labels),
+			Annotations: utils.ConvertKeyValueToMap(capp.Annotations),
+			Labels:      utils.ConvertKeyValueToMap(capp.Labels),
 		},
 		Spec: v1alpha1.CappSpec{
 			ScaleMetric:       capp.Spec.ScaleMetric,
@@ -198,8 +200,8 @@ func convertCappToType(capp v1alpha1.Capp) types.Capp {
 			Name:      capp.Name,
 			Namespace: capp.Namespace,
 		},
-		Annotations: convertMapToKeyValue(capp.Annotations),
-		Labels:      convertMapToKeyValue(capp.Labels),
+		Annotations: utils.ConvertMapToKeyValue(capp.Annotations),
+		Labels:      utils.ConvertMapToKeyValue(capp.Labels),
 		Spec: v1alpha1.CappSpec{
 			ScaleMetric:       capp.Spec.ScaleMetric,
 			Site:              capp.Spec.Site,
