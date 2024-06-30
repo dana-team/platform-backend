@@ -33,7 +33,7 @@ const (
 
 func TestMain(m *testing.M) {
 	setup()
-	createTestSecret()
+	createTestSecret("test-secret", "default")
 	createTestNamespace(testNamespace)
 	setupCappRevisions()
 	createTestCapp()
@@ -119,18 +119,18 @@ func createTestNamespace(name string) {
 	}
 }
 
-func createTestSecret() {
+func createTestSecret(secretName string, namespace string) {
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-secret",
-			Namespace: "default",
+			Name:      secretName,
+			Namespace: namespace,
 		},
 		Type: v1.SecretTypeOpaque,
 		Data: map[string][]byte{
 			"key1": []byte("ZmFrZQ=="),
 		},
 	}
-	_, err := client.CoreV1().Secrets("default").Create(context.TODO(), secret, metav1.CreateOptions{})
+	_, err := client.CoreV1().Secrets(namespace).Create(context.TODO(), secret, metav1.CreateOptions{})
 	if err != nil {
 		panic(err)
 	}

@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/base64"
 	"github.com/dana-team/platform-backend/src/types"
 )
 
@@ -29,7 +30,7 @@ func convertMapToKeyValue(values map[string]string) []types.KeyValue {
 func convertKeyValueToByteMap(kvList []types.KeyValue) map[string][]byte {
 	data := map[string][]byte{}
 	for _, kv := range kvList {
-		data[kv.Key] = []byte(kv.Value)
+		data[kv.Key] = []byte(base64.StdEncoding.EncodeToString([]byte(kv.Value)))
 	}
 	return data
 }
