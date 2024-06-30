@@ -1,10 +1,12 @@
 package v1_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
+	"github.com/dana-team/platform-backend/src/routes/mocks"
 	"github.com/dana-team/platform-backend/src/types"
-	"github.com/dana-team/platform-backend/src/utils"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
@@ -15,15 +17,22 @@ import (
 const (
 	cappRevisionNamespace = testName + "-capp-revision-ns"
 	cappRevisionName      = testName + "-capp-revision"
-	labelSelectorKey      = "labelSelector"
-	labelKey              = "key"
-	labelValue            = "value"
+	capprevisions         = "capprevisions"
 )
 
 func setupCappRevisions() {
 	createTestNamespace(cappRevisionNamespace)
-	createTestCappRevision(cappRevisionName+"-1", cappRevisionNamespace, map[string]string{labelKey + "-1": labelValue + "-1"}, map[string]string{})
-	createTestCappRevision(cappRevisionName+"-2", cappRevisionNamespace, map[string]string{labelKey + "-2": labelValue + "-2"}, map[string]string{})
+	createTestCappRevision(cappRevisionName+"-1", cappRevisionNamespace, map[string]string{labelKey + "-1": labelValue + "-1"}, nil)
+	createTestCappRevision(cappRevisionName+"-2", cappRevisionNamespace, map[string]string{labelKey + "-2": labelValue + "-2"}, nil)
+}
+
+// createTestCappRevision creates a test CappRevision object.
+func createTestCappRevision(name, namespace string, labels, annotations map[string]string) {
+	cappRevision := mocks.PrepareCappRevision(name, namespace, labels, annotations)
+	err := dynClient.Create(context.TODO(), &cappRevision)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func TestGetCappRevisions(t *testing.T) {
@@ -39,7 +48,7 @@ func TestGetCappRevisions(t *testing.T) {
 
 	type want struct {
 		statusCode int
-		response   types.CappRevisionList
+		response   map[string]interface{}
 	}
 
 	cases := map[string]struct {
@@ -52,16 +61,10 @@ func TestGetCappRevisions(t *testing.T) {
 			},
 			want: want{
 				statusCode: http.StatusOK,
-				response:   types.CappRevisionList{Count: 2, CappRevisions: []string{cappRevisionName + "-1", cappRevisionName + "-2"}},
-			},
-		},
-		"ShouldFailWithBadRequestInvalidURI": {
-			requestParams: requestParams{
-				namespace: "",
-			},
-			want: want{
-				statusCode: http.StatusBadRequest,
-				response:   types.CappRevisionList{},
+				response: map[string]interface{}{
+					capprevisions: []string{cappRevisionName + "-1", cappRevisionName + "-2"},
+					count:         2,
+				},
 			},
 		},
 		"ShouldSucceedGettingCappRevisionsWithLabelSelector": {
@@ -74,7 +77,10 @@ func TestGetCappRevisions(t *testing.T) {
 			},
 			want: want{
 				statusCode: http.StatusOK,
-				response:   types.CappRevisionList{Count: 1, CappRevisions: []string{cappRevisionName + "-1"}},
+				response: map[string]interface{}{
+					capprevisions: []string{cappRevisionName + "-1"},
+					count:         1,
+				},
 			},
 		},
 		"ShouldFailGettingCappRevisionsWithInvalidLabelSelector": {
@@ -87,7 +93,10 @@ func TestGetCappRevisions(t *testing.T) {
 			},
 			want: want{
 				statusCode: http.StatusBadRequest,
-				response:   types.CappRevisionList{},
+				response: map[string]interface{}{
+					detailsKey: "found '1', expected: ',' or 'end of string'",
+					errorKey:   operationFailed,
+				},
 			},
 		},
 		"ShouldSucceedGettingNoCappRevisionsWithLabelSelector": {
@@ -100,7 +109,10 @@ func TestGetCappRevisions(t *testing.T) {
 			},
 			want: want{
 				statusCode: http.StatusOK,
-				response:   types.CappRevisionList{Count: 0, CappRevisions: nil},
+				response: map[string]interface{}{
+					capprevisions: nil,
+					count:         0,
+				},
 			},
 		},
 	}
@@ -114,22 +126,22 @@ func TestGetCappRevisions(t *testing.T) {
 			}
 
 			baseURI := fmt.Sprintf("/v1/namespaces/%s/capprevisions/", test.requestParams.namespace)
-
-			request, _ := http.NewRequest("GET", fmt.Sprintf("%s?%s", baseURI, params.Encode()), nil)
+			request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s?%s", baseURI, params.Encode()), nil)
+			assert.NoError(t, err)
 			writer := httptest.NewRecorder()
 			router.ServeHTTP(writer, request)
 
 			assert.Equal(t, test.want.statusCode, writer.Code)
 
-			if writer.Code == http.StatusOK {
-				var response types.CappRevisionList
-				if err := json.Unmarshal(writer.Body.Bytes(), &response); err != nil {
-					panic(err)
-				}
+			var response map[string]interface{}
+			err = json.Unmarshal(writer.Body.Bytes(), &response)
+			assert.NoError(t, err)
 
-				assert.Equal(t, test.want.response.Count, response.Count)
-				assert.Equal(t, test.want.response.CappRevisions, response.CappRevisions)
-			}
+			wantResponseJSON, _ := json.Marshal(test.want.response)
+			var wantResponseNormalized map[string]interface{}
+			err = json.Unmarshal(wantResponseJSON, &wantResponseNormalized)
+			assert.NoError(t, err)
+			assert.Equal(t, wantResponseNormalized, response)
 		})
 	}
 }
@@ -142,7 +154,7 @@ func TestGetCappRevision(t *testing.T) {
 
 	type want struct {
 		statusCode int
-		response   types.CappRevision
+		response   map[string]interface{}
 	}
 
 	cases := map[string]struct {
@@ -156,17 +168,39 @@ func TestGetCappRevision(t *testing.T) {
 			},
 			want: want{
 				statusCode: http.StatusOK,
-				response: utils.GetBareCappRevisionType(cappRevisionName+"-1", cappRevisionNamespace,
-					[]types.KeyValue{{Key: "key1", Value: "value-1"}}, []types.KeyValue{}),
+				response: map[string]interface{}{
+					metadata:    types.Metadata{Name: cappRevisionName + "-1", Namespace: cappRevisionNamespace},
+					labels:      []types.KeyValue{{Key: labelKey + "-1", Value: labelValue + "-1"}},
+					annotations: nil,
+					spec:        mocks.PrepareCappRevisionSpec(),
+					status:      mocks.PrepareCappRevisionStatus(),
+				},
 			},
 		},
-		"ShouldFailWithBadRequestInvalidURI": {
+		"ShouldHandleNotFoundCappRevision": {
 			requestParams: requestParams{
-				namespace: "",
+				namespace: cappRevisionNamespace,
+				name:      cappRevisionName + "-1" + nonExistentSuffix,
 			},
 			want: want{
-				statusCode: http.StatusBadRequest,
-				response:   types.CappRevision{},
+				statusCode: http.StatusNotFound,
+				response: map[string]interface{}{
+					detailsKey: fmt.Sprintf("%s.%s %q not found", capprevisions, cappv1alpha1.GroupVersion.Group, cappRevisionName+"-1"+nonExistentSuffix),
+					errorKey:   operationFailed,
+				},
+			},
+		},
+		"ShouldHandleNotFoundNamespace": {
+			requestParams: requestParams{
+				namespace: cappRevisionNamespace + nonExistentSuffix,
+				name:      cappRevisionName + "-1",
+			},
+			want: want{
+				statusCode: http.StatusNotFound,
+				response: map[string]interface{}{
+					detailsKey: fmt.Sprintf("capprevisions.%s %q not found", cappv1alpha1.GroupVersion.Group, cappRevisionName+"-1"),
+					errorKey:   operationFailed,
+				},
 			},
 		},
 	}
@@ -174,21 +208,22 @@ func TestGetCappRevision(t *testing.T) {
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
 			baseURI := fmt.Sprintf("/v1/namespaces/%s/capprevisions/%s", test.requestParams.namespace, test.requestParams.name)
-			request, _ := http.NewRequest("GET", baseURI, nil)
+			request, err := http.NewRequest(http.MethodGet, baseURI, nil)
+			assert.NoError(t, err)
 			writer := httptest.NewRecorder()
 			router.ServeHTTP(writer, request)
 
 			assert.Equal(t, test.want.statusCode, writer.Code)
 
-			if writer.Code == http.StatusOK {
-				var response types.CappRevision
-				if err := json.Unmarshal(writer.Body.Bytes(), &response); err != nil {
-					panic(err)
-				}
+			var response map[string]interface{}
+			err = json.Unmarshal(writer.Body.Bytes(), &response)
+			assert.NoError(t, err)
 
-				assert.Equal(t, test.want.response.Metadata.Name, response.Metadata.Name)
-				assert.Equal(t, test.want.response.Metadata.Namespace, response.Metadata.Namespace)
-			}
+			wantResponseJSON, _ := json.Marshal(test.want.response)
+			var wantResponseNormalized map[string]interface{}
+			err = json.Unmarshal(wantResponseJSON, &wantResponseNormalized)
+			assert.NoError(t, err)
+			assert.Equal(t, wantResponseNormalized, response)
 		})
 	}
 }
