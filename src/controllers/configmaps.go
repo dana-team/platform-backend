@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/dana-team/platform-backend/src/utils"
 
 	"github.com/dana-team/platform-backend/src/types"
 	"go.uber.org/zap"
@@ -42,6 +43,6 @@ func (c *configMapController) GetConfigMap(namespace string, name string) (types
 	c.logger.Debug(fmt.Sprintf("Got config map %q successfully", name))
 
 	return types.ConfigMap{
-		Data: convertMapToKeyValue(configMap.Data),
+		Data: utils.ConvertMapToKeyValue(configMap.Data),
 	}, nil
 }

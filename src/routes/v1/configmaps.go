@@ -46,6 +46,7 @@ func GetConfigMap() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var uriRequest types.ConfigMapUri
 		if err := c.BindUri(&uriRequest); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
 			return
 		}
 
