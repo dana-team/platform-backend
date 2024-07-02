@@ -80,6 +80,8 @@ func TestGetSecret(t *testing.T) {
 			},
 		},
 	}
+
+	setup()
 	createTestNamespace(secretNamespace)
 	createTestSecret(secretName, secretNamespace)
 
@@ -136,6 +138,8 @@ func TestGetSecrets(t *testing.T) {
 			},
 		},
 	}
+
+	setup()
 	createTestNamespace(secretNamespace)
 	createTestSecret("test-secret1", secretNamespace)
 	createTestSecret("test-secret2", secretNamespace)
@@ -186,7 +190,7 @@ func TestDeleteSecret(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					message: fmt.Sprintf("Secret %q was deleted successfully", secretName)},
+					messageKey: fmt.Sprintf("Secret %q was deleted successfully", secretName)},
 			},
 		},
 		"ShouldHandleNotFoundSecret": {
@@ -216,6 +220,8 @@ func TestDeleteSecret(t *testing.T) {
 			},
 		},
 	}
+
+	setup()
 	createTestNamespace(secretNamespace)
 	createTestSecret(secretName, secretNamespace)
 
@@ -300,6 +306,7 @@ func TestCreateSecret(t *testing.T) {
 		},
 	}
 
+	setup()
 	createTestNamespace(secretNamespace)
 	createTestSecret("test-secret", secretNamespace)
 
@@ -390,6 +397,8 @@ func TestUpdateSecret(t *testing.T) {
 			},
 		},
 	}
+
+	setup()
 	createTestNamespace(secretNamespace)
 	createTestSecret("test-secret", secretNamespace)
 

@@ -15,21 +15,16 @@ import (
 )
 
 const (
-	configMapNamespace = testName + "-configmap-ns"
 	configMapName      = testName + "-configmap"
 	configKey          = "key"
 	configValue        = "value"
-	configmaps         = "configmaps"
+	configmapsKey      = "configmaps"
+	configMapNamespace = testNamespace + configmapsKey
 )
-
-func setupConfigMaps() {
-	createTestNamespace(configMapNamespace)
-	createTestConfigMap(configMapName+"-1", configMapNamespace)
-}
 
 // createTestConfigMap creates a test ConfigMap object.
 func createTestConfigMap(name, namespace string) {
-	configMap := mocks.PrepareConfigMap(name, namespace, map[string]string{configKey + "-1": configValue + "-1"})
+	configMap := mocks.PrepareConfigMap(name, namespace, map[string]string{configKey: configValue})
 	_, err := client.CoreV1().ConfigMaps(namespace).Create(context.TODO(), &configMap, metav1.CreateOptions{})
 	if err != nil {
 		panic(err)
@@ -37,6 +32,8 @@ func createTestConfigMap(name, namespace string) {
 }
 
 func TestGetConfigMap(t *testing.T) {
+	testNamespaceName := configMapNamespace + "-get"
+
 	type requestParams struct {
 		name      string
 		namespace string
@@ -53,43 +50,47 @@ func TestGetConfigMap(t *testing.T) {
 	}{
 		"ShouldSucceedGettingConfigMap": {
 			requestParams: requestParams{
-				namespace: configMapNamespace,
-				name:      configMapName + "-1",
+				namespace: testNamespaceName,
+				name:      configMapName,
 			},
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					data: []types.KeyValue{{Key: configKey + "-1", Value: configValue + "-1"}},
+					data: []types.KeyValue{{Key: configKey, Value: configValue}},
 				},
 			},
 		},
 		"ShouldHandleNotFoundConfigMap": {
 			requestParams: requestParams{
-				namespace: configMapNamespace,
-				name:      configMapName + "-1" + nonExistentSuffix,
+				namespace: testNamespaceName,
+				name:      configMapName + nonExistentSuffix,
 			},
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					detailsKey: fmt.Sprintf("%s %q not found", configmaps, configMapName+"-1"+nonExistentSuffix),
+					detailsKey: fmt.Sprintf("%s %q not found", configmapsKey, configMapName+nonExistentSuffix),
 					errorKey:   operationFailed,
 				},
 			},
 		},
 		"ShouldHandleNotFoundNamespace": {
 			requestParams: requestParams{
-				namespace: configMapNamespace + nonExistentSuffix,
-				name:      configMapName + "-1",
+				namespace: testNamespaceName + nonExistentSuffix,
+				name:      configMapName,
 			},
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					detailsKey: fmt.Sprintf("%s %q not found", configmaps, configMapName+"-1"),
+					detailsKey: fmt.Sprintf("%s %q not found", configmapsKey, configMapName),
 					errorKey:   operationFailed,
 				},
 			},
 		},
 	}
+
+	setup()
+	createTestNamespace(testNamespaceName)
+	createTestConfigMap(configMapName, testNamespaceName)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -105,7 +106,8 @@ func TestGetConfigMap(t *testing.T) {
 			err = json.Unmarshal(writer.Body.Bytes(), &response)
 			assert.NoError(t, err)
 
-			wantResponseJSON, _ := json.Marshal(test.want.response)
+			wantResponseJSON, err := json.Marshal(test.want.response)
+			assert.NoError(t, err)
 			var wantResponseNormalized map[string]interface{}
 			err = json.Unmarshal(wantResponseJSON, &wantResponseNormalized)
 			assert.NoError(t, err)

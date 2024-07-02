@@ -42,7 +42,7 @@ func namespaceHandler(handler func(controller controllers.NamespaceController, c
 	}
 }
 
-func ListNamespaces() gin.HandlerFunc {
+func GetNamespaces() gin.HandlerFunc {
 	return namespaceHandler(func(controller controllers.NamespaceController, c *gin.Context) (interface{}, error) {
 		return controller.GetNamespaces()
 	})
@@ -52,6 +52,7 @@ func GetNamespace() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var namespaceUri types.NamespaceUri
 		if err := c.BindUri(&namespaceUri); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
 			return
 		}
 
@@ -65,6 +66,7 @@ func CreateNamespace() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var namespace types.Namespace
 		if err := c.BindJSON(&namespace); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
 			return
 		}
 
@@ -78,12 +80,13 @@ func DeleteNamespace() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var namespaceUri types.NamespaceUri
 		if err := c.BindUri(&namespaceUri); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
 			return
 		}
 
 		namespaceHandler(func(controller controllers.NamespaceController, c *gin.Context) (interface{}, error) {
 			name := namespaceUri.NamespaceName
-			message := fmt.Sprintf("Deleted namespace successfully %s", name)
+			message := fmt.Sprintf("Deleted namespace successfully %q", name)
 			return gin.H{"message": message}, controller.DeleteNamespace(name)
 		})(c)
 	}
