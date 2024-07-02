@@ -148,9 +148,9 @@ func (n *secretController) UpdateSecret(namespace, name string, request types.Up
 	}
 
 	response := types.UpdateSecretResponse{
-		Id:         string(result.UID),
-		Type:       string(result.Type),
-		SecretName: result.Name,
+		Type:          string(result.Type),
+		SecretName:    result.Name,
+		NamespaceName: result.Namespace,
 	}
 	for k, v := range result.Data {
 		value, err := base64.StdEncoding.DecodeString(string(v))
