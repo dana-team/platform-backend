@@ -9,10 +9,12 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/stretchr/testify v1.9.0
 	go.uber.org/zap v1.27.0
-	golang.org/x/oauth2 v0.20.0
+	golang.org/x/oauth2 v0.21.0
 	k8s.io/api v0.30.2
 	k8s.io/apimachinery v0.30.2
 	k8s.io/client-go v0.30.2
+	knative.dev/pkg v0.0.0-20240116073220-b488e7be5902
+	knative.dev/serving v0.40.1
 	sigs.k8s.io/controller-runtime v0.18.4
 )
 
@@ -93,8 +95,6 @@ require (
 	k8s.io/kube-openapi v0.0.0-20240430033511-f0e62f92d13f // indirect
 	k8s.io/utils v0.0.0-20240502163921-fe8a2dddb1d0 // indirect
 	knative.dev/networking v0.0.0-20240116081125-ce0738abf051 // indirect
-	knative.dev/pkg v0.0.0-20240116073220-b488e7be5902 // indirect
-	knative.dev/serving v0.40.1 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
