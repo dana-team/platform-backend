@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"encoding/base64"
 	"github.com/dana-team/platform-backend/src/types"
 )
 
@@ -23,14 +22,4 @@ func ConvertMapToKeyValue(values map[string]string) []types.KeyValue {
 		kvList = append(kvList, types.KeyValue{Key: k, Value: v})
 	}
 	return kvList
-}
-
-// ConvertKeyValueToByteMap converts a slice of KeyValue pairs
-// to a map with string keys and byte slice values.
-func ConvertKeyValueToByteMap(kvList []types.KeyValue) map[string][]byte {
-	data := map[string][]byte{}
-	for _, kv := range kvList {
-		data[kv.Key] = []byte(base64.StdEncoding.EncodeToString([]byte(kv.Value)))
-	}
-	return data
 }

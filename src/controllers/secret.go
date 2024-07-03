@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"github.com/dana-team/platform-backend/src/utils"
-
 	"github.com/dana-team/platform-backend/src/types"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
@@ -111,23 +109,19 @@ func (n *secretController) GetSecret(namespace, name string) (types.GetSecretRes
 
 	n.logger.Debug("Fetched secret successfully")
 
+	secretData, err := decodeData(secret.Data)
+	if err != nil {
+		n.logger.Error(fmt.Sprintf("Error decoding secret %q value: %v", secret.Name, err.Error()))
+		return types.GetSecretResponse{}, k8serrors.NewInternalError(err)
+
+	}
 	response := types.GetSecretResponse{
 		Id:         string(secret.UID),
 		Type:       string(secret.Type),
 		SecretName: secret.Name,
+		Data:       secretData,
 	}
-	for k, v := range secret.Data {
-		value, err := base64.StdEncoding.DecodeString(string(v))
-		if err != nil {
-			n.logger.Error(fmt.Sprintf("Error decoding secret %q value: %v", name, err.Error()))
-			continue
-		}
 
-		response.Data = append(response.Data, types.KeyValue{
-			Key:   k,
-			Value: string(value),
-		})
-	}
 	return response, nil
 }
 
@@ -139,7 +133,7 @@ func (n *secretController) UpdateSecret(namespace, name string, request types.Up
 		n.logger.Error(fmt.Sprintf("Could not get secret %q with error: %v", name, err.Error()))
 		return types.UpdateSecretResponse{}, err
 	}
-	secret.Data = utils.ConvertKeyValueToByteMap(request.Data)
+	secret.Data = convertKeyValueToByteMap(request.Data)
 
 	result, err := n.client.CoreV1().Secrets(namespace).Update(n.ctx, secret, metav1.UpdateOptions{})
 	if err != nil {
@@ -147,23 +141,20 @@ func (n *secretController) UpdateSecret(namespace, name string, request types.Up
 		return types.UpdateSecretResponse{}, err
 	}
 
+	secretData, err := decodeData(result.Data)
+	if err != nil {
+		n.logger.Error(fmt.Sprintf("Error decoding secret %q value: %v", result.Name, err.Error()))
+		return types.UpdateSecretResponse{}, k8serrors.NewInternalError(err)
+
+	}
+
 	response := types.UpdateSecretResponse{
 		Type:          string(result.Type),
 		SecretName:    result.Name,
 		NamespaceName: result.Namespace,
+		Data:          secretData,
 	}
-	for k, v := range result.Data {
-		value, err := base64.StdEncoding.DecodeString(string(v))
-		if err != nil {
-			n.logger.Error(fmt.Sprintf("Error decoding secret %q value: %v", result.Name, err.Error()))
-			continue
-		}
 
-		response.Data = append(response.Data, types.KeyValue{
-			Key:   k,
-			Value: string(value),
-		})
-	}
 	return response, nil
 }
 
@@ -213,4 +204,32 @@ func newSecretFromRequest(namespace string, request types.CreateSecretRequest) (
 		return secret, k8serrors.NewBadRequest("unsupported secret type")
 	}
 	return secret, nil
+}
+
+// convertKeyValueToByteMap converts a slice of KeyValue pairs
+// to a map with string keys and byte slice values.
+func convertKeyValueToByteMap(kvList []types.KeyValue) map[string][]byte {
+	data := map[string][]byte{}
+	for _, kv := range kvList {
+		data[kv.Key] = []byte(base64.StdEncoding.EncodeToString([]byte(kv.Value)))
+	}
+	return data
+}
+
+// decodeData decodes secret data.
+func decodeData(encodedData map[string][]byte) ([]types.KeyValue, error) {
+	var decodedData []types.KeyValue
+	for k, v := range encodedData {
+		value, err := base64.StdEncoding.DecodeString(string(v))
+		if err != nil {
+			return decodedData, err
+		}
+
+		decodedData = append(decodedData, types.KeyValue{
+			Key:   k,
+			Value: string(value),
+		})
+	}
+	
+	return decodedData, nil
 }
