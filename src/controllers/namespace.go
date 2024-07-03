@@ -57,6 +57,7 @@ func (n *namespaceController) GetNamespace(name string) (types.Namespace, error)
 	namespace, err := n.client.CoreV1().Namespaces().Get(n.ctx, name, metav1.GetOptions{})
 	if err != nil {
 		n.logger.Error(fmt.Sprintf("Could not fetch namespace %q with error: %s", name, err.Error()))
+		return types.Namespace{}, err
 	}
 
 	n.logger.Debug(fmt.Sprintf("Fetched namespace %q successfully", name))
@@ -83,6 +84,7 @@ func (n *namespaceController) DeleteNamespace(name string) error {
 
 	if err := n.client.CoreV1().Namespaces().Delete(n.ctx, name, metav1.DeleteOptions{}); err != nil {
 		n.logger.Debug(fmt.Sprintf("Deleted namespace %q successfully", name))
+		return err
 	}
 	return nil
 }

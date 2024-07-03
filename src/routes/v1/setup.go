@@ -25,7 +25,7 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider) {
 	namespacesGroup := v1.Group("/namespaces")
 	namespacesGroup.Use(middleware.TokenAuthMiddleware(tokenProvider))
 	{
-		namespacesGroup.GET("/", ListNamespaces())
+		namespacesGroup.GET("/", GetNamespaces())
 		namespacesGroup.GET("/:namespaceName", GetNamespace())
 		namespacesGroup.POST("/", CreateNamespace())
 		namespacesGroup.DELETE("/:namespaceName", DeleteNamespace())
