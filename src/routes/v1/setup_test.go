@@ -12,7 +12,6 @@ import (
 	routev1 "github.com/dana-team/platform-backend/src/routes/v1"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
@@ -136,23 +135,6 @@ func createTestNamespace(name string) {
 	namespace := mocks.PrepareNamespace(name)
 	_, err := client.CoreV1().Namespaces().Create(context.TODO(), &namespace, metav1.CreateOptions{})
 
-	if err != nil {
-		panic(err)
-	}
-}
-
-func createTestSecret(secretName string, namespace string) {
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      secretName,
-			Namespace: namespace,
-		},
-		Type: corev1.SecretTypeOpaque,
-		Data: map[string][]byte{
-			"key1": []byte("ZmFrZQ=="),
-		},
-	}
-	_, err := client.CoreV1().Secrets(namespace).Create(context.TODO(), secret, metav1.CreateOptions{})
 	if err != nil {
 		panic(err)
 	}

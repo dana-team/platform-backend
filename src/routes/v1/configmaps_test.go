@@ -34,7 +34,7 @@ func createTestConfigMap(name, namespace string) {
 func TestGetConfigMap(t *testing.T) {
 	testNamespaceName := configMapNamespace + "-get"
 
-	type requestParams struct {
+	type requestURI struct {
 		name      string
 		namespace string
 	}
@@ -45,11 +45,11 @@ func TestGetConfigMap(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		requestParams requestParams
-		want          want
+		requestURI requestURI
+		want       want
 	}{
 		"ShouldSucceedGettingConfigMap": {
-			requestParams: requestParams{
+			requestURI: requestURI{
 				namespace: testNamespaceName,
 				name:      configMapName,
 			},
@@ -61,7 +61,7 @@ func TestGetConfigMap(t *testing.T) {
 			},
 		},
 		"ShouldHandleNotFoundConfigMap": {
-			requestParams: requestParams{
+			requestURI: requestURI{
 				namespace: testNamespaceName,
 				name:      configMapName + nonExistentSuffix,
 			},
@@ -74,7 +74,7 @@ func TestGetConfigMap(t *testing.T) {
 			},
 		},
 		"ShouldHandleNotFoundNamespace": {
-			requestParams: requestParams{
+			requestURI: requestURI{
 				namespace: testNamespaceName + nonExistentSuffix,
 				name:      configMapName,
 			},
@@ -94,7 +94,7 @@ func TestGetConfigMap(t *testing.T) {
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
-			baseURI := fmt.Sprintf("/v1/namespaces/%s/configmaps/%s", test.requestParams.namespace, test.requestParams.name)
+			baseURI := fmt.Sprintf("/v1/namespaces/%s/configmaps/%s", test.requestURI.namespace, test.requestURI.name)
 			request, err := http.NewRequest(http.MethodGet, baseURI, nil)
 			assert.NoError(t, err)
 			writer := httptest.NewRecorder()

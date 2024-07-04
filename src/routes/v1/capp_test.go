@@ -48,7 +48,7 @@ func TestGetCapps(t *testing.T) {
 		values []string
 	}
 
-	type requestParams struct {
+	type requestURI struct {
 		namespace     string
 		labelSelector selector
 	}
@@ -59,11 +59,11 @@ func TestGetCapps(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		requestParams requestParams
-		want          want
+		requestURI requestURI
+		want       want
 	}{
 		"ShouldSucceedGettingCapps": {
-			requestParams: requestParams{
+			requestURI: requestURI{
 				namespace: testNamespaceName,
 			},
 			want: want{
@@ -80,7 +80,7 @@ func TestGetCapps(t *testing.T) {
 			},
 		},
 		"ShouldSucceedGettingCappsWithLabelSelector": {
-			requestParams: requestParams{
+			requestURI: requestURI{
 				namespace: testNamespaceName,
 				labelSelector: selector{
 					keys:   []string{labelKey + "-1"},
@@ -98,7 +98,7 @@ func TestGetCapps(t *testing.T) {
 			},
 		},
 		"ShouldFailGettingCappsWithInvalidLabelSelector": {
-			requestParams: requestParams{
+			requestURI: requestURI{
 				namespace: testNamespaceName,
 				labelSelector: selector{
 					keys:   []string{labelKey + "-1"},
@@ -114,7 +114,7 @@ func TestGetCapps(t *testing.T) {
 			},
 		},
 		"ShouldSucceedGettingNoCappsWithLabelSelector": {
-			requestParams: requestParams{
+			requestURI: requestURI{
 				namespace: testNamespaceName,
 				labelSelector: selector{
 					keys:   []string{labelKey + nonExistentSuffix},
@@ -142,11 +142,11 @@ func TestGetCapps(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			params := url.Values{}
 
-			for i, key := range test.requestParams.labelSelector.keys {
-				params.Add(labelSelectorKey, key+"="+test.requestParams.labelSelector.values[i])
+			for i, key := range test.requestURI.labelSelector.keys {
+				params.Add(labelSelectorKey, fmt.Sprintf("%s=%s", key, test.requestURI.labelSelector.values[i]))
 			}
 
-			baseURI := fmt.Sprintf("/v1/namespaces/%s/capps/", test.requestParams.namespace)
+			baseURI := fmt.Sprintf("/v1/namespaces/%s/capps/", test.requestURI.namespace)
 
 			request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s?%s", baseURI, params.Encode()), nil)
 			assert.NoError(t, err)
@@ -172,7 +172,7 @@ func TestGetCapps(t *testing.T) {
 func TestGetCapp(t *testing.T) {
 	testNamespaceName := cappNamespace + "-get-one"
 
-	type requestParams struct {
+	type requestURI struct {
 		name      string
 		namespace string
 	}
@@ -183,11 +183,11 @@ func TestGetCapp(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		requestParams requestParams
-		want          want
+		requestURI requestURI
+		want       want
 	}{
 		"ShouldSucceedGettingCapp": {
-			requestParams: requestParams{
+			requestURI: requestURI{
 				namespace: testNamespaceName,
 				name:      cappName,
 			},
@@ -203,7 +203,7 @@ func TestGetCapp(t *testing.T) {
 			},
 		},
 		"ShouldHandleNotFoundCapp": {
-			requestParams: requestParams{
+			requestURI: requestURI{
 				namespace: testNamespaceName,
 				name:      cappName + nonExistentSuffix,
 			},
@@ -216,7 +216,7 @@ func TestGetCapp(t *testing.T) {
 			},
 		},
 		"ShouldHandleNotFoundNamespace": {
-			requestParams: requestParams{
+			requestURI: requestURI{
 				namespace: testNamespaceName + nonExistentSuffix,
 				name:      cappName,
 			},
@@ -236,7 +236,7 @@ func TestGetCapp(t *testing.T) {
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
-			baseURI := fmt.Sprintf("/v1/namespaces/%s/capps/%s", test.requestParams.namespace, test.requestParams.name)
+			baseURI := fmt.Sprintf("/v1/namespaces/%s/capps/%s", test.requestURI.namespace, test.requestURI.name)
 			request, err := http.NewRequest(http.MethodGet, baseURI, nil)
 			assert.NoError(t, err)
 
@@ -262,8 +262,8 @@ func TestGetCapp(t *testing.T) {
 func TestCreateCapp(t *testing.T) {
 	testNamespaceName := cappNamespace + "-create"
 
-	type bodyParams struct {
-		capp types.Capp
+	type requestURI struct {
+		namespace string
 	}
 
 	type want struct {
@@ -272,12 +272,13 @@ func TestCreateCapp(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		bodyParams bodyParams
-		want       want
+		requestURI  requestURI
+		want        want
+		requestData interface{}
 	}{
 		"ShouldSucceedCreatingCapp": {
-			bodyParams: bodyParams{
-				capp: mocks.PrepareCappTypeWithoutStatus(cappName, testNamespaceName, map[string]string{labelKey: labelValue}, nil),
+			requestURI: requestURI{
+				namespace: testNamespaceName,
 			},
 			want: want{
 				statusCode: http.StatusOK,
@@ -289,10 +290,11 @@ func TestCreateCapp(t *testing.T) {
 					status:      cappv1alpha1.CappStatus{},
 				},
 			},
+			requestData: mocks.PrepareCreateCappType(cappName, []types.KeyValue{{Key: labelKey, Value: labelValue}}, nil),
 		},
 		"ShouldFailWithBadRequestBody": {
-			bodyParams: bodyParams{
-				capp: mocks.PrepareCappTypeWithoutStatus("", testNamespaceName, map[string]string{labelKey: labelValue}, nil),
+			requestURI: requestURI{
+				namespace: testNamespaceName,
 			},
 			want: want{
 				statusCode: http.StatusBadRequest,
@@ -301,10 +303,11 @@ func TestCreateCapp(t *testing.T) {
 					errorKey:   invalidRequest,
 				},
 			},
+			requestData: mocks.PrepareCreateCappType("", []types.KeyValue{{Key: labelKey, Value: labelValue}}, nil),
 		},
 		"ShouldHandleAlreadyExists": {
-			bodyParams: bodyParams{
-				capp: mocks.PrepareCappTypeWithoutStatus(cappName+"-1", testNamespaceName, map[string]string{labelKey + "-1": labelValue + "-1"}, nil),
+			requestURI: requestURI{
+				namespace: testNamespaceName,
 			},
 			want: want{
 				statusCode: http.StatusConflict,
@@ -313,6 +316,7 @@ func TestCreateCapp(t *testing.T) {
 					errorKey:   operationFailed,
 				},
 			},
+			requestData: mocks.PrepareCreateCappType(cappName+"-1", []types.KeyValue{{Key: labelKey, Value: labelValue}}, nil),
 		},
 	}
 
@@ -322,11 +326,11 @@ func TestCreateCapp(t *testing.T) {
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
-			body, err := json.Marshal(test.bodyParams.capp)
+			payload, err := json.Marshal(test.requestData)
 			assert.NoError(t, err)
 
-			baseURI := fmt.Sprintf("/v1/namespaces/%s/capps/", test.bodyParams.capp.Metadata.Namespace)
-			request, err := http.NewRequest(http.MethodPost, baseURI, bytes.NewBuffer(body))
+			baseURI := fmt.Sprintf("/v1/namespaces/%s/capps/", test.requestURI.namespace)
+			request, err := http.NewRequest(http.MethodPost, baseURI, bytes.NewBuffer(payload))
 			assert.NoError(t, err)
 			request.Header.Set(contentType, applicationJson)
 
@@ -352,8 +356,9 @@ func TestCreateCapp(t *testing.T) {
 func TestUpdateCapp(t *testing.T) {
 	testNamespaceName := cappNamespace + "-update"
 
-	type bodyParams struct {
-		capp types.Capp
+	type requestURI struct {
+		name      string
+		namespace string
 	}
 
 	type want struct {
@@ -362,12 +367,14 @@ func TestUpdateCapp(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		bodyParams bodyParams
-		want       want
+		requestURI  requestURI
+		want        want
+		requestData interface{}
 	}{
 		"ShouldSucceedUpdatingCapp": {
-			bodyParams: bodyParams{
-				capp: mocks.PrepareCappType(cappName, testNamespaceName, map[string]string{labelKey + "-updated": labelValue + "-updated"}, nil),
+			requestURI: requestURI{
+				name:      cappName,
+				namespace: testNamespaceName,
 			},
 			want: want{
 				statusCode: http.StatusOK,
@@ -379,10 +386,12 @@ func TestUpdateCapp(t *testing.T) {
 					status:      mocks.PrepareCappStatus(cappName, testNamespaceName),
 				},
 			},
+			requestData: mocks.PrepareUpdateCappType([]types.KeyValue{{Key: labelKey + "-updated", Value: labelValue + "-updated"}}, nil),
 		},
 		"ShouldHandleNotFoundCapp": {
-			bodyParams: bodyParams{
-				capp: mocks.PrepareCappType(cappName+nonExistentSuffix, testNamespaceName, map[string]string{labelKey + "-updated": labelValue + "-updated"}, nil),
+			requestURI: requestURI{
+				name:      cappName + nonExistentSuffix,
+				namespace: testNamespaceName,
 			},
 			want: want{
 				statusCode: http.StatusNotFound,
@@ -391,10 +400,12 @@ func TestUpdateCapp(t *testing.T) {
 					errorKey:   operationFailed,
 				},
 			},
+			requestData: mocks.PrepareUpdateCappType([]types.KeyValue{{Key: labelKey + "-updated", Value: labelValue + "-updated"}}, nil),
 		},
 		"ShouldHandleNotFoundNamespace": {
-			bodyParams: bodyParams{
-				capp: mocks.PrepareCappType(cappName, testNamespaceName+nonExistentSuffix, map[string]string{labelKey + "-updated": labelValue + "-updated"}, nil),
+			requestURI: requestURI{
+				name:      cappName,
+				namespace: testNamespaceName + nonExistentSuffix,
 			},
 			want: want{
 				statusCode: http.StatusNotFound,
@@ -403,6 +414,7 @@ func TestUpdateCapp(t *testing.T) {
 					errorKey:   operationFailed,
 				},
 			},
+			requestData: mocks.PrepareUpdateCappType([]types.KeyValue{{Key: labelKey + "-updated", Value: labelValue + "-updated"}}, nil),
 		},
 	}
 
@@ -411,11 +423,11 @@ func TestUpdateCapp(t *testing.T) {
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
-			body, err := json.Marshal(test.bodyParams.capp)
+			payload, err := json.Marshal(test.requestData)
 			assert.NoError(t, err)
 
-			baseURI := fmt.Sprintf("/v1/namespaces/%s/capps/%s", test.bodyParams.capp.Metadata.Namespace, test.bodyParams.capp.Metadata.Name)
-			request, err := http.NewRequest(http.MethodPut, baseURI, bytes.NewBuffer(body))
+			baseURI := fmt.Sprintf("/v1/namespaces/%s/capps/%s", test.requestURI.namespace, test.requestURI.name)
+			request, err := http.NewRequest(http.MethodPut, baseURI, bytes.NewBuffer(payload))
 			assert.NoError(t, err)
 			request.Header.Set(contentType, applicationJson)
 
@@ -503,7 +515,6 @@ func TestDeleteCapp(t *testing.T) {
 			baseURI := fmt.Sprintf("/v1/namespaces/%s/capps/%s", test.requestParams.namespace, test.requestParams.name)
 			request, err := http.NewRequest(http.MethodDelete, baseURI, nil)
 			assert.NoError(t, err)
-			request.Header.Set(contentType, applicationJson)
 
 			writer := httptest.NewRecorder()
 			router.ServeHTTP(writer, request)

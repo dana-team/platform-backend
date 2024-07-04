@@ -37,7 +37,7 @@ func TestGetCappRevisions(t *testing.T) {
 		values []string
 	}
 
-	type requestParams struct {
+	type requestURI struct {
 		namespace     string
 		labelSelector selector
 	}
@@ -48,11 +48,11 @@ func TestGetCappRevisions(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		requestParams requestParams
-		want          want
+		requestURI requestURI
+		want       want
 	}{
 		"ShouldSucceedGettingCappRevisions": {
-			requestParams: requestParams{
+			requestURI: requestURI{
 				namespace: testNamespaceName,
 			},
 			want: want{
@@ -64,7 +64,7 @@ func TestGetCappRevisions(t *testing.T) {
 			},
 		},
 		"ShouldSucceedGettingCappRevisionsWithLabelSelector": {
-			requestParams: requestParams{
+			requestURI: requestURI{
 				namespace: testNamespaceName,
 				labelSelector: selector{
 					keys:   []string{labelKey + "-1"},
@@ -80,7 +80,7 @@ func TestGetCappRevisions(t *testing.T) {
 			},
 		},
 		"ShouldFailGettingCappRevisionsWithInvalidLabelSelector": {
-			requestParams: requestParams{
+			requestURI: requestURI{
 				namespace: testNamespaceName,
 				labelSelector: selector{
 					keys:   []string{labelKey + "-1"},
@@ -96,7 +96,7 @@ func TestGetCappRevisions(t *testing.T) {
 			},
 		},
 		"ShouldSucceedGettingNoCappRevisionsWithLabelSelector": {
-			requestParams: requestParams{
+			requestURI: requestURI{
 				namespace: testNamespaceName,
 				labelSelector: selector{
 					keys:   []string{labelKey + "-3"},
@@ -122,11 +122,11 @@ func TestGetCappRevisions(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			params := url.Values{}
 
-			for i, key := range test.requestParams.labelSelector.keys {
-				params.Add(labelSelectorKey, key+"="+test.requestParams.labelSelector.values[i])
+			for i, key := range test.requestURI.labelSelector.keys {
+				params.Add(labelSelectorKey, fmt.Sprintf("%s=%s", key, test.requestURI.labelSelector.values[i]))
 			}
 
-			baseURI := fmt.Sprintf("/v1/namespaces/%s/capprevisions/", test.requestParams.namespace)
+			baseURI := fmt.Sprintf("/v1/namespaces/%s/capprevisions/", test.requestURI.namespace)
 			request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s?%s", baseURI, params.Encode()), nil)
 			assert.NoError(t, err)
 			writer := httptest.NewRecorder()
