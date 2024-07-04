@@ -167,7 +167,7 @@ func (n *secretController) DeleteSecret(namespace, name string) (types.DeleteSec
 	}
 
 	return types.DeleteSecretResponse{
-		Message: fmt.Sprintf("Secret %q was deleted successfully", name),
+		Message: fmt.Sprintf("Deleted secret %q in namespace %q successfully", name, namespace),
 	}, nil
 }
 
@@ -230,6 +230,5 @@ func decodeData(encodedData map[string][]byte) ([]types.KeyValue, error) {
 			Value: string(value),
 		})
 	}
-	
 	return decodedData, nil
 }

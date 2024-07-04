@@ -71,7 +71,7 @@ func TestGetNamespaces(t *testing.T) {
 func TestGetNamespace(t *testing.T) {
 	testNamespaceName := nsName + "-get-one"
 
-	type requestParams struct {
+	type requestURI struct {
 		name string
 	}
 
@@ -81,11 +81,11 @@ func TestGetNamespace(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		requestParams requestParams
-		want          want
+		requestURI requestURI
+		want       want
 	}{
 		"ShouldSucceedGettingNamespace": {
-			requestParams: requestParams{
+			requestURI: requestURI{
 				name: testNamespaceName + "-1",
 			},
 			want: want{
@@ -96,7 +96,7 @@ func TestGetNamespace(t *testing.T) {
 			},
 		},
 		"ShouldHandleNotFoundNamespace": {
-			requestParams: requestParams{
+			requestURI: requestURI{
 				name: testNamespaceName + "-1" + nonExistentSuffix,
 			},
 			want: want{
@@ -114,7 +114,7 @@ func TestGetNamespace(t *testing.T) {
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
-			baseURI := fmt.Sprintf("/v1/namespaces/%s", test.requestParams.name)
+			baseURI := fmt.Sprintf("/v1/namespaces/%s", test.requestURI.name)
 			request, err := http.NewRequest(http.MethodGet, baseURI, nil)
 			assert.NoError(t, err)
 
@@ -140,34 +140,25 @@ func TestGetNamespace(t *testing.T) {
 func TestCreateNamespace(t *testing.T) {
 	testNamespaceName := nsName + "-create"
 
-	type bodyParams struct {
-		ns types.Namespace
-	}
-
 	type want struct {
 		statusCode int
 		response   map[string]interface{}
 	}
 
 	cases := map[string]struct {
-		bodyParams bodyParams
-		want       want
+		want        want
+		requestData interface{}
 	}{
 		"ShouldSucceedCreatingNamespace": {
-			bodyParams: bodyParams{
-				ns: mocks.PrepareNamespaceType(testNamespaceName),
-			},
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
 					nameKey: testNamespaceName,
 				},
 			},
+			requestData: mocks.PrepareNamespaceType(testNamespaceName),
 		},
 		"ShouldFailWithBadRequestBody": {
-			bodyParams: bodyParams{
-				ns: types.Namespace{},
-			},
 			want: want{
 				statusCode: http.StatusBadRequest,
 				response: map[string]interface{}{
@@ -175,11 +166,9 @@ func TestCreateNamespace(t *testing.T) {
 					errorKey:   invalidRequest,
 				},
 			},
+			requestData: map[string]interface{}{},
 		},
 		"ShouldHandleAlreadyExists": {
-			bodyParams: bodyParams{
-				ns: mocks.PrepareNamespaceType(testNamespaceName + "-1"),
-			},
 			want: want{
 				statusCode: http.StatusConflict,
 				response: map[string]interface{}{
@@ -187,6 +176,7 @@ func TestCreateNamespace(t *testing.T) {
 					errorKey:   operationFailed,
 				},
 			},
+			requestData: mocks.PrepareNamespaceType(testNamespaceName + "-1"),
 		},
 	}
 
@@ -195,11 +185,11 @@ func TestCreateNamespace(t *testing.T) {
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
-			body, err := json.Marshal(test.bodyParams.ns)
+			payload, err := json.Marshal(test.requestData)
 			assert.NoError(t, err)
 
 			baseURI := "/v1/namespaces/"
-			request, err := http.NewRequest(http.MethodPost, baseURI, bytes.NewBuffer(body))
+			request, err := http.NewRequest(http.MethodPost, baseURI, bytes.NewBuffer(payload))
 			assert.NoError(t, err)
 			request.Header.Set(contentType, applicationJson)
 
@@ -225,7 +215,7 @@ func TestCreateNamespace(t *testing.T) {
 func TestDeleteNamespace(t *testing.T) {
 	testNamespaceName := nsName + "-delete"
 
-	type requestParams struct {
+	type requestURI struct {
 		name string
 	}
 
@@ -235,11 +225,11 @@ func TestDeleteNamespace(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		requestParams requestParams
-		want          want
+		requestURI requestURI
+		want       want
 	}{
 		"ShouldSucceedDeletingNamespace": {
-			requestParams: requestParams{
+			requestURI: requestURI{
 				name: testNamespaceName,
 			},
 			want: want{
@@ -250,7 +240,7 @@ func TestDeleteNamespace(t *testing.T) {
 			},
 		},
 		"ShouldHandleNotFoundNamespace": {
-			requestParams: requestParams{
+			requestURI: requestURI{
 				name: testNamespaceName + nonExistentSuffix,
 			},
 			want: want{
@@ -268,10 +258,9 @@ func TestDeleteNamespace(t *testing.T) {
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
-			baseURI := fmt.Sprintf("/v1/namespaces/%s", test.requestParams.name)
+			baseURI := fmt.Sprintf("/v1/namespaces/%s", test.requestURI.name)
 			request, err := http.NewRequest(http.MethodDelete, baseURI, nil)
 			assert.NoError(t, err)
-			request.Header.Set(contentType, applicationJson)
 
 			writer := httptest.NewRecorder()
 			router.ServeHTTP(writer, request)

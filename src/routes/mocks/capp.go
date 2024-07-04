@@ -4,7 +4,6 @@ import (
 	"fmt"
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/types"
-	"github.com/dana-team/platform-backend/src/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	knativeapis "knative.dev/pkg/apis"
@@ -121,32 +120,22 @@ func PrepareCappStatusWithHostname(name, namespace string) cappv1alpha1.CappStat
 	}
 }
 
-// PrepareCappType returns a Capp type object.
-func PrepareCappType(name, namespace string, labels, annotations map[string]string) types.Capp {
-	cappRevision := types.Capp{
-		Annotations: utils.ConvertMapToKeyValue(annotations),
-		Labels:      utils.ConvertMapToKeyValue(labels),
-		Metadata: types.Metadata{
-			Name:      name,
-			Namespace: namespace,
-		},
-		Spec:   PrepareCappSpec(),
-		Status: PrepareCappStatus(name, namespace),
+func PrepareUpdateCappType(labels, annotations []types.KeyValue) types.UpdateCapp {
+	return types.UpdateCapp{
+		Annotations: annotations,
+		Labels:      labels,
+		Spec:        PrepareCappSpec(),
 	}
-
-	return cappRevision
 }
 
-// PrepareCappTypeWithoutStatus returns a Capp type object without the Status set.
-func PrepareCappTypeWithoutStatus(name, namespace string, labels, annotations map[string]string) types.Capp {
-	return types.Capp{
-		Annotations: utils.ConvertMapToKeyValue(annotations),
-		Labels:      utils.ConvertMapToKeyValue(labels),
-		Metadata: types.Metadata{
-			Name:      name,
-			Namespace: namespace,
+// PrepareCreateCappType returns a CreateCapp type object.
+func PrepareCreateCappType(name string, labels, annotations []types.KeyValue) types.CreateCapp {
+	return types.CreateCapp{
+		Metadata: types.CreateMetadata{
+			Name: name,
 		},
-		Spec:   PrepareCappSpec(),
-		Status: cappv1alpha1.CappStatus{},
+		Annotations: annotations,
+		Labels:      labels,
+		Spec:        PrepareCappSpec(),
 	}
 }
