@@ -29,12 +29,7 @@ func cappRevisionHandler(handler func(controller controllers.CappRevisionControl
 		kubeClient := dynClient.(client.Client)
 		context := c.Request.Context()
 
-		cappRevisionController, err := controllers.NewCappRevisionController(kubeClient, context, logger)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to create controller"})
-			return
-		}
-
+		cappRevisionController := controllers.NewCappRevisionController(kubeClient, context, logger)
 		result, err := handler(cappRevisionController, c)
 		if err != nil {
 			c.AbortWithStatusJSON(int(err.(*k8serrors.StatusError).ErrStatus.Code), gin.H{"error": "Operation failed", "details": err.Error()})

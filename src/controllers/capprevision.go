@@ -27,12 +27,12 @@ type cappRevisionController struct {
 	logger *zap.Logger
 }
 
-func NewCappRevisionController(client client.Client, context context.Context, logger *zap.Logger) (CappRevisionController, error) {
+func NewCappRevisionController(client client.Client, context context.Context, logger *zap.Logger) CappRevisionController {
 	return &cappRevisionController{
 		client: client,
 		ctx:    context,
 		logger: logger,
-	}, nil
+	}
 }
 
 func (c *cappRevisionController) GetCappRevision(namespace string, name string) (types.CappRevision, error) {
