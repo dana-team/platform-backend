@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	client "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func cappHandler(handler func(controller controllers.CappController, c *gin.Context) (interface{}, error)) gin.HandlerFunc {
@@ -29,12 +29,7 @@ func cappHandler(handler func(controller controllers.CappController, c *gin.Cont
 		kubeClient := dynClient.(client.Client)
 		context := c.Request.Context()
 
-		cappController, err := controllers.NewCappController(kubeClient, context, logger)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to create controller"})
-			return
-		}
-
+		cappController := controllers.NewCappController(kubeClient, context, logger)
 		result, err := handler(cappController, c)
 		if err != nil {
 			c.AbortWithStatusJSON(int(err.(*k8serrors.StatusError).ErrStatus.Code), gin.H{"error": "Operation failed", "details": err.Error()})

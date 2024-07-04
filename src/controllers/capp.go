@@ -37,12 +37,12 @@ type cappController struct {
 	logger *zap.Logger
 }
 
-func NewCappController(client client.Client, context context.Context, logger *zap.Logger) (CappController, error) {
+func NewCappController(client client.Client, context context.Context, logger *zap.Logger) CappController {
 	return &cappController{
 		client: client,
 		ctx:    context,
 		logger: logger,
-	}, nil
+	}
 }
 
 func (c *cappController) CreateCapp(namespace string, capp types.CreateCapp) (types.Capp, error) {

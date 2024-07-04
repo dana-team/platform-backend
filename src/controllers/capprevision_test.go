@@ -21,13 +21,10 @@ const (
 	labelValue            = "value"
 )
 
-var (
-	controller controllers.CappRevisionController
-)
+var controller controllers.CappRevisionController
 
 func setupCappRevisions() {
-
-	controller, _ = controllers.NewCappRevisionController(dynClient, context.TODO(), logger)
+	controller = controllers.NewCappRevisionController(dynClient, context.TODO(), logger)
 }
 
 // createTestCappRevision creates a test CappRevision object.
