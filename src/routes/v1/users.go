@@ -69,7 +69,7 @@ func UpdateUser() gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
 			return
 		}
-		var userRole types.PatchUserData
+		var userRole types.UpdateUserData
 		if err := c.BindJSON(&userRole); err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
 			return

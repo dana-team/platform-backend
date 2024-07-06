@@ -1,4 +1,4 @@
-package v1_test
+package v1
 
 import (
 	"context"
@@ -25,7 +25,7 @@ const (
 // createTestConfigMap creates a test ConfigMap object.
 func createTestConfigMap(name, namespace string) {
 	configMap := mocks.PrepareConfigMap(name, namespace, map[string]string{configKey: configValue})
-	_, err := client.CoreV1().ConfigMaps(namespace).Create(context.TODO(), &configMap, metav1.CreateOptions{})
+	_, err := clientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(), &configMap, metav1.CreateOptions{})
 	if err != nil {
 		panic(err)
 	}

@@ -1,4 +1,4 @@
-package v1_test
+package v1
 
 import (
 	"context"
@@ -151,7 +151,7 @@ func TestGetCappRevisions(t *testing.T) {
 func TestGetCappRevision(t *testing.T) {
 	testNamespaceName := cappRevisionNamespace + "-get-one"
 
-	type requestParams struct {
+	type requestURI struct {
 		name      string
 		namespace string
 	}
@@ -162,11 +162,11 @@ func TestGetCappRevision(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		requestParams requestParams
-		want          want
+		requestURI requestURI
+		want       want
 	}{
 		"ShouldSucceedGettingCappRevision": {
-			requestParams: requestParams{
+			requestURI: requestURI{
 				namespace: testNamespaceName,
 				name:      cappRevisionName,
 			},
@@ -182,7 +182,7 @@ func TestGetCappRevision(t *testing.T) {
 			},
 		},
 		"ShouldHandleNotFoundCappRevision": {
-			requestParams: requestParams{
+			requestURI: requestURI{
 				namespace: testNamespaceName,
 				name:      cappRevisionName + nonExistentSuffix,
 			},
@@ -195,7 +195,7 @@ func TestGetCappRevision(t *testing.T) {
 			},
 		},
 		"ShouldHandleNotFoundNamespace": {
-			requestParams: requestParams{
+			requestURI: requestURI{
 				namespace: testNamespaceName + nonExistentSuffix,
 				name:      cappRevisionName,
 			},
@@ -215,7 +215,7 @@ func TestGetCappRevision(t *testing.T) {
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
-			baseURI := fmt.Sprintf("/v1/namespaces/%s/capprevisions/%s", test.requestParams.namespace, test.requestParams.name)
+			baseURI := fmt.Sprintf("/v1/namespaces/%s/capprevisions/%s", test.requestURI.namespace, test.requestURI.name)
 			request, err := http.NewRequest(http.MethodGet, baseURI, nil)
 			assert.NoError(t, err)
 			writer := httptest.NewRecorder()

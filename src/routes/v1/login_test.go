@@ -15,41 +15,69 @@ import (
 )
 
 type MockTokenProvider struct {
-	Username string
-	Token    string
-	Err      error
+	username string
+	token    string
+	err      error
 }
 
+const (
+	tokenKey        = "token"
+	validTokenKey   = "valid_token"
+	validUser       = "valid_user"
+	invalidUser     = "invalid_user"
+	validPassword   = "valid_password"
+	invalidPassword = "invalid_password"
+)
+
 func (m MockTokenProvider) ObtainToken(username, password string, logger *zap.Logger, ctx *gin.Context) (string, error) {
-	return m.Token, m.Err
+	return m.token, m.err
 }
 
 func (m MockTokenProvider) ObtainUsername(token string, logger *zap.Logger) (string, error) {
-	return m.Username, m.Err
+	return m.username, m.err
 }
-func Test_Login(t *testing.T) {
+
+// setupLogin sets up a router for the Login routes
+func setupLogin(tokenProvider auth.TokenProvider) (*gin.Engine, error) {
+	r := gin.New()
+
+	mockLogger, err := zap.NewDevelopment()
+	if err != nil {
+		return nil, err
+	}
+	r.Use(middleware.LoggerMiddleware(mockLogger))
+	r.POST("/login", Login(tokenProvider))
+
+	return r, nil
+}
+
+func TestLogin(t *testing.T) {
 	type args struct {
 		tokenProvider auth.TokenProvider
 		username      string
 		password      string
 	}
+
 	type want struct {
 		statusCode int
-		response   map[string]string
+		response   map[string]interface{}
 	}
+
 	cases := map[string]struct {
 		args args
 		want want
 	}{
-		"ShouldSuccessObtainingToken": {
+		"ShouldSucceedObtainingToken": {
 			args: args{
-				tokenProvider: MockTokenProvider{Token: "valid_token", Err: nil},
-				username:      "valid_user",
-				password:      "valid_password",
+				tokenProvider: MockTokenProvider{token: validTokenKey, err: nil},
+				username:      validUser,
+				password:      validPassword,
 			},
 			want: want{
 				statusCode: http.StatusOK,
-				response:   map[string]string{"token": "valid_token"},
+				response: map[string]interface{}{
+					tokenKey: validTokenKey,
+				},
 			},
 		},
 		"ShouldFailWithInvalidPayload": {
@@ -58,56 +86,67 @@ func Test_Login(t *testing.T) {
 			},
 			want: want{
 				statusCode: http.StatusBadRequest,
-				response:   map[string]string{"error": "Authorization header not found"},
+				response: map[string]interface{}{
+					errorKey: "Authorization header not found",
+				},
 			},
 		},
 		"ShouldFailWithInvalidCredentials": {
 			args: args{
-				tokenProvider: MockTokenProvider{Err: auth.ErrInvalidCredentials},
-				username:      "invalid_user",
-				password:      "invalid_password",
+				tokenProvider: MockTokenProvider{err: auth.ErrInvalidCredentials},
+				username:      invalidUser,
+				password:      invalidPassword,
 			},
 			want: want{
 				statusCode: http.StatusUnauthorized,
-				response:   map[string]string{"error": "Invalid credentials"},
+				response: map[string]interface{}{
+					errorKey: "Invalid credentials",
+				},
 			},
 		},
 		"ShouldFailWithInternalServerError": {
 			args: args{
-				tokenProvider: MockTokenProvider{Err: errors.New("some internal error")},
-				username:      "user",
-				password:      "password",
+				tokenProvider: MockTokenProvider{err: errors.New("some internal error")},
+				username:      validUser,
+				password:      validPassword,
 			},
 			want: want{
 				statusCode: http.StatusInternalServerError,
-				response:   map[string]string{"error": "Internal server error"},
+				response: map[string]interface{}{
+					errorKey: "Internal server error",
+				},
 			},
 		},
 	}
 
-	for name, tc := range cases {
+	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
-			r := gin.New()
+			router, err := setupLogin(test.args.tokenProvider)
+			assert.NoError(t, err)
 
-			mockLogger, _ := zap.NewDevelopment()
-			r.Use(middleware.LoggerMiddleware(mockLogger))
-			r.POST("/login", Login(tc.args.tokenProvider))
-
-			req, _ := http.NewRequest(http.MethodPost, "/login", nil)
-			req.Header.Set("Content-Type", "application/json")
-			if tc.args.username != "" {
-				req.SetBasicAuth(tc.args.username, tc.args.password)
+			baseURI := "/login"
+			request, err := http.NewRequest(http.MethodPost, baseURI, nil)
+			assert.NoError(t, err)
+			request.Header.Set(contentType, applicationJson)
+			if test.args.username != "" {
+				request.SetBasicAuth(test.args.username, test.args.password)
 			}
 
-			w := httptest.NewRecorder()
-			r.ServeHTTP(w, req)
+			writer := httptest.NewRecorder()
+			router.ServeHTTP(writer, request)
 
-			assert.Equal(t, tc.want.statusCode, w.Code)
+			assert.Equal(t, test.want.statusCode, writer.Code)
 
-			var response map[string]string
-			err := json.Unmarshal(w.Body.Bytes(), &response)
+			var response map[string]interface{}
+			err = json.Unmarshal(writer.Body.Bytes(), &response)
 			assert.NoError(t, err)
-			assert.Equal(t, tc.want.response, response)
+
+			wantResponseJSON, err := json.Marshal(test.want.response)
+			assert.NoError(t, err)
+			var wantResponseNormalized map[string]interface{}
+			err = json.Unmarshal(wantResponseJSON, &wantResponseNormalized)
+			assert.NoError(t, err)
+			assert.Equal(t, wantResponseNormalized, response)
 		})
 	}
 }

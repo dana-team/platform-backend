@@ -1,4 +1,4 @@
-package v1_test
+package v1
 
 import (
 	"bytes"
@@ -34,7 +34,7 @@ const (
 // createTestSecret creates a test Secret object.
 func createTestSecret(name, namespace string) {
 	secret := mocks.PrepareSecret(name, namespace, secretDataKey, secretDataValueEncoded)
-	_, err := client.CoreV1().Secrets(namespace).Create(context.TODO(), &secret, metav1.CreateOptions{})
+	_, err := clientset.CoreV1().Secrets(namespace).Create(context.TODO(), &secret, metav1.CreateOptions{})
 	if err != nil {
 		panic(err)
 	}
@@ -92,7 +92,8 @@ func TestGetSecrets(t *testing.T) {
 			err = json.Unmarshal(writer.Body.Bytes(), &response)
 			assert.NoError(t, err)
 
-			wantResponseJSON, _ := json.Marshal(test.want.response)
+			wantResponseJSON, err := json.Marshal(test.want.response)
+			assert.NoError(t, err)
 			var wantResponseNormalized map[string]interface{}
 			err = json.Unmarshal(wantResponseJSON, &wantResponseNormalized)
 			assert.NoError(t, err)
@@ -386,7 +387,8 @@ func TestUpdateSecret(t *testing.T) {
 			err = json.Unmarshal(writer.Body.Bytes(), &response)
 			assert.NoError(t, err)
 
-			wantResponseJSON, _ := json.Marshal(test.want.response)
+			wantResponseJSON, err := json.Marshal(test.want.response)
+			assert.NoError(t, err)
 			var wantResponseNormalized map[string]interface{}
 			err = json.Unmarshal(wantResponseJSON, &wantResponseNormalized)
 			assert.NoError(t, err)
@@ -468,7 +470,8 @@ func TestDeleteSecret(t *testing.T) {
 			err = json.Unmarshal(writer.Body.Bytes(), &response)
 			assert.NoError(t, err)
 
-			wantResponseJSON, _ := json.Marshal(test.want.response)
+			wantResponseJSON, err := json.Marshal(test.want.response)
+			assert.NoError(t, err)
 			var wantResponseNormalized map[string]interface{}
 			err = json.Unmarshal(wantResponseJSON, &wantResponseNormalized)
 			assert.NoError(t, err)
