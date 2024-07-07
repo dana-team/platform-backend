@@ -80,15 +80,15 @@ func setupRouter(logger *zap.Logger) *gin.Engine {
 	{
 		namespacesGroup := v1.Group("/namespaces")
 		{
-			namespacesGroup.GET("/", GetNamespaces())
+			namespacesGroup.GET("", GetNamespaces())
 			namespacesGroup.GET("/:namespaceName", GetNamespace())
-			namespacesGroup.POST("/", CreateNamespace())
+			namespacesGroup.POST("", CreateNamespace())
 			namespacesGroup.DELETE("/:namespaceName", DeleteNamespace())
 
 			secretsGroup := namespacesGroup.Group("/:namespaceName/secrets")
 			{
-				secretsGroup.POST("/", CreateSecret())
-				secretsGroup.GET("/", GetSecrets())
+				secretsGroup.POST("", CreateSecret())
+				secretsGroup.GET("", GetSecrets())
 				secretsGroup.GET("/:secretName", GetSecret())
 				secretsGroup.PUT("/:secretName", UpdateSecret())
 				secretsGroup.DELETE("/:secretName", DeleteSecret())
@@ -96,23 +96,26 @@ func setupRouter(logger *zap.Logger) *gin.Engine {
 
 			cappGroup := namespacesGroup.Group("/:namespaceName/capps")
 			{
-				cappGroup.POST("/", CreateCapp())
-				cappGroup.GET("/", GetCapps())
+
+				cappGroup.POST("", CreateCapp())
+				cappGroup.GET("", GetCapps())
 				cappGroup.GET("/:cappName", GetCapp())
 				cappGroup.PUT("/:cappName", UpdateCapp())
 				cappGroup.DELETE("/:cappName", DeleteCapp())
+
 			}
 
 			cappRevisionGroup := namespacesGroup.Group("/:namespaceName/capprevisions")
 			{
-				cappRevisionGroup.GET("/", GetCappRevisions())
+
+				cappRevisionGroup.GET("", GetCappRevisions())
 				cappRevisionGroup.GET("/:cappRevisionName", GetCappRevision())
 			}
 
 			usersGroup := namespacesGroup.Group("/:namespaceName/users")
 			{
-				usersGroup.POST("/", CreateUser())
-				usersGroup.GET("/", GetUsers())
+				usersGroup.POST("", CreateUser())
+				usersGroup.GET("", GetUsers())
 				usersGroup.GET("/:userName", GetUser())
 				usersGroup.PUT("/:userName", UpdateUser())
 				usersGroup.DELETE("/:userName", DeleteUser())

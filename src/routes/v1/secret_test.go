@@ -79,7 +79,7 @@ func TestGetSecrets(t *testing.T) {
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
-			baseURI := fmt.Sprintf("/v1/namespaces/%s/secrets/", test.requestURI.namespace)
+			baseURI := fmt.Sprintf("/v1/namespaces/%s/secrets", test.requestURI.namespace)
 			request, err := http.NewRequest(http.MethodGet, baseURI, nil)
 			assert.NoError(t, err)
 
@@ -264,7 +264,7 @@ func TestCreateSecret(t *testing.T) {
 			payload, err := json.Marshal(test.requestData)
 			assert.NoError(t, err)
 
-			baseURI := fmt.Sprintf("/v1/namespaces/%s/secrets/", test.requestURI.namespace)
+			baseURI := fmt.Sprintf("/v1/namespaces/%s/secrets", test.requestURI.namespace)
 			request, err := http.NewRequest(http.MethodPost, baseURI, bytes.NewBuffer(payload))
 			assert.NoError(t, err)
 			request.Header.Set(contentType, applicationJson)

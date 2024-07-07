@@ -46,7 +46,7 @@ func TestGetNamespaces(t *testing.T) {
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
-			baseURI := "/v1/namespaces/"
+			baseURI := "/v1/namespaces"
 			request, err := http.NewRequest(http.MethodGet, baseURI, nil)
 			assert.NoError(t, err)
 			writer := httptest.NewRecorder()
@@ -187,7 +187,7 @@ func TestCreateNamespace(t *testing.T) {
 			payload, err := json.Marshal(test.requestData)
 			assert.NoError(t, err)
 
-			baseURI := "/v1/namespaces/"
+			baseURI := "/v1/namespaces"
 			request, err := http.NewRequest(http.MethodPost, baseURI, bytes.NewBuffer(payload))
 			assert.NoError(t, err)
 			request.Header.Set(contentType, applicationJson)
