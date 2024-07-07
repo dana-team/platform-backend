@@ -1,4 +1,4 @@
-package v1_test
+package v1
 
 import (
 	"bytes"
@@ -453,7 +453,7 @@ func TestUpdateCapp(t *testing.T) {
 func TestDeleteCapp(t *testing.T) {
 	testNamespaceName := cappNamespace + "-delete"
 
-	type requestParams struct {
+	type requestURI struct {
 		name      string
 		namespace string
 	}
@@ -464,11 +464,11 @@ func TestDeleteCapp(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		requestParams requestParams
-		want          want
+		requestURI requestURI
+		want       want
 	}{
 		"ShouldSucceedDeletingCapp": {
-			requestParams: requestParams{
+			requestURI: requestURI{
 				name:      cappName,
 				namespace: testNamespaceName,
 			},
@@ -480,7 +480,7 @@ func TestDeleteCapp(t *testing.T) {
 			},
 		},
 		"ShouldHandleNotFoundCapp": {
-			requestParams: requestParams{
+			requestURI: requestURI{
 				name:      cappName + nonExistentSuffix,
 				namespace: testNamespaceName,
 			},
@@ -493,7 +493,7 @@ func TestDeleteCapp(t *testing.T) {
 			},
 		},
 		"ShouldHandleNotFoundNamespace": {
-			requestParams: requestParams{
+			requestURI: requestURI{
 				name:      cappName,
 				namespace: testNamespaceName + nonExistentSuffix,
 			},
@@ -512,7 +512,7 @@ func TestDeleteCapp(t *testing.T) {
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
-			baseURI := fmt.Sprintf("/v1/namespaces/%s/capps/%s", test.requestParams.namespace, test.requestParams.name)
+			baseURI := fmt.Sprintf("/v1/namespaces/%s/capps/%s", test.requestURI.namespace, test.requestURI.name)
 			request, err := http.NewRequest(http.MethodDelete, baseURI, nil)
 			assert.NoError(t, err)
 

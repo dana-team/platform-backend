@@ -1,4 +1,4 @@
-package v1_test
+package v1
 
 import (
 	"bytes"
@@ -15,7 +15,6 @@ import (
 
 const (
 	namespacesKey = "namespaces"
-	nameKey       = "name"
 	nsName        = testNamespace + "-" + namespacesKey
 )
 

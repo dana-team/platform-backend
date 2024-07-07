@@ -137,7 +137,7 @@ func (u *userController) UpdateUser(user types.UserInput) (types.User, error) {
 }
 
 func (u *userController) DeleteUser(userIdentifier types.UserIdentifier) (types.DeleteUserResponse, error) {
-	u.logger.Debug(fmt.Sprintf("Trying to delete rolebinding %q in %q namespace", userIdentifier.UserName, userIdentifier.NamespaceName))
+	u.logger.Debug(fmt.Sprintf("Trying to delete rolebinding %q in namespace %q", userIdentifier.UserName, userIdentifier.NamespaceName))
 
 	if err := u.client.RbacV1().RoleBindings(userIdentifier.NamespaceName).Delete(u.ctx, userIdentifier.UserName, metav1.DeleteOptions{}); err != nil {
 		u.logger.Error(fmt.Sprintf("Could note delete rolebinding %q with error: %v",
@@ -146,8 +146,8 @@ func (u *userController) DeleteUser(userIdentifier types.UserIdentifier) (types.
 			userIdentifier.UserName, err.Error())}, err
 	}
 
-	u.logger.Debug(fmt.Sprintf("deleted roleBinding %q successfully", userIdentifier.UserName))
-	return types.DeleteUserResponse{Message: fmt.Sprintf("deleted roleBinding %q successfully", userIdentifier.UserName)}, nil
+	u.logger.Debug(fmt.Sprintf("Deleted roleBinding %q in namespace %q successfully", userIdentifier.UserName, userIdentifier.NamespaceName))
+	return types.DeleteUserResponse{Message: fmt.Sprintf("Deleted roleBinding %q in namespace %q successfully", userIdentifier.UserName, userIdentifier.NamespaceName)}, nil
 }
 
 func prepareRoleBinding(roleBindingName string, role string) *rbacv1.RoleBinding {

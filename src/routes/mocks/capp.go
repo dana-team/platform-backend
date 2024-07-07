@@ -20,7 +20,7 @@ const (
 
 // PrepareCapp returns a mock Capp object.
 func PrepareCapp(name, namespace string, labels, annotations map[string]string) cappv1alpha1.Capp {
-	cappRevision := cappv1alpha1.Capp{
+	return cappv1alpha1.Capp{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Namespace:   namespace,
@@ -30,13 +30,11 @@ func PrepareCapp(name, namespace string, labels, annotations map[string]string) 
 		Spec:   PrepareCappSpec(),
 		Status: PrepareCappStatus(name, namespace),
 	}
-
-	return cappRevision
 }
 
 // PrepareCappWithHostname returns a mock Capp object with Hostname set in the spec.
 func PrepareCappWithHostname(name, namespace string, labels, annotations map[string]string) cappv1alpha1.Capp {
-	cappRevision := cappv1alpha1.Capp{
+	return cappv1alpha1.Capp{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Namespace:   namespace,
@@ -46,8 +44,6 @@ func PrepareCappWithHostname(name, namespace string, labels, annotations map[str
 		Spec:   PrepareCappSpecWithHostname(),
 		Status: PrepareCappStatusWithHostname(name, namespace),
 	}
-
-	return cappRevision
 }
 
 // PrepareCappSpec returns a mock Capp spec.

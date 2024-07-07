@@ -15,7 +15,7 @@ type UserInput struct {
 	User
 }
 
-type PatchUserData struct {
+type UpdateUserData struct {
 	Role string `json:"role" binding:"required,oneof=admin viewer contributor"`
 }
 
