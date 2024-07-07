@@ -126,7 +126,7 @@ func TestGetCappRevisions(t *testing.T) {
 				params.Add(labelSelectorKey, fmt.Sprintf("%s=%s", key, test.requestURI.labelSelector.values[i]))
 			}
 
-			baseURI := fmt.Sprintf("/v1/namespaces/%s/capprevisions/", test.requestURI.namespace)
+			baseURI := fmt.Sprintf("/v1/namespaces/%s/capprevisions", test.requestURI.namespace)
 			request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s?%s", baseURI, params.Encode()), nil)
 			assert.NoError(t, err)
 			writer := httptest.NewRecorder()

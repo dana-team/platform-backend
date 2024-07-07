@@ -146,7 +146,7 @@ func TestGetCapps(t *testing.T) {
 				params.Add(labelSelectorKey, fmt.Sprintf("%s=%s", key, test.requestURI.labelSelector.values[i]))
 			}
 
-			baseURI := fmt.Sprintf("/v1/namespaces/%s/capps/", test.requestURI.namespace)
+			baseURI := fmt.Sprintf("/v1/namespaces/%s/capps", test.requestURI.namespace)
 
 			request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s?%s", baseURI, params.Encode()), nil)
 			assert.NoError(t, err)
@@ -329,7 +329,7 @@ func TestCreateCapp(t *testing.T) {
 			payload, err := json.Marshal(test.requestData)
 			assert.NoError(t, err)
 
-			baseURI := fmt.Sprintf("/v1/namespaces/%s/capps/", test.requestURI.namespace)
+			baseURI := fmt.Sprintf("/v1/namespaces/%s/capps", test.requestURI.namespace)
 			request, err := http.NewRequest(http.MethodPost, baseURI, bytes.NewBuffer(payload))
 			assert.NoError(t, err)
 			request.Header.Set(contentType, applicationJson)
