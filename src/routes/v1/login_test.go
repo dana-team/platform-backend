@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/dana-team/platform-backend/src/auth"
 	"github.com/dana-team/platform-backend/src/middleware"
+	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"go.uber.org/zap"
 	"net/http"
 	"net/http/httptest"
@@ -87,7 +88,7 @@ func TestLogin(t *testing.T) {
 			want: want{
 				statusCode: http.StatusBadRequest,
 				response: map[string]interface{}{
-					errorKey: "Authorization header not found",
+					testutils.ErrorKey: "Authorization header not found",
 				},
 			},
 		},
@@ -100,7 +101,7 @@ func TestLogin(t *testing.T) {
 			want: want{
 				statusCode: http.StatusUnauthorized,
 				response: map[string]interface{}{
-					errorKey: "Invalid credentials",
+					testutils.ErrorKey: "Invalid credentials",
 				},
 			},
 		},
@@ -113,7 +114,7 @@ func TestLogin(t *testing.T) {
 			want: want{
 				statusCode: http.StatusInternalServerError,
 				response: map[string]interface{}{
-					errorKey: "Internal server error",
+					testutils.ErrorKey: "Internal server error",
 				},
 			},
 		},
@@ -127,7 +128,7 @@ func TestLogin(t *testing.T) {
 			baseURI := "/login"
 			request, err := http.NewRequest(http.MethodPost, baseURI, nil)
 			assert.NoError(t, err)
-			request.Header.Set(contentType, applicationJson)
+			request.Header.Set(testutils.ContentType, testutils.ApplicationJson)
 			if test.args.username != "" {
 				request.SetBasicAuth(test.args.username, test.args.password)
 			}

@@ -4,27 +4,15 @@ import (
 	"context"
 	"fmt"
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
-	"github.com/dana-team/platform-backend/src/controllers/mocks"
 	"github.com/dana-team/platform-backend/src/types"
+	"github.com/dana-team/platform-backend/src/utils/testutils"
+	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"testing"
 )
-
-const (
-	cappRevisionNamespace = testName + "-capp-revision-ns"
-	cappRevisionName      = testName + "-capp-revision"
-	labelKey              = "key"
-	labelValue            = "value"
-)
-
-var controller CappRevisionController
-
-func setupCappRevisions() {
-	controller = NewCappRevisionController(dynClient, context.TODO(), logger)
-}
 
 // createTestCappRevision creates a test CappRevision object.
 func createTestCappRevision(name, namespace string, labels, annotations map[string]string) {
@@ -36,7 +24,7 @@ func createTestCappRevision(name, namespace string, labels, annotations map[stri
 }
 
 func TestGetCappRevision(t *testing.T) {
-	namespaceName := cappRevisionNamespace + "-GetOne"
+	namespaceName := testutils.CappRevisionNamespace + "-GetOne"
 
 	type requestParams struct {
 		name      string
@@ -45,7 +33,7 @@ func TestGetCappRevision(t *testing.T) {
 
 	type want struct {
 		cappRevision types.CappRevision
-		errorStatus  v1.StatusReason
+		errorStatus  metav1.StatusReason
 	}
 
 	cases := map[string]struct {
@@ -55,49 +43,51 @@ func TestGetCappRevision(t *testing.T) {
 		"ShouldSucceedGettingCappRevision": {
 			requestParams: requestParams{
 				namespace: namespaceName,
-				name:      cappRevisionName + "1",
+				name:      testutils.CappRevisionName + "-1",
 			},
 			want: want{
 				cappRevision: types.CappRevision{
-					Metadata: types.Metadata{Name: cappRevisionName + "1", Namespace: namespaceName},
-					Labels:   []types.KeyValue{{Key: labelKey + "-1", Value: labelValue + "-1"}},
+					Metadata: types.Metadata{Name: testutils.CappRevisionName + "-1", Namespace: namespaceName},
+					Labels:   []types.KeyValue{{Key: testutils.LabelKey + "-1", Value: testutils.LabelValue + "-1"}},
 					Spec: cappv1alpha1.CappRevisionSpec{
 						RevisionNumber: 1,
-						CappTemplate:   cappv1alpha1.CappTemplate{Spec: cappv1alpha1.CappSpec{}},
+						CappTemplate:   cappv1alpha1.CappTemplate{Spec: mocks.PrepareCappSpec()},
 					},
 					Status: cappv1alpha1.CappRevisionStatus{},
 				},
-				errorStatus: v1.StatusSuccess,
+				errorStatus: metav1.StatusSuccess,
 			},
 		},
 		"ShouldFailGettingNonExistingCappRevision": {
 			requestParams: requestParams{
 				namespace: namespaceName,
-				name:      doesNotExist,
+				name:      testutils.CappRevisionName + testutils.NonExistentSuffix,
 			},
 			want: want{
 				cappRevision: types.CappRevision{},
-				errorStatus:  v1.StatusReasonNotFound,
+				errorStatus:  metav1.StatusReasonNotFound,
 			},
 		},
 		"ShouldFailGettingNonExistingNamespace": {
 			requestParams: requestParams{
-				namespace: doesNotExist,
-				name:      cappRevisionName,
+				namespace: testutils.CappRevisionNamespace + testutils.NonExistentSuffix,
+				name:      testutils.CappRevisionName,
 			},
 			want: want{
 				cappRevision: types.CappRevision{},
-				errorStatus:  v1.StatusReasonNotFound,
+				errorStatus:  metav1.StatusReasonNotFound,
 			},
 		},
 	}
+	setup()
+	cappRevisionController := NewCappRevisionController(dynClient, context.TODO(), logger)
 	createTestNamespace(namespaceName)
-	createTestCappRevision(cappRevisionName+"1", namespaceName, map[string]string{labelKey + "-1": labelValue + "-1"}, map[string]string{})
-	createTestCappRevision(cappRevisionName+"2", namespaceName, map[string]string{labelKey + "-2": labelValue + "-2"}, map[string]string{})
+	createTestCappRevision(testutils.CappRevisionName+"-1", namespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{})
+	createTestCappRevision(testutils.CappRevisionName+"-2", namespaceName, map[string]string{testutils.LabelKey + "-2": testutils.LabelValue + "-2"}, map[string]string{})
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
-			response, err := controller.GetCappRevision(test.requestParams.namespace, test.requestParams.name)
-			if test.want.errorStatus != v1.StatusSuccess {
+			response, err := cappRevisionController.GetCappRevision(test.requestParams.namespace, test.requestParams.name)
+			if test.want.errorStatus != metav1.StatusSuccess {
 				reason := err.(errors.APIStatus).Status().Reason
 
 				assert.Equal(t, test.want.errorStatus, reason)
@@ -112,7 +102,7 @@ func TestGetCappRevision(t *testing.T) {
 }
 
 func TestGetCappRevisions(t *testing.T) {
-	namespaceName := cappRevisionNamespace + "-GetMany"
+	namespaceName := testutils.CappRevisionNamespace + "-GetMany"
 
 	type requestParams struct {
 		cappQuery types.CappRevisionQuery
@@ -121,7 +111,7 @@ func TestGetCappRevisions(t *testing.T) {
 
 	type want struct {
 		cappRevisions types.CappRevisionList
-		errorStatus   v1.StatusReason
+		errorStatus   metav1.StatusReason
 	}
 
 	cases := map[string]struct {
@@ -134,17 +124,17 @@ func TestGetCappRevisions(t *testing.T) {
 				cappQuery: types.CappRevisionQuery{},
 			},
 			want: want{
-				cappRevisions: types.CappRevisionList{CappRevisions: []string{cappRevisionName + "1", cappRevisionName + "2"}, Count: 2},
-				errorStatus:   v1.StatusSuccess,
+				cappRevisions: types.CappRevisionList{CappRevisions: []string{testutils.CappRevisionName + "-1", testutils.CappRevisionName + "-2"}, Count: 2},
+				errorStatus:   metav1.StatusSuccess,
 			}},
 		"ShouldSucceedGettingCappRevisionsByLabels": {
 			requestParams: requestParams{
 				namespace: namespaceName,
-				cappQuery: types.CappRevisionQuery{LabelSelector: fmt.Sprintf("%s-2=%s-2", labelKey, labelValue)},
+				cappQuery: types.CappRevisionQuery{LabelSelector: fmt.Sprintf("%s-2=%s-2", testutils.LabelKey, testutils.LabelValue)},
 			},
 			want: want{
-				cappRevisions: types.CappRevisionList{CappRevisions: []string{cappRevisionName + "2"}, Count: 1},
-				errorStatus:   v1.StatusSuccess,
+				cappRevisions: types.CappRevisionList{CappRevisions: []string{testutils.CappRevisionName + "-2"}, Count: 1},
+				errorStatus:   metav1.StatusSuccess,
 			},
 		},
 		"ShouldThrowErrorWithInvalidSelector": {
@@ -154,27 +144,29 @@ func TestGetCappRevisions(t *testing.T) {
 			},
 			want: want{
 				cappRevisions: types.CappRevisionList{},
-				errorStatus:   v1.StatusReasonBadRequest,
+				errorStatus:   metav1.StatusReasonBadRequest,
 			},
 		},
 		"ShouldFailGettingNonExistingNamespace": {
 			requestParams: requestParams{
-				namespace: doesNotExist,
+				namespace: testutils.CappRevisionNamespace + testutils.NonExistentSuffix,
 				cappQuery: types.CappRevisionQuery{},
 			},
 			want: want{
 				cappRevisions: types.CappRevisionList{},
-				errorStatus:   v1.StatusSuccess,
+				errorStatus:   metav1.StatusSuccess,
 			},
 		},
 	}
+	setup()
+	cappRevisionController := NewCappRevisionController(dynClient, context.TODO(), logger)
 	createTestNamespace(namespaceName)
-	createTestCappRevision(cappRevisionName+"1", namespaceName, map[string]string{labelKey + "-1": labelValue + "-1"}, map[string]string{})
-	createTestCappRevision(cappRevisionName+"2", namespaceName, map[string]string{labelKey + "-2": labelValue + "-2"}, map[string]string{})
+	createTestCappRevision(testutils.CappRevisionName+"-1", namespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{})
+	createTestCappRevision(testutils.CappRevisionName+"-2", namespaceName, map[string]string{testutils.LabelKey + "-2": testutils.LabelValue + "-2"}, map[string]string{})
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
-			response, err := controller.GetCappRevisions(test.requestParams.namespace, test.requestParams.cappQuery)
-			if test.want.errorStatus != v1.StatusSuccess {
+			response, err := cappRevisionController.GetCappRevisions(test.requestParams.namespace, test.requestParams.cappQuery)
+			if test.want.errorStatus != metav1.StatusSuccess {
 				reason := err.(errors.APIStatus).Status().Reason
 
 				assert.Equal(t, test.want.errorStatus, reason)

@@ -4,7 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/dana-team/platform-backend/src/routes/mocks"
+	"github.com/dana-team/platform-backend/src/utils/testutils"
+	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -14,8 +15,7 @@ import (
 )
 
 const (
-	namespacesKey = "namespaces"
-	nsName        = testNamespace + "-" + namespacesKey
+	nsName = testutils.TestNamespace + "-" + testutils.NameSpaceKey
 )
 
 func TestGetNamespaces(t *testing.T) {
@@ -33,8 +33,8 @@ func TestGetNamespaces(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					count:         2,
-					namespacesKey: []types.Namespace{{Name: testNamespaceName + "-1"}, {Name: testNamespaceName + "-2"}},
+					testutils.Count:        2,
+					testutils.NameSpaceKey: []types.Namespace{{Name: testNamespaceName + "-1"}, {Name: testNamespaceName + "-2"}},
 				},
 			},
 		},
@@ -90,19 +90,19 @@ func TestGetNamespace(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					nameKey: testNamespaceName + "-1",
+					testutils.NameKey: testNamespaceName + "-1",
 				},
 			},
 		},
 		"ShouldHandleNotFoundNamespace": {
 			requestURI: requestURI{
-				name: testNamespaceName + "-1" + nonExistentSuffix,
+				name: testNamespaceName + "-1" + testutils.NonExistentSuffix,
 			},
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					errorKey:   operationFailed,
-					detailsKey: fmt.Sprintf("%s %q not found", namespacesKey, testNamespaceName+"-1"+nonExistentSuffix),
+					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.NameSpaceKey, testNamespaceName+"-1"+testutils.NonExistentSuffix),
 				},
 			},
 		},
@@ -152,7 +152,7 @@ func TestCreateNamespace(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					nameKey: testNamespaceName,
+					testutils.NameKey: testNamespaceName,
 				},
 			},
 			requestData: mocks.PrepareNamespaceType(testNamespaceName),
@@ -161,8 +161,8 @@ func TestCreateNamespace(t *testing.T) {
 			want: want{
 				statusCode: http.StatusBadRequest,
 				response: map[string]interface{}{
-					detailsKey: "Key: 'Namespace.Name' Error:Field validation for 'Name' failed on the 'required' tag",
-					errorKey:   invalidRequest,
+					testutils.DetailsKey: "Key: 'Namespace.Name' Error:Field validation for 'Name' failed on the 'required' tag",
+					testutils.ErrorKey:   testutils.InvalidRequest,
 				},
 			},
 			requestData: map[string]interface{}{},
@@ -171,8 +171,8 @@ func TestCreateNamespace(t *testing.T) {
 			want: want{
 				statusCode: http.StatusConflict,
 				response: map[string]interface{}{
-					detailsKey: fmt.Sprintf("%s %q already exists", namespacesKey, testNamespaceName+"-1"),
-					errorKey:   operationFailed,
+					testutils.DetailsKey: fmt.Sprintf("%s %q already exists", testutils.NameSpaceKey, testNamespaceName+"-1"),
+					testutils.ErrorKey:   testutils.OperationFailed,
 				},
 			},
 			requestData: mocks.PrepareNamespaceType(testNamespaceName + "-1"),
@@ -190,7 +190,7 @@ func TestCreateNamespace(t *testing.T) {
 			baseURI := "/v1/namespaces"
 			request, err := http.NewRequest(http.MethodPost, baseURI, bytes.NewBuffer(payload))
 			assert.NoError(t, err)
-			request.Header.Set(contentType, applicationJson)
+			request.Header.Set(testutils.ContentType, testutils.ApplicationJson)
 
 			writer := httptest.NewRecorder()
 			router.ServeHTTP(writer, request)
@@ -234,19 +234,19 @@ func TestDeleteNamespace(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					messageKey: fmt.Sprintf("Deleted namespace successfully %q", testNamespaceName),
+					testutils.MessageKey: fmt.Sprintf("Deleted namespace successfully %q", testNamespaceName),
 				},
 			},
 		},
 		"ShouldHandleNotFoundNamespace": {
 			requestURI: requestURI{
-				name: testNamespaceName + nonExistentSuffix,
+				name: testNamespaceName + testutils.NonExistentSuffix,
 			},
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					detailsKey: fmt.Sprintf("%s %q not found", namespacesKey, testNamespaceName+nonExistentSuffix),
-					errorKey:   operationFailed,
+					testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.NameSpaceKey, testNamespaceName+testutils.NonExistentSuffix),
+					testutils.ErrorKey:   testutils.OperationFailed,
 				},
 			},
 		},

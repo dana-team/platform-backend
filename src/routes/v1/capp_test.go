@@ -6,7 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
-	"github.com/dana-team/platform-backend/src/routes/mocks"
+	"github.com/dana-team/platform-backend/src/utils/testutils"
+	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -14,12 +15,6 @@ import (
 
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/stretchr/testify/assert"
-)
-
-const (
-	cappName      = testName + "-capp"
-	cappsKey      = "capps"
-	cappNamespace = testNamespace + "-" + cappsKey
 )
 
 // createTestCapp creates a test Capp object.
@@ -41,7 +36,7 @@ func createTestCappWithHostname(name, namespace string, labels, annotations map[
 }
 
 func TestGetCapps(t *testing.T) {
-	testNamespaceName := cappNamespace + "-get"
+	testNamespaceName := testutils.CappNamespace + "-get"
 
 	type selector struct {
 		keys   []string
@@ -69,12 +64,12 @@ func TestGetCapps(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					count: 4,
-					cappsKey: []types.CappSummary{
-						{Name: cappName + "-1", URL: fmt.Sprintf("https://%s-%s.%s", cappName+"-1", testNamespaceName, mocks.Domain), Images: []string{mocks.CappImage}},
-						{Name: cappName + "-2", URL: fmt.Sprintf("https://%s-%s.%s", cappName+"-2", testNamespaceName, mocks.Domain), Images: []string{mocks.CappImage}},
-						{Name: cappName + "-3", URL: fmt.Sprintf("https://%s.%s", mocks.Hostname, mocks.Domain), Images: []string{mocks.CappImage}},
-						{Name: cappName + "-4", URL: fmt.Sprintf("https://%s.%s", mocks.Hostname, mocks.Domain), Images: []string{mocks.CappImage}},
+					testutils.Count: 4,
+					testutils.CappsKey: []types.CappSummary{
+						{Name: testutils.CappName + "-1", URL: fmt.Sprintf("https://%s-%s.%s", testutils.CappName+"-1", testNamespaceName, testutils.Domain), Images: []string{testutils.CappImage}},
+						{Name: testutils.CappName + "-2", URL: fmt.Sprintf("https://%s-%s.%s", testutils.CappName+"-2", testNamespaceName, testutils.Domain), Images: []string{testutils.CappImage}},
+						{Name: testutils.CappName + "-3", URL: fmt.Sprintf("https://%s.%s", testutils.Hostname, testutils.Domain), Images: []string{testutils.CappImage}},
+						{Name: testutils.CappName + "-4", URL: fmt.Sprintf("https://%s.%s", testutils.Hostname, testutils.Domain), Images: []string{testutils.CappImage}},
 					},
 				},
 			},
@@ -83,16 +78,16 @@ func TestGetCapps(t *testing.T) {
 			requestURI: requestURI{
 				namespace: testNamespaceName,
 				labelSelector: selector{
-					keys:   []string{labelKey + "-1"},
-					values: []string{labelValue + "-1"},
+					keys:   []string{testutils.LabelKey + "-1"},
+					values: []string{testutils.LabelValue + "-1"},
 				},
 			},
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					count: 1,
-					cappsKey: []types.CappSummary{
-						{Name: cappName + "-1", URL: fmt.Sprintf("https://%s-%s.%s", cappName+"-1", testNamespaceName, mocks.Domain), Images: []string{mocks.CappImage}},
+					testutils.Count: 1,
+					testutils.CappsKey: []types.CappSummary{
+						{Name: testutils.CappName + "-1", URL: fmt.Sprintf("https://%s-%s.%s", testutils.CappName+"-1", testNamespaceName, testutils.Domain), Images: []string{testutils.CappImage}},
 					},
 				},
 			},
@@ -101,15 +96,15 @@ func TestGetCapps(t *testing.T) {
 			requestURI: requestURI{
 				namespace: testNamespaceName,
 				labelSelector: selector{
-					keys:   []string{labelKey + "-1"},
-					values: []string{labelValue + " 1"},
+					keys:   []string{testutils.LabelKey + "-1"},
+					values: []string{testutils.LabelValue + " 1"},
 				},
 			},
 			want: want{
 				statusCode: http.StatusBadRequest,
 				response: map[string]interface{}{
-					detailsKey: "found '1', expected: ',' or 'end of string'",
-					errorKey:   operationFailed,
+					testutils.DetailsKey: "found '1', expected: ',' or 'end of string'",
+					testutils.ErrorKey:   testutils.OperationFailed,
 				},
 			},
 		},
@@ -117,15 +112,15 @@ func TestGetCapps(t *testing.T) {
 			requestURI: requestURI{
 				namespace: testNamespaceName,
 				labelSelector: selector{
-					keys:   []string{labelKey + nonExistentSuffix},
-					values: []string{labelValue + nonExistentSuffix},
+					keys:   []string{testutils.LabelKey + testutils.NonExistentSuffix},
+					values: []string{testutils.LabelValue + testutils.NonExistentSuffix},
 				},
 			},
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					count:    0,
-					cappsKey: nil,
+					testutils.Count:    0,
+					testutils.CappsKey: nil,
 				},
 			},
 		},
@@ -133,17 +128,17 @@ func TestGetCapps(t *testing.T) {
 
 	setup()
 	createTestNamespace(testNamespaceName)
-	createTestCapp(cappName+"-1", testNamespaceName, map[string]string{labelKey + "-1": labelValue + "-1"}, nil)
-	createTestCapp(cappName+"-2", testNamespaceName, map[string]string{labelKey + "-2": labelValue + "-2"}, nil)
-	createTestCappWithHostname(cappName+"-3", testNamespaceName, map[string]string{labelKey + "-3": labelValue + "-3"}, nil)
-	createTestCappWithHostname(cappName+"-4", testNamespaceName, map[string]string{labelKey + "-4": labelValue + "-4"}, nil)
+	createTestCapp(testutils.CappName+"-1", testNamespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, nil)
+	createTestCapp(testutils.CappName+"-2", testNamespaceName, map[string]string{testutils.LabelKey + "-2": testutils.LabelValue + "-2"}, nil)
+	createTestCappWithHostname(testutils.CappName+"-3", testNamespaceName, map[string]string{testutils.LabelKey + "-3": testutils.LabelValue + "-3"}, nil)
+	createTestCappWithHostname(testutils.CappName+"-4", testNamespaceName, map[string]string{testutils.LabelKey + "-4": testutils.LabelValue + "-4"}, nil)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
 			params := url.Values{}
 
 			for i, key := range test.requestURI.labelSelector.keys {
-				params.Add(labelSelectorKey, fmt.Sprintf("%s=%s", key, test.requestURI.labelSelector.values[i]))
+				params.Add(testutils.LabelSelectorKey, fmt.Sprintf("%s=%s", key, test.requestURI.labelSelector.values[i]))
 			}
 
 			baseURI := fmt.Sprintf("/v1/namespaces/%s/capps", test.requestURI.namespace)
@@ -170,7 +165,7 @@ func TestGetCapps(t *testing.T) {
 }
 
 func TestGetCapp(t *testing.T) {
-	testNamespaceName := cappNamespace + "-get-one"
+	testNamespaceName := testutils.CappNamespace + "-get-one"
 
 	type requestURI struct {
 		name      string
@@ -189,42 +184,42 @@ func TestGetCapp(t *testing.T) {
 		"ShouldSucceedGettingCapp": {
 			requestURI: requestURI{
 				namespace: testNamespaceName,
-				name:      cappName,
+				name:      testutils.CappName,
 			},
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					metadata:    types.Metadata{Name: cappName, Namespace: testNamespaceName},
-					labels:      []types.KeyValue{{Key: labelKey, Value: labelValue}},
-					annotations: nil,
-					spec:        mocks.PrepareCappSpec(),
-					status:      mocks.PrepareCappStatus(cappName, testNamespaceName),
+					testutils.Metadata:    types.Metadata{Name: testutils.CappName, Namespace: testNamespaceName},
+					testutils.Labels:      []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}},
+					testutils.Annotations: nil,
+					testutils.Spec:        mocks.PrepareCappSpec(),
+					testutils.Status:      mocks.PrepareCappStatus(testutils.CappName, testNamespaceName),
 				},
 			},
 		},
 		"ShouldHandleNotFoundCapp": {
 			requestURI: requestURI{
 				namespace: testNamespaceName,
-				name:      cappName + nonExistentSuffix,
+				name:      testutils.CappName + testutils.NonExistentSuffix,
 			},
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					detailsKey: fmt.Sprintf("%s.%s %q not found", cappsKey, cappv1alpha1.GroupVersion.Group, cappName+nonExistentSuffix),
-					errorKey:   operationFailed,
+					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName+testutils.NonExistentSuffix),
+					testutils.ErrorKey:   testutils.OperationFailed,
 				},
 			},
 		},
 		"ShouldHandleNotFoundNamespace": {
 			requestURI: requestURI{
-				namespace: testNamespaceName + nonExistentSuffix,
-				name:      cappName,
+				namespace: testNamespaceName + testutils.NonExistentSuffix,
+				name:      testutils.CappName,
 			},
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					detailsKey: fmt.Sprintf("%s.%s %q not found", cappsKey, cappv1alpha1.GroupVersion.Group, cappName),
-					errorKey:   operationFailed,
+					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName),
+					testutils.ErrorKey:   testutils.OperationFailed,
 				},
 			},
 		},
@@ -232,7 +227,7 @@ func TestGetCapp(t *testing.T) {
 
 	setup()
 	createTestNamespace(testNamespaceName)
-	createTestCapp(cappName, testNamespaceName, map[string]string{labelKey: labelValue}, nil)
+	createTestCapp(testutils.CappName, testNamespaceName, map[string]string{testutils.LabelKey: testutils.LabelValue}, nil)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -260,7 +255,7 @@ func TestGetCapp(t *testing.T) {
 }
 
 func TestCreateCapp(t *testing.T) {
-	testNamespaceName := cappNamespace + "-create"
+	testNamespaceName := testutils.CappNamespace + "-create"
 
 	type requestURI struct {
 		namespace string
@@ -283,14 +278,14 @@ func TestCreateCapp(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					metadata:    types.Metadata{Name: cappName, Namespace: testNamespaceName},
-					labels:      []types.KeyValue{{Key: labelKey, Value: labelValue}},
-					annotations: nil,
-					spec:        mocks.PrepareCappSpec(),
-					status:      cappv1alpha1.CappStatus{},
+					testutils.Metadata:    types.Metadata{Name: testutils.CappName, Namespace: testNamespaceName},
+					testutils.Labels:      []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}},
+					testutils.Annotations: nil,
+					testutils.Spec:        mocks.PrepareCappSpec(),
+					testutils.Status:      cappv1alpha1.CappStatus{},
 				},
 			},
-			requestData: mocks.PrepareCreateCappType(cappName, []types.KeyValue{{Key: labelKey, Value: labelValue}}, nil),
+			requestData: mocks.PrepareCreateCappType(testutils.CappName, []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}}, nil),
 		},
 		"ShouldFailWithBadRequestBody": {
 			requestURI: requestURI{
@@ -299,11 +294,11 @@ func TestCreateCapp(t *testing.T) {
 			want: want{
 				statusCode: http.StatusBadRequest,
 				response: map[string]interface{}{
-					detailsKey: "Key: 'CreateCapp.Metadata.Name' Error:Field validation for 'Name' failed on the 'required' tag",
-					errorKey:   invalidRequest,
+					testutils.DetailsKey: "Key: 'CreateCapp.Metadata.Name' Error:Field validation for 'Name' failed on the 'required' tag",
+					testutils.ErrorKey:   testutils.InvalidRequest,
 				},
 			},
-			requestData: mocks.PrepareCreateCappType("", []types.KeyValue{{Key: labelKey, Value: labelValue}}, nil),
+			requestData: mocks.PrepareCreateCappType("", []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}}, nil),
 		},
 		"ShouldHandleAlreadyExists": {
 			requestURI: requestURI{
@@ -312,17 +307,17 @@ func TestCreateCapp(t *testing.T) {
 			want: want{
 				statusCode: http.StatusConflict,
 				response: map[string]interface{}{
-					detailsKey: fmt.Sprintf("%s.%s %q already exists", cappsKey, cappv1alpha1.GroupVersion.Group, cappName+"-1"),
-					errorKey:   operationFailed,
+					testutils.DetailsKey: fmt.Sprintf("%s.%s %q already exists", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName+"-1"),
+					testutils.ErrorKey:   testutils.OperationFailed,
 				},
 			},
-			requestData: mocks.PrepareCreateCappType(cappName+"-1", []types.KeyValue{{Key: labelKey, Value: labelValue}}, nil),
+			requestData: mocks.PrepareCreateCappType(testutils.CappName+"-1", []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}}, nil),
 		},
 	}
 
 	setup()
 	createTestNamespace(testNamespaceName)
-	createTestCapp(cappName+"-1", testNamespaceName, map[string]string{labelKey + "-1": labelValue + "-1"}, nil)
+	createTestCapp(testutils.CappName+"-1", testNamespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, nil)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -332,7 +327,7 @@ func TestCreateCapp(t *testing.T) {
 			baseURI := fmt.Sprintf("/v1/namespaces/%s/capps", test.requestURI.namespace)
 			request, err := http.NewRequest(http.MethodPost, baseURI, bytes.NewBuffer(payload))
 			assert.NoError(t, err)
-			request.Header.Set(contentType, applicationJson)
+			request.Header.Set(testutils.ContentType, testutils.ApplicationJson)
 
 			writer := httptest.NewRecorder()
 			router.ServeHTTP(writer, request)
@@ -354,7 +349,7 @@ func TestCreateCapp(t *testing.T) {
 }
 
 func TestUpdateCapp(t *testing.T) {
-	testNamespaceName := cappNamespace + "-update"
+	testNamespaceName := testutils.CappNamespace + "-update"
 
 	type requestURI struct {
 		name      string
@@ -373,53 +368,53 @@ func TestUpdateCapp(t *testing.T) {
 	}{
 		"ShouldSucceedUpdatingCapp": {
 			requestURI: requestURI{
-				name:      cappName,
+				name:      testutils.CappName,
 				namespace: testNamespaceName,
 			},
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					metadata:    types.Metadata{Name: cappName, Namespace: testNamespaceName},
-					labels:      []types.KeyValue{{Key: labelKey + "-updated", Value: labelValue + "-updated"}},
-					annotations: nil,
-					spec:        mocks.PrepareCappSpec(),
-					status:      mocks.PrepareCappStatus(cappName, testNamespaceName),
+					testutils.Metadata:    types.Metadata{Name: testutils.CappName, Namespace: testNamespaceName},
+					testutils.Labels:      []types.KeyValue{{Key: testutils.LabelKey + "-updated", Value: testutils.LabelValue + "-updated"}},
+					testutils.Annotations: nil,
+					testutils.Spec:        mocks.PrepareCappSpec(),
+					testutils.Status:      mocks.PrepareCappStatus(testutils.CappName, testNamespaceName),
 				},
 			},
-			requestData: mocks.PrepareUpdateCappType([]types.KeyValue{{Key: labelKey + "-updated", Value: labelValue + "-updated"}}, nil),
+			requestData: mocks.PrepareUpdateCappType([]types.KeyValue{{Key: testutils.LabelKey + "-updated", Value: testutils.LabelValue + "-updated"}}, nil),
 		},
 		"ShouldHandleNotFoundCapp": {
 			requestURI: requestURI{
-				name:      cappName + nonExistentSuffix,
+				name:      testutils.CappName + testutils.NonExistentSuffix,
 				namespace: testNamespaceName,
 			},
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					detailsKey: fmt.Sprintf("%s.%s %q not found", cappsKey, cappv1alpha1.GroupVersion.Group, cappName+nonExistentSuffix),
-					errorKey:   operationFailed,
+					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName+testutils.NonExistentSuffix),
+					testutils.ErrorKey:   testutils.OperationFailed,
 				},
 			},
-			requestData: mocks.PrepareUpdateCappType([]types.KeyValue{{Key: labelKey + "-updated", Value: labelValue + "-updated"}}, nil),
+			requestData: mocks.PrepareUpdateCappType([]types.KeyValue{{Key: testutils.LabelKey + "-updated", Value: testutils.LabelValue + "-updated"}}, nil),
 		},
 		"ShouldHandleNotFoundNamespace": {
 			requestURI: requestURI{
-				name:      cappName,
-				namespace: testNamespaceName + nonExistentSuffix,
+				name:      testutils.CappName,
+				namespace: testNamespaceName + testutils.NonExistentSuffix,
 			},
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					detailsKey: fmt.Sprintf("%s.%s %q not found", cappsKey, cappv1alpha1.GroupVersion.Group, cappName),
-					errorKey:   operationFailed,
+					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName),
+					testutils.ErrorKey:   testutils.OperationFailed,
 				},
 			},
-			requestData: mocks.PrepareUpdateCappType([]types.KeyValue{{Key: labelKey + "-updated", Value: labelValue + "-updated"}}, nil),
+			requestData: mocks.PrepareUpdateCappType([]types.KeyValue{{Key: testutils.LabelKey + "-updated", Value: testutils.LabelValue + "-updated"}}, nil),
 		},
 	}
 
 	setup()
-	createTestCapp(cappName, testNamespaceName, map[string]string{labelKey: labelValue}, nil)
+	createTestCapp(testutils.CappName, testNamespaceName, map[string]string{testutils.LabelKey: testutils.LabelValue}, nil)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -429,7 +424,7 @@ func TestUpdateCapp(t *testing.T) {
 			baseURI := fmt.Sprintf("/v1/namespaces/%s/capps/%s", test.requestURI.namespace, test.requestURI.name)
 			request, err := http.NewRequest(http.MethodPut, baseURI, bytes.NewBuffer(payload))
 			assert.NoError(t, err)
-			request.Header.Set(contentType, applicationJson)
+			request.Header.Set(testutils.ContentType, testutils.ApplicationJson)
 
 			writer := httptest.NewRecorder()
 			router.ServeHTTP(writer, request)
@@ -451,7 +446,7 @@ func TestUpdateCapp(t *testing.T) {
 }
 
 func TestDeleteCapp(t *testing.T) {
-	testNamespaceName := cappNamespace + "-delete"
+	testNamespaceName := testutils.CappNamespace + "-delete"
 
 	type requestURI struct {
 		name      string
@@ -464,55 +459,55 @@ func TestDeleteCapp(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		requestURI requestURI
-		want       want
+		requestParams requestURI
+		want          want
 	}{
 		"ShouldSucceedDeletingCapp": {
-			requestURI: requestURI{
-				name:      cappName,
+			requestParams: requestURI{
+				name:      testutils.CappName,
 				namespace: testNamespaceName,
 			},
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					messageKey: fmt.Sprintf("Deleted capp %q in namespace %q successfully", cappName, testNamespaceName),
+					testutils.MessageKey: fmt.Sprintf("Deleted capp %q in namespace %q successfully", testutils.CappName, testNamespaceName),
 				},
 			},
 		},
 		"ShouldHandleNotFoundCapp": {
-			requestURI: requestURI{
-				name:      cappName + nonExistentSuffix,
+			requestParams: requestURI{
+				name:      testutils.CappName + testutils.NonExistentSuffix,
 				namespace: testNamespaceName,
 			},
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					detailsKey: fmt.Sprintf("%s.%s %q not found", cappsKey, cappv1alpha1.GroupVersion.Group, cappName+nonExistentSuffix),
-					errorKey:   operationFailed,
+					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName+testutils.NonExistentSuffix),
+					testutils.ErrorKey:   testutils.OperationFailed,
 				},
 			},
 		},
 		"ShouldHandleNotFoundNamespace": {
-			requestURI: requestURI{
-				name:      cappName,
-				namespace: testNamespaceName + nonExistentSuffix,
+			requestParams: requestURI{
+				name:      testutils.CappName,
+				namespace: testNamespaceName + testutils.NonExistentSuffix,
 			},
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					detailsKey: fmt.Sprintf("%s.%s %q not found", cappsKey, cappv1alpha1.GroupVersion.Group, cappName),
-					errorKey:   operationFailed,
+					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName),
+					testutils.ErrorKey:   testutils.OperationFailed,
 				},
 			},
 		},
 	}
 
 	setup()
-	createTestCapp(cappName, testNamespaceName, map[string]string{labelKey: labelValue}, nil)
+	createTestCapp(testutils.CappName, testNamespaceName, map[string]string{testutils.LabelKey: testutils.LabelValue}, nil)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
-			baseURI := fmt.Sprintf("/v1/namespaces/%s/capps/%s", test.requestURI.namespace, test.requestURI.name)
+			baseURI := fmt.Sprintf("/v1/namespaces/%s/capps/%s", test.requestParams.namespace, test.requestParams.name)
 			request, err := http.NewRequest(http.MethodDelete, baseURI, nil)
 			assert.NoError(t, err)
 

@@ -4,18 +4,12 @@ import (
 	"fmt"
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/types"
+	"github.com/dana-team/platform-backend/src/utils/testutils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	knativeapis "knative.dev/pkg/apis"
 	knativev1 "knative.dev/serving/pkg/apis/serving/v1"
 	knativev1beta1 "knative.dev/serving/pkg/apis/serving/v1beta1"
-)
-
-const (
-	CappImage     = "ghcr.io/dana-team/capp-gin-app:v0.2.0"
-	containerName = "capp-container"
-	Domain        = "dana-team.io"
-	Hostname      = "custom-capp"
 )
 
 // PrepareCapp returns a mock Capp object.
@@ -55,8 +49,8 @@ func PrepareCappSpec() cappv1alpha1.CappSpec {
 					PodSpec: corev1.PodSpec{
 						Containers: []corev1.Container{
 							{
-								Image: CappImage,
-								Name:  containerName,
+								Image: testutils.CappImage,
+								Name:  testutils.ContainerName,
 							},
 						},
 					},
@@ -75,8 +69,8 @@ func PrepareCappSpecWithHostname() cappv1alpha1.CappSpec {
 					PodSpec: corev1.PodSpec{
 						Containers: []corev1.Container{
 							{
-								Image: CappImage,
-								Name:  containerName,
+								Image: testutils.CappImage,
+								Name:  testutils.ContainerName,
 							},
 						},
 					},
@@ -84,7 +78,7 @@ func PrepareCappSpecWithHostname() cappv1alpha1.CappSpec {
 			},
 		},
 		RouteSpec: cappv1alpha1.RouteSpec{
-			Hostname: Hostname + "." + Domain,
+			Hostname: testutils.Hostname + "." + testutils.Domain,
 		},
 	}
 }
@@ -94,7 +88,7 @@ func PrepareCappStatus(name, namespace string) cappv1alpha1.CappStatus {
 	return cappv1alpha1.CappStatus{
 		KnativeObjectStatus: knativev1.ServiceStatus{
 			RouteStatusFields: knativev1.RouteStatusFields{
-				URL: knativeapis.HTTPS(fmt.Sprintf("%s-%s.%s", name, namespace, Domain)),
+				URL: knativeapis.HTTPS(fmt.Sprintf("%s-%s.%s", name, namespace, testutils.Domain)),
 			},
 		},
 	}
@@ -105,12 +99,12 @@ func PrepareCappStatusWithHostname(name, namespace string) cappv1alpha1.CappStat
 	return cappv1alpha1.CappStatus{
 		KnativeObjectStatus: knativev1.ServiceStatus{
 			RouteStatusFields: knativev1.RouteStatusFields{
-				URL: knativeapis.HTTPS(fmt.Sprintf("%s-%s.%s", name, namespace, Domain)),
+				URL: knativeapis.HTTPS(fmt.Sprintf("%s-%s.%s", name, namespace, testutils.Domain)),
 			},
 		},
 		RouteStatus: cappv1alpha1.RouteStatus{
 			DomainMappingObjectStatus: knativev1beta1.DomainMappingStatus{
-				URL: knativeapis.HTTPS(fmt.Sprintf("%s.%s", Hostname, Domain)),
+				URL: knativeapis.HTTPS(fmt.Sprintf("%s.%s", testutils.Hostname, testutils.Domain)),
 			},
 		},
 	}

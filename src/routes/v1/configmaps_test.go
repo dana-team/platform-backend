@@ -4,7 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/dana-team/platform-backend/src/routes/mocks"
+	"github.com/dana-team/platform-backend/src/utils/testutils"
+	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"net/http/httptest"
@@ -15,17 +16,17 @@ import (
 )
 
 const (
-	configMapName      = testName + "-configmap"
+	configMapName      = testutils.TestName + "-configmap"
 	configKey          = "key"
 	configValue        = "value"
 	configmapsKey      = "configmaps"
-	configMapNamespace = testNamespace + configmapsKey
+	configMapNamespace = testutils.TestNamespace + configmapsKey
 )
 
 // createTestConfigMap creates a test ConfigMap object.
 func createTestConfigMap(name, namespace string) {
 	configMap := mocks.PrepareConfigMap(name, namespace, map[string]string{configKey: configValue})
-	_, err := clientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(), &configMap, metav1.CreateOptions{})
+	_, err := fakeClient.CoreV1().ConfigMaps(namespace).Create(context.TODO(), &configMap, metav1.CreateOptions{})
 	if err != nil {
 		panic(err)
 	}
@@ -56,33 +57,33 @@ func TestGetConfigMap(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					data: []types.KeyValue{{Key: configKey, Value: configValue}},
+					testutils.Data: []types.KeyValue{{Key: configKey, Value: configValue}},
 				},
 			},
 		},
 		"ShouldHandleNotFoundConfigMap": {
 			requestURI: requestURI{
 				namespace: testNamespaceName,
-				name:      configMapName + nonExistentSuffix,
+				name:      configMapName + testutils.NonExistentSuffix,
 			},
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					detailsKey: fmt.Sprintf("%s %q not found", configmapsKey, configMapName+nonExistentSuffix),
-					errorKey:   operationFailed,
+					testutils.DetailsKey: fmt.Sprintf("%s %q not found", configmapsKey, configMapName+testutils.NonExistentSuffix),
+					testutils.ErrorKey:   testutils.OperationFailed,
 				},
 			},
 		},
 		"ShouldHandleNotFoundNamespace": {
 			requestURI: requestURI{
-				namespace: testNamespaceName + nonExistentSuffix,
+				namespace: testNamespaceName + testutils.NonExistentSuffix,
 				name:      configMapName,
 			},
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					detailsKey: fmt.Sprintf("%s %q not found", configmapsKey, configMapName),
-					errorKey:   operationFailed,
+					testutils.DetailsKey: fmt.Sprintf("%s %q not found", configmapsKey, configMapName),
+					testutils.ErrorKey:   testutils.OperationFailed,
 				},
 			},
 		},
