@@ -2,59 +2,24 @@ package v1
 
 import (
 	"context"
+	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
+	"testing"
+
 	cappv1 "github.com/dana-team/container-app-operator/api/v1alpha1"
-	"github.com/dana-team/platform-backend/src/routes/mocks"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	fakeclient "k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	runtimeClient "sigs.k8s.io/controller-runtime/pkg/client"
 	runtimeFake "sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
 )
 
 var (
-	router    *gin.Engine
-	clientset *fakeclient.Clientset
-	dynClient client.Client
-)
-
-const (
-	testName          = "test"
-	testNamespace     = testName + "-ns"
-	nonExistentSuffix = "-non-existent"
-)
-
-const (
-	labelSelectorKey = "labelSelector"
-	labelKey         = "key"
-	labelValue       = "value"
-)
-
-const (
-	operationFailed = "Operation failed"
-	invalidRequest  = "Invalid request"
-	detailsKey      = "details"
-	errorKey        = "error"
-	messageKey      = "message"
-)
-
-const (
-	metadata    = "metadata"
-	labels      = "labels"
-	annotations = "annotations"
-	spec        = "spec"
-	status      = "status"
-	count       = "count"
-	data        = "data"
-	nameKey     = "name"
-)
-
-const (
-	contentType     = "Content-Type"
-	applicationJson = "application/json"
+	router     *gin.Engine
+	fakeClient *fake.Clientset
+	dynClient  runtimeClient.WithWatch
 )
 
 func TestMain(m *testing.M) {
@@ -62,7 +27,7 @@ func TestMain(m *testing.M) {
 }
 
 func setup() {
-	clientset = fakeclient.NewSimpleClientset()
+	fakeClient = fake.NewSimpleClientset()
 	dynClient = runtimeFake.NewClientBuilder().WithScheme(setupScheme()).Build()
 	logger, _ := zap.NewProduction()
 	router = setupRouter(logger)
@@ -72,7 +37,7 @@ func setupRouter(logger *zap.Logger) *gin.Engine {
 	engine := gin.Default()
 	engine.Use(func(c *gin.Context) {
 		c.Set("logger", logger)
-		c.Set("kubeClient", clientset)
+		c.Set("kubeClient", fakeClient)
 		c.Set("dynClient", dynClient)
 		c.Next()
 	})
@@ -132,7 +97,7 @@ func setupRouter(logger *zap.Logger) *gin.Engine {
 
 func createTestNamespace(name string) {
 	namespace := mocks.PrepareNamespace(name)
-	_, err := clientset.CoreV1().Namespaces().Create(context.TODO(), &namespace, metav1.CreateOptions{})
+	_, err := fakeClient.CoreV1().Namespaces().Create(context.TODO(), &namespace, metav1.CreateOptions{})
 
 	if err != nil {
 		panic(err)
