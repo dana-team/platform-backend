@@ -1,10 +1,9 @@
-package controllers_test
+package controllers
 
 import (
 	"context"
 	"fmt"
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
-	"github.com/dana-team/platform-backend/src/controllers"
 	"github.com/dana-team/platform-backend/src/controllers/mocks"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/stretchr/testify/assert"
@@ -21,10 +20,10 @@ const (
 	labelValue            = "value"
 )
 
-var controller controllers.CappRevisionController
+var controller CappRevisionController
 
 func setupCappRevisions() {
-	controller = controllers.NewCappRevisionController(dynClient, context.TODO(), logger)
+	controller = NewCappRevisionController(dynClient, context.TODO(), logger)
 }
 
 // createTestCappRevision creates a test CappRevision object.

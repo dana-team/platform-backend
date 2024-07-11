@@ -1,4 +1,4 @@
-package controllers_test
+package controllers
 
 import (
 	"context"
@@ -16,9 +16,9 @@ import (
 )
 
 var (
-	client    *fake.Clientset
-	dynClient runtimeClient.WithWatch
-	logger    *zap.Logger
+	fakeClient *fake.Clientset
+	dynClient  runtimeClient.WithWatch
+	logger     *zap.Logger
 )
 
 const (
@@ -33,7 +33,7 @@ func TestMain(m *testing.M) {
 }
 
 func setup() {
-	client = fake.NewSimpleClientset()
+	fakeClient = fake.NewSimpleClientset()
 	dynClient = runtimeFake.NewClientBuilder().WithScheme(setupScheme()).Build()
 	logger, _ = zap.NewProduction()
 
@@ -45,7 +45,7 @@ func createTestNamespace(name string) {
 			Name: name,
 		},
 	}
-	_, err := client.CoreV1().Namespaces().Create(context.TODO(), namespace, metav1.CreateOptions{})
+	_, err := fakeClient.CoreV1().Namespaces().Create(context.TODO(), namespace, metav1.CreateOptions{})
 	if err != nil {
 		panic(err)
 	}
