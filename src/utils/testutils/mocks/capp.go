@@ -1,7 +1,9 @@
 package mocks
 
 import (
+	"context"
 	"fmt"
+
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
@@ -10,6 +12,7 @@ import (
 	knativeapis "knative.dev/pkg/apis"
 	knativev1 "knative.dev/serving/pkg/apis/serving/v1"
 	knativev1beta1 "knative.dev/serving/pkg/apis/serving/v1beta1"
+	runtimeClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // PrepareCapp returns a mock Capp object.
@@ -127,5 +130,38 @@ func PrepareCreateCappType(name string, labels, annotations []types.KeyValue) ty
 		Annotations: annotations,
 		Labels:      labels,
 		Spec:        PrepareCappSpec(),
+	}
+}
+
+func PrepareCappMetadata(name, namespace string) types.Metadata {
+	return types.Metadata{
+		Name:      name,
+		Namespace: namespace,
+	}
+}
+
+func PrepareCappSummary(name string, namespace string) types.CappSummary {
+	return types.CappSummary{
+		Name:   name,
+		Images: []string{testutils.CappImage},
+		URL:    fmt.Sprintf("https://%s-%s.%s", name, namespace, testutils.Domain),
+	}
+}
+
+// CreateTestCapp creates a test Capp object.
+func CreateTestCapp(name, namespace string, labels, annotations map[string]string, dynClient runtimeClient.WithWatch) {
+	cappRevision := PrepareCapp(name, namespace, labels, annotations)
+	err := dynClient.Create(context.TODO(), &cappRevision)
+	if err != nil {
+		panic(err)
+	}
+}
+
+// CreateTestCappWithHostname creates a test Capp object with a hostname.
+func CreateTestCappWithHostname(name, namespace string, labels, annotations map[string]string, dynClient runtimeClient.WithWatch) {
+	capp := PrepareCappWithHostname(name, namespace, labels, annotations)
+	err := dynClient.Create(context.TODO(), &capp)
+	if err != nil {
+		panic(err)
 	}
 }

@@ -2,7 +2,6 @@ package v1
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
@@ -16,24 +15,6 @@ import (
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/stretchr/testify/assert"
 )
-
-// createTestCapp creates a test Capp object.
-func createTestCapp(name, namespace string, labels, annotations map[string]string) {
-	capp := mocks.PrepareCapp(name, namespace, labels, annotations)
-	err := dynClient.Create(context.TODO(), &capp)
-	if err != nil {
-		panic(err)
-	}
-}
-
-// createTestCapp creates a test Capp object.
-func createTestCappWithHostname(name, namespace string, labels, annotations map[string]string) {
-	capp := mocks.PrepareCappWithHostname(name, namespace, labels, annotations)
-	err := dynClient.Create(context.TODO(), &capp)
-	if err != nil {
-		panic(err)
-	}
-}
 
 func TestGetCapps(t *testing.T) {
 	testNamespaceName := testutils.CappNamespace + "-get"
@@ -128,10 +109,10 @@ func TestGetCapps(t *testing.T) {
 
 	setup()
 	createTestNamespace(testNamespaceName)
-	createTestCapp(testutils.CappName+"-1", testNamespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, nil)
-	createTestCapp(testutils.CappName+"-2", testNamespaceName, map[string]string{testutils.LabelKey + "-2": testutils.LabelValue + "-2"}, nil)
-	createTestCappWithHostname(testutils.CappName+"-3", testNamespaceName, map[string]string{testutils.LabelKey + "-3": testutils.LabelValue + "-3"}, nil)
-	createTestCappWithHostname(testutils.CappName+"-4", testNamespaceName, map[string]string{testutils.LabelKey + "-4": testutils.LabelValue + "-4"}, nil)
+	mocks.CreateTestCapp(testutils.CappName+"-1", testNamespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, nil, dynClient)
+	mocks.CreateTestCapp(testutils.CappName+"-2", testNamespaceName, map[string]string{testutils.LabelKey + "-2": testutils.LabelValue + "-2"}, nil, dynClient)
+	mocks.CreateTestCappWithHostname(testutils.CappName+"-3", testNamespaceName, map[string]string{testutils.LabelKey + "-3": testutils.LabelValue + "-3"}, nil, dynClient)
+	mocks.CreateTestCappWithHostname(testutils.CappName+"-4", testNamespaceName, map[string]string{testutils.LabelKey + "-4": testutils.LabelValue + "-4"}, nil, dynClient)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -227,7 +208,7 @@ func TestGetCapp(t *testing.T) {
 
 	setup()
 	createTestNamespace(testNamespaceName)
-	createTestCapp(testutils.CappName, testNamespaceName, map[string]string{testutils.LabelKey: testutils.LabelValue}, nil)
+	mocks.CreateTestCapp(testutils.CappName, testNamespaceName, map[string]string{testutils.LabelKey: testutils.LabelValue}, nil, dynClient)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -317,7 +298,7 @@ func TestCreateCapp(t *testing.T) {
 
 	setup()
 	createTestNamespace(testNamespaceName)
-	createTestCapp(testutils.CappName+"-1", testNamespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, nil)
+	mocks.CreateTestCapp(testutils.CappName+"-1", testNamespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, nil, dynClient)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -414,7 +395,7 @@ func TestUpdateCapp(t *testing.T) {
 	}
 
 	setup()
-	createTestCapp(testutils.CappName, testNamespaceName, map[string]string{testutils.LabelKey: testutils.LabelValue}, nil)
+	mocks.CreateTestCapp(testutils.CappName, testNamespaceName, map[string]string{testutils.LabelKey: testutils.LabelValue}, nil, dynClient)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -503,7 +484,7 @@ func TestDeleteCapp(t *testing.T) {
 	}
 
 	setup()
-	createTestCapp(testutils.CappName, testNamespaceName, map[string]string{testutils.LabelKey: testutils.LabelValue}, nil)
+	mocks.CreateTestCapp(testutils.CappName, testNamespaceName, map[string]string{testutils.LabelKey: testutils.LabelValue}, nil, dynClient)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {

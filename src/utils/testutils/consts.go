@@ -29,9 +29,10 @@ const (
 )
 
 const (
-	LabelSelectorKey = "labelSelector"
-	LabelKey         = "key"
-	LabelValue       = "value"
+	LabelSelectorKey     = "labelSelector"
+	LabelKey             = "key"
+	LabelValue           = "value"
+	InvalidLabelSelector = ":--"
 )
 
 const (

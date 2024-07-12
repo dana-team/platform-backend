@@ -24,7 +24,7 @@ func createTestCappRevision(name, namespace string, labels, annotations map[stri
 }
 
 func TestGetCappRevision(t *testing.T) {
-	namespaceName := testutils.CappRevisionNamespace + "-GetOne"
+	namespaceName := testutils.CappRevisionNamespace + "-get"
 
 	type requestParams struct {
 		name      string
@@ -102,7 +102,7 @@ func TestGetCappRevision(t *testing.T) {
 }
 
 func TestGetCappRevisions(t *testing.T) {
-	namespaceName := testutils.CappRevisionNamespace + "-GetMany"
+	namespaceName := testutils.CappRevisionNamespace + "-getmany"
 
 	type requestParams struct {
 		cappQuery types.CappRevisionQuery
@@ -140,7 +140,7 @@ func TestGetCappRevisions(t *testing.T) {
 		"ShouldThrowErrorWithInvalidSelector": {
 			requestParams: requestParams{
 				namespace: namespaceName,
-				cappQuery: types.CappRevisionQuery{LabelSelector: ":--"},
+				cappQuery: types.CappRevisionQuery{LabelSelector: testutils.InvalidLabelSelector},
 			},
 			want: want{
 				cappRevisions: types.CappRevisionList{},
