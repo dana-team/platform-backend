@@ -2,6 +2,7 @@ package mocks
 
 import (
 	"github.com/dana-team/platform-backend/src/types"
+	"github.com/dana-team/platform-backend/src/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -10,7 +11,8 @@ import (
 func PrepareNamespace(name string) corev1.Namespace {
 	return corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:   name,
+			Labels: utils.AddManagedLabel(map[string]string{}),
 		},
 	}
 }

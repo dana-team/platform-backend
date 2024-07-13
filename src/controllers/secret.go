@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"github.com/dana-team/platform-backend/src/types"
+	"github.com/dana-team/platform-backend/src/utils"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -57,7 +58,6 @@ func (n *secretController) CreateSecret(namespace string, request types.CreateSe
 	if err != nil {
 		return types.CreateSecretResponse{}, err
 	}
-
 	newSecret, err := n.client.CoreV1().Secrets(namespace).Create(n.ctx, secret, metav1.CreateOptions{})
 	if err != nil {
 		n.logger.Error(fmt.Sprintf("Could not create secret %q with error: %v", request.SecretName, err.Error()))
@@ -76,7 +76,7 @@ func (n *secretController) CreateSecret(namespace string, request types.CreateSe
 func (n *secretController) GetSecrets(namespace string) (types.GetSecretsResponse, error) {
 	n.logger.Debug(fmt.Sprintf("Trying to get all secrets in %q namespace", namespace))
 
-	secrets, err := n.client.CoreV1().Secrets(namespace).List(n.ctx, metav1.ListOptions{})
+	secrets, err := n.client.CoreV1().Secrets(namespace).List(n.ctx, metav1.ListOptions{LabelSelector: utils.ManagedLabelSelctor})
 	if err != nil {
 		n.logger.Error(fmt.Sprintf("Could not get secrets with error: %v", err.Error()))
 		return types.GetSecretsResponse{}, err
@@ -178,6 +178,7 @@ func newSecretFromRequest(namespace string, request types.CreateSecretRequest) (
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      request.SecretName,
 			Namespace: namespace,
+			Labels:    utils.AddManagedLabel(map[string]string{}),
 		},
 	}
 

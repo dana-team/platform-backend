@@ -2,6 +2,7 @@ package mocks
 
 import (
 	"github.com/dana-team/platform-backend/src/types"
+	"github.com/dana-team/platform-backend/src/utils"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -17,6 +18,7 @@ func PrepareRoleBinding(name, namespace, role string) rbacv1.RoleBinding {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
+			Labels:    utils.AddManagedLabel(map[string]string{}),
 		},
 		Subjects: []rbacv1.Subject{
 			{

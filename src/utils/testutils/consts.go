@@ -1,8 +1,9 @@
 package testutils
 
 const (
-	Domain   = "dana-team.io"
-	Hostname = "custom-capp"
+	Domain       = "dana-team.io"
+	Hostname     = "custom-capp"
+	ManagedLabel = "rcs.dana.io/managed"
 )
 
 const (
