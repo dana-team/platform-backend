@@ -16,14 +16,8 @@ import (
 )
 
 const (
-	roleBindingsKey      = "rolebindings"
-	usersKey             = "users"
-	userNamespace        = testutils.TestNamespace + "-" + usersKey
-	roleBindingsGroupKey = "rbac.authorization.k8s.io"
-	userName             = testutils.TestName + "-user"
-	roleKey              = "role"
-	adminKey             = "admin"
-	viewerKey            = "viewer"
+	userNamespace = testutils.TestNamespace + "-" + testutils.UsersKey
+	userName      = testutils.TestName + "-user"
 )
 
 // createTestRoleBinding creates a test RoleBinding object.
@@ -58,10 +52,10 @@ func TestGetUsers(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					testutils.Count: 2,
-					usersKey: []types.User{
-						{Name: userName + "-1", Role: adminKey},
-						{Name: userName + "-2", Role: adminKey},
+					testutils.CountKey: 2,
+					testutils.UsersKey: []types.User{
+						{Name: userName + "-1", Role: testutils.AdminKey},
+						{Name: userName + "-2", Role: testutils.AdminKey},
 					},
 				},
 			},
@@ -70,8 +64,8 @@ func TestGetUsers(t *testing.T) {
 
 	setup()
 	createTestNamespace(testNamespaceName)
-	createTestRoleBinding(userName+"-1", testNamespaceName, adminKey)
-	createTestRoleBinding(userName+"-2", testNamespaceName, adminKey)
+	createTestRoleBinding(userName+"-1", testNamespaceName, testutils.AdminKey)
+	createTestRoleBinding(userName+"-2", testNamespaceName, testutils.AdminKey)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -123,7 +117,7 @@ func TestGetUser(t *testing.T) {
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
 					testutils.NameKey: userName,
-					roleKey:           adminKey,
+					testutils.RoleKey: testutils.AdminKey,
 				},
 			},
 		},
@@ -135,7 +129,7 @@ func TestGetUser(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", roleBindingsKey, roleBindingsGroupKey, userName+testutils.NonExistentSuffix),
+					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, userName+testutils.NonExistentSuffix),
 					testutils.ErrorKey:   testutils.OperationFailed,
 				},
 			},
@@ -148,7 +142,7 @@ func TestGetUser(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", roleBindingsKey, roleBindingsGroupKey, userName),
+					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, userName),
 					testutils.ErrorKey:   testutils.OperationFailed,
 				},
 			},
@@ -157,7 +151,7 @@ func TestGetUser(t *testing.T) {
 
 	setup()
 	createTestNamespace(testNamespaceName)
-	createTestRoleBinding(userName, testNamespaceName, adminKey)
+	createTestRoleBinding(userName, testNamespaceName, testutils.AdminKey)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -208,10 +202,10 @@ func TestCreateUser(t *testing.T) {
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
 					testutils.NameKey: userName,
-					roleKey:           viewerKey,
+					testutils.RoleKey: testutils.ViewerKey,
 				},
 			},
-			requestData: mocks.PrepareUserType(userName, viewerKey),
+			requestData: mocks.PrepareUserType(userName, testutils.ViewerKey),
 		},
 		"ShouldHandleAlreadyExists": {
 			requestURI: requestURI{
@@ -220,11 +214,11 @@ func TestCreateUser(t *testing.T) {
 			want: want{
 				statusCode: http.StatusConflict,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s.%s %q already exists", roleBindingsKey, roleBindingsGroupKey, userName+"-1"),
+					testutils.DetailsKey: fmt.Sprintf("%s.%s %q already exists", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, userName+"-1"),
 					testutils.ErrorKey:   testutils.OperationFailed,
 				},
 			},
-			requestData: mocks.PrepareUserType(userName+"-1", viewerKey),
+			requestData: mocks.PrepareUserType(userName+"-1", testutils.ViewerKey),
 		},
 		"ShouldHandleNonExistentRole": {
 			requestURI: requestURI{
@@ -237,13 +231,13 @@ func TestCreateUser(t *testing.T) {
 					testutils.ErrorKey:   testutils.InvalidRequest,
 				},
 			},
-			requestData: mocks.PrepareUserType(userName, viewerKey+testutils.NonExistentSuffix),
+			requestData: mocks.PrepareUserType(userName, testutils.ViewerKey+testutils.NonExistentSuffix),
 		},
 	}
 
 	setup()
 	createTestNamespace(testNamespaceName)
-	createTestRoleBinding(userName+"-1", testNamespaceName, viewerKey)
+	createTestRoleBinding(userName+"-1", testNamespaceName, testutils.ViewerKey)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -301,10 +295,10 @@ func TestUpdateUser(t *testing.T) {
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
 					testutils.NameKey: userName,
-					roleKey:           viewerKey,
+					testutils.RoleKey: testutils.ViewerKey,
 				},
 			},
-			requestData: mocks.PrepareUserType(userName, viewerKey),
+			requestData: mocks.PrepareUserType(userName, testutils.ViewerKey),
 		},
 		"ShouldHandleNotFoundUser": {
 			requestURI: requestURI{
@@ -314,11 +308,11 @@ func TestUpdateUser(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", roleBindingsKey, roleBindingsGroupKey, userName+testutils.NonExistentSuffix),
+					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, userName+testutils.NonExistentSuffix),
 					testutils.ErrorKey:   testutils.OperationFailed,
 				},
 			},
-			requestData: mocks.PrepareUpdateUserDataType(viewerKey),
+			requestData: mocks.PrepareUpdateUserDataType(testutils.ViewerKey),
 		},
 		"ShouldHandleNotExistentRole": {
 			requestURI: requestURI{
@@ -332,13 +326,13 @@ func TestUpdateUser(t *testing.T) {
 					testutils.ErrorKey:   testutils.InvalidRequest,
 				},
 			},
-			requestData: mocks.PrepareUpdateUserDataType(viewerKey + testutils.NonExistentSuffix),
+			requestData: mocks.PrepareUpdateUserDataType(testutils.ViewerKey + testutils.NonExistentSuffix),
 		},
 	}
 
 	setup()
 	createTestNamespace(testNamespaceName)
-	createTestRoleBinding(userName, testNamespaceName, adminKey)
+	createTestRoleBinding(userName, testNamespaceName, testutils.AdminKey)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -406,7 +400,7 @@ func TestDeleteUser(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", roleBindingsKey, roleBindingsGroupKey, userName+testutils.NonExistentSuffix),
+					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, userName+testutils.NonExistentSuffix),
 					testutils.ErrorKey:   testutils.OperationFailed,
 				},
 			},
@@ -419,7 +413,7 @@ func TestDeleteUser(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", roleBindingsKey, roleBindingsGroupKey, userName),
+					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, userName),
 					testutils.ErrorKey:   testutils.OperationFailed,
 				},
 			},
@@ -428,7 +422,7 @@ func TestDeleteUser(t *testing.T) {
 
 	setup()
 	createTestNamespace(testNamespaceName)
-	createTestRoleBinding(userName, testNamespaceName, adminKey)
+	createTestRoleBinding(userName, testNamespaceName, testutils.AdminKey)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {

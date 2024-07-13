@@ -7,10 +7,11 @@ import (
 )
 
 // PrepareNamespace returns a mock Namespace object.
-func PrepareNamespace(name string) corev1.Namespace {
+func PrepareNamespace(name string, labels map[string]string) corev1.Namespace {
 	return corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:   name,
+			Labels: labels,
 		},
 	}
 }

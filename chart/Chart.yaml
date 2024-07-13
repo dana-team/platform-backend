@@ -1,0 +1,6 @@
+apiVersion: v2
+type: application
+name: platform-backend
+version: 0.0.0
+appVersion: latest
+kubeVersion: ">=1.25.0-0"
