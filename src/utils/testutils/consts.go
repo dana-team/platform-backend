@@ -1,5 +1,7 @@
 package testutils
 
+import "time"
+
 const (
 	Domain   = "dana-team.io"
 	Hostname = "custom-capp"
@@ -8,11 +10,11 @@ const (
 const (
 	CappRevisionNamespace = TestName + "-capp-revision-ns"
 	CappRevisionName      = TestName + "-capp-revision"
+	CapprevisionsKey      = "capprevisions"
 )
+
 const (
 	SecretsKey             = "secrets"
-	OpaqueType             = "opaque"
-	SecretType             = "Opaque"
 	SecretNameKey          = "secretName"
 	SecretDataKey          = "test-key"
 	SecretDataValue        = "fake"
@@ -21,7 +23,26 @@ const (
 	SecretName             = TestName + "-secret"
 	SecretDataValueEncoded = "ZmFrZQ=="
 	SecretNamespace        = SecretName + "-ns"
+	KeyField               = "key"
+	ValueField             = "value"
 )
+
+const (
+	ConfigmapsKey      = "configmaps"
+	ConfigMapDataKey   = "key"
+	ConfigMapDataValue = "value"
+)
+
+const (
+	RoleKey              = "role"
+	AdminKey             = "admin"
+	ViewerKey            = "viewer"
+	RoleBindingsKey      = "rolebindings"
+	UsersKey             = "users"
+	RoleBindingsGroupKey = "rbac.authorization.k8s.io"
+	CappUserPrefix       = "capp-user-"
+)
+
 const (
 	TestName          = "test"
 	TestNamespace     = TestName + "-ns"
@@ -32,12 +53,13 @@ const (
 	LabelSelectorKey = "labelSelector"
 	LabelKey         = "key"
 	LabelValue       = "value"
+	LabelCappName    = "rcs.dana.io/cappName"
 )
 
 const (
 	NameKey          = "name"
-	NameSpaceKey     = "namespaces"
-	NameSpaceNameKey = "namespaceName"
+	NamespaceKey     = "namespaces"
+	NamespaceNameKey = "namespaceName"
 	IdKey            = "id"
 	OperationFailed  = "Operation failed"
 	InvalidRequest   = "Invalid request"
@@ -48,13 +70,13 @@ const (
 )
 
 const (
-	Metadata    = "metadata"
-	Labels      = "labels"
-	Annotations = "annotations"
-	Spec        = "spec"
-	Status      = "status"
-	Count       = "count"
-	Data        = "data"
+	MetadataKey    = "metadata"
+	LabelsKey      = "labels"
+	AnnotationsKey = "annotations"
+	SpecKey        = "spec"
+	StatusKey      = "status"
+	CountKey       = "count"
+	DataKey        = "data"
 )
 
 const (
@@ -67,4 +89,10 @@ const (
 	CappNamespace = TestNamespace + "-" + CappsKey
 	CappImage     = "ghcr.io/dana-team/capp-gin-app:v0.2.0"
 	ContainerName = "capp-container"
+)
+
+const (
+	Timeout           = 300 * time.Second
+	Interval          = 2 * time.Second
+	DefaultEventually = 2 * time.Second
 )

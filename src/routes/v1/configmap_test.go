@@ -17,15 +17,12 @@ import (
 
 const (
 	configMapName      = testutils.TestName + "-configmap"
-	configKey          = "key"
-	configValue        = "value"
-	configmapsKey      = "configmaps"
-	configMapNamespace = testutils.TestNamespace + configmapsKey
+	configMapNamespace = testutils.TestNamespace + testutils.ConfigmapsKey
 )
 
 // createTestConfigMap creates a test ConfigMap object.
 func createTestConfigMap(name, namespace string) {
-	configMap := mocks.PrepareConfigMap(name, namespace, map[string]string{configKey: configValue})
+	configMap := mocks.PrepareConfigMap(name, namespace, map[string]string{testutils.ConfigMapDataKey: testutils.ConfigMapDataValue})
 	_, err := fakeClient.CoreV1().ConfigMaps(namespace).Create(context.TODO(), &configMap, metav1.CreateOptions{})
 	if err != nil {
 		panic(err)
@@ -57,7 +54,7 @@ func TestGetConfigMap(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					testutils.Data: []types.KeyValue{{Key: configKey, Value: configValue}},
+					testutils.DataKey: []types.KeyValue{{Key: testutils.ConfigMapDataKey, Value: testutils.ConfigMapDataValue}},
 				},
 			},
 		},
@@ -69,7 +66,7 @@ func TestGetConfigMap(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s %q not found", configmapsKey, configMapName+testutils.NonExistentSuffix),
+					testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.ConfigmapsKey, configMapName+testutils.NonExistentSuffix),
 					testutils.ErrorKey:   testutils.OperationFailed,
 				},
 			},
@@ -82,7 +79,7 @@ func TestGetConfigMap(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s %q not found", configmapsKey, configMapName),
+					testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.ConfigmapsKey, configMapName),
 					testutils.ErrorKey:   testutils.OperationFailed,
 				},
 			},

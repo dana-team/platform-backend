@@ -52,7 +52,7 @@ $ make run
 Alternatively, to build the backend as a Docker image, use the following `Makefile` targets:
 
 ```bash
-$ make docker-build docker-push IMG=<registry>/platform-backend:<tag>
+$ make docker-build docker-push IMG=<registry>/platform-manager:<tag>
 ```
 
 ## Routes Examples

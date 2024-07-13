@@ -12,8 +12,13 @@ import (
 	knativev1beta1 "knative.dev/serving/pkg/apis/serving/v1beta1"
 )
 
+const (
+	concurrencyKey = "concurrency"
+	enabledKey     = "enabled"
+)
+
 // PrepareCapp returns a mock Capp object.
-func PrepareCapp(name, namespace string, labels, annotations map[string]string) cappv1alpha1.Capp {
+func PrepareCapp(name, namespace, domain string, labels, annotations map[string]string) cappv1alpha1.Capp {
 	return cappv1alpha1.Capp{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
@@ -22,7 +27,7 @@ func PrepareCapp(name, namespace string, labels, annotations map[string]string) 
 			Labels:      labels,
 		},
 		Spec:   PrepareCappSpec(),
-		Status: PrepareCappStatus(name, namespace),
+		Status: PrepareCappStatus(name, namespace, domain),
 	}
 }
 
@@ -43,6 +48,8 @@ func PrepareCappWithHostname(name, namespace string, labels, annotations map[str
 // PrepareCappSpec returns a mock Capp spec.
 func PrepareCappSpec() cappv1alpha1.CappSpec {
 	return cappv1alpha1.CappSpec{
+		ScaleMetric: concurrencyKey,
+		State:       enabledKey,
 		ConfigurationSpec: knativev1.ConfigurationSpec{
 			Template: knativev1.RevisionTemplateSpec{
 				Spec: knativev1.RevisionSpec{
@@ -84,11 +91,11 @@ func PrepareCappSpecWithHostname() cappv1alpha1.CappSpec {
 }
 
 // PrepareCappStatus returns a mock Capp status.
-func PrepareCappStatus(name, namespace string) cappv1alpha1.CappStatus {
+func PrepareCappStatus(name, namespace, domain string) cappv1alpha1.CappStatus {
 	return cappv1alpha1.CappStatus{
 		KnativeObjectStatus: knativev1.ServiceStatus{
 			RouteStatusFields: knativev1.RouteStatusFields{
-				URL: knativeapis.HTTPS(fmt.Sprintf("%s-%s.%s", name, namespace, testutils.Domain)),
+				URL: knativeapis.HTTPS(fmt.Sprintf("%s-%s.%s", name, namespace, domain)),
 			},
 		},
 	}

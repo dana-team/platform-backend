@@ -1,0 +1,301 @@
+package e2e_tests
+
+import (
+	"bytes"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"github.com/dana-team/platform-backend/src/types"
+	"github.com/dana-team/platform-backend/src/utils/testutils"
+	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
+	"net/http"
+	"strings"
+)
+
+var _ = Describe("Validate Secret routes and functionality", func() {
+	var namespaceName, oneSecretName, secondSecretName string
+	var namespace corev1.Namespace
+
+	BeforeEach(func() {
+		namespaceName = generateName(e2eNamespace)
+		namespace = mocks.PrepareNamespace(namespaceName, map[string]string{e2eLabelKey: e2eLabelValue})
+		createResource(k8sClient, &namespace)
+
+		oneSecretName = generateName(testSecretName)
+		oneSecret := mocks.PrepareSecret(oneSecretName, namespaceName, testutils.SecretDataKey, testutils.SecretDataValueEncoded)
+		createResource(k8sClient, &oneSecret)
+
+		secondSecretName = generateName(testSecretName)
+		secondSecret := mocks.PrepareSecret(secondSecretName, namespaceName, testutils.SecretDataKey, testutils.SecretDataValueEncoded)
+		createResource(k8sClient, &secondSecret)
+	})
+
+	Context("Validate get Secrets route", func() {
+		It("Should get all secrets in a namespace", func() {
+			baseURI := fmt.Sprintf("%s/v1/namespaces/%s/%s", platformURL, namespaceName, testutils.SecretsKey)
+			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodGet, baseURI, "", "", userToken)
+
+			expectedResponse := map[string]interface{}{
+				testutils.CountKey: 2,
+				testutils.SecretsKey: []map[string]interface{}{
+					{
+						testutils.SecretNameKey:    oneSecretName,
+						testutils.NamespaceNameKey: namespaceName,
+						testutils.TypeKey:          string(corev1.SecretTypeOpaque),
+					},
+					{
+						testutils.SecretNameKey:    secondSecretName,
+						testutils.NamespaceNameKey: namespaceName,
+						testutils.TypeKey:          string(corev1.SecretTypeOpaque),
+					},
+				},
+			}
+
+			Expect(status).Should(Equal(http.StatusOK))
+			Expect(expectedResponse[testutils.CountKey]).To(BeNumerically("<=", response[testutils.CountKey]))
+			for _, secret := range expectedResponse[testutils.SecretsKey].([]map[string]interface{}) {
+				Expect(secret).To(BeElementOf(response[testutils.SecretsKey]))
+			}
+		})
+	})
+
+	Context("Validate get Secret route", func() {
+		It("Should get a specific Secret in a namespace", func() {
+			baseURI := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName, testutils.SecretsKey, oneSecretName)
+			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodGet, baseURI, "", "", userToken)
+
+			expectedResponse := map[string]interface{}{
+				testutils.SecretNameKey: oneSecretName,
+				testutils.TypeKey:       string(corev1.SecretTypeOpaque),
+				testutils.DataKey:       []types.KeyValue{{Key: testutils.SecretDataKey, Value: testutils.SecretDataValue}},
+			}
+
+			Expect(status).Should(Equal(http.StatusOK))
+			Expect(response[testutils.SecretNameKey]).To(Equal(expectedResponse[testutils.SecretNameKey]))
+			Expect(response[testutils.TypeKey]).To(Equal(expectedResponse[testutils.TypeKey]))
+
+			var responseKeyVal []types.KeyValue
+			for _, data := range response[testutils.DataKey].([]interface{}) {
+				pair := data.(map[string]interface{})
+				responseKeyVal = append(responseKeyVal, types.KeyValue{Key: pair[testutils.KeyField].(string), Value: pair[testutils.ValueField].(string)})
+			}
+
+			Expect(responseKeyVal).To(Equal(expectedResponse[testutils.DataKey]))
+		})
+
+		It("Should handle a not found Secret in a namespace", func() {
+			baseURI := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName, testutils.SecretsKey, oneSecretName+testutils.NonExistentSuffix)
+			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodGet, baseURI, "", "", userToken)
+
+			expectedResponse := map[string]interface{}{
+				testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.SecretsKey, oneSecretName+testutils.NonExistentSuffix),
+				testutils.ErrorKey:   testutils.OperationFailed,
+			}
+
+			secret := mocks.PrepareSecret(oneSecretName+testutils.NonExistentSuffix, namespaceName, "", "")
+			Expect(doesResourceExist(k8sClient, &secret)).To(BeFalse())
+			Expect(status).Should(Equal(http.StatusNotFound))
+			compareResponses(response, expectedResponse)
+		})
+
+		It("Should handle a get of a ConfigMap in a not found namespace", func() {
+			baseURI := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName+testutils.NonExistentSuffix, testutils.SecretsKey, oneSecretName)
+			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodGet, baseURI, "", "", userToken)
+
+			expectedResponse := map[string]interface{}{
+				testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.SecretsKey, oneSecretName),
+				testutils.ErrorKey:   testutils.OperationFailed,
+			}
+
+			secret := mocks.PrepareSecret(oneSecretName, namespaceName+testutils.NonExistentSuffix, "", "")
+			Expect(doesResourceExist(k8sClient, &secret)).To(BeFalse())
+			Expect(status).Should(Equal(http.StatusNotFound))
+			compareResponses(response, expectedResponse)
+		})
+	})
+
+	Context("Validate create Secret route", func() {
+		It("Should create a new secret in a namespace", func() {
+			newSecretName := generateName(testSecretName)
+
+			baseURI := fmt.Sprintf("%s/v1/namespaces/%s/%s", platformURL, namespaceName, testutils.SecretsKey)
+			requestData := mocks.PrepareCreateSecretRequestType(newSecretName, strings.ToLower(string(corev1.SecretTypeOpaque)), "", "", []types.KeyValue{{Key: testutils.SecretDataKey, Value: testutils.SecretDataValue}})
+			payload, err := json.Marshal(requestData)
+			Expect(err).Should(Not(HaveOccurred()))
+
+			status, response := performAuthorizedHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, baseURI, "", "", userToken)
+			expectedResponse := map[string]interface{}{
+				testutils.SecretNameKey:    newSecretName,
+				testutils.TypeKey:          corev1.SecretTypeOpaque,
+				testutils.NamespaceNameKey: namespaceName,
+			}
+
+			Expect(status).Should(Equal(http.StatusOK))
+			compareResponses(response, expectedResponse)
+
+			secret := mocks.PrepareSecret(newSecretName, namespaceName, "", "")
+			Eventually(func() bool {
+				return doesResourceExist(k8sClient, &secret)
+			}, testutils.Timeout, testutils.Interval).Should(BeTrue())
+
+			Eventually(func() bool {
+				secret := getSecret(k8sClient, newSecretName, namespaceName)
+				return secret.Type == corev1.SecretTypeOpaque
+			}, testutils.Timeout, testutils.Interval).Should(BeTrue())
+		})
+
+		It("Should fail creating secret with invalid body", func() {
+			baseURI := fmt.Sprintf("%s/v1/namespaces/%s/%s", platformURL, namespaceName, testutils.SecretsKey)
+			requestData := mocks.PrepareCreateSecretRequestType("", strings.ToLower(string(corev1.SecretTypeOpaque)), "", "", []types.KeyValue{{Key: testutils.SecretDataKey, Value: testutils.SecretDataValue}})
+			payload, err := json.Marshal(requestData)
+			Expect(err).Should(Not(HaveOccurred()))
+
+			status, response := performAuthorizedHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, baseURI, "", "", userToken)
+			expectedResponse := map[string]interface{}{
+				testutils.DetailsKey: "Key: 'CreateSecretRequest.SecretName' Error:Field validation for 'SecretName' failed on the 'required' tag",
+				testutils.ErrorKey:   testutils.InvalidRequest,
+			}
+
+			Expect(status).Should(Equal(http.StatusBadRequest))
+			compareResponses(response, expectedResponse)
+		})
+
+		It("Should handle already existing secret", func() {
+			baseURI := fmt.Sprintf("%s/v1/namespaces/%s/%s", platformURL, namespaceName, testutils.SecretsKey)
+			requestData := mocks.PrepareCreateSecretRequestType(oneSecretName, strings.ToLower(string(corev1.SecretTypeOpaque)), "", "", []types.KeyValue{{Key: testutils.SecretDataKey, Value: testutils.SecretDataValue}})
+			payload, err := json.Marshal(requestData)
+			Expect(err).Should(Not(HaveOccurred()))
+
+			status, response := performAuthorizedHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, baseURI, "", "", userToken)
+			expectedResponse := map[string]interface{}{
+				testutils.DetailsKey: fmt.Sprintf("%s %q already exists", testutils.SecretsKey, oneSecretName),
+				testutils.ErrorKey:   testutils.OperationFailed,
+			}
+
+			Expect(status).Should(Equal(http.StatusConflict))
+			compareResponses(response, expectedResponse)
+		})
+	})
+
+	Context("Validate update Secret route", func() {
+		It("Should update an existing Secret in a namespace", func() {
+			baseURI := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName, testutils.SecretsKey, oneSecretName)
+			requestData := mocks.PrepareSecretRequestType([]types.KeyValue{{Key: testutils.SecretDataKey, Value: testutils.SecretDataValue + "-updated"}})
+			payload, err := json.Marshal(requestData)
+			Expect(err).Should(Not(HaveOccurred()))
+
+			status, response := performAuthorizedHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPut, baseURI, "", "", userToken)
+			expectedResponse := map[string]interface{}{
+				testutils.SecretNameKey:    oneSecretName,
+				testutils.TypeKey:          corev1.SecretTypeOpaque,
+				testutils.NamespaceNameKey: namespaceName,
+				testutils.DataKey:          []types.KeyValue{{Key: testutils.SecretDataKey, Value: testutils.SecretDataValue + "-updated"}},
+			}
+
+			Expect(status).Should(Equal(http.StatusOK))
+			compareResponses(response, expectedResponse)
+
+			updatedValue := base64.StdEncoding.EncodeToString([]byte(testutils.SecretDataValue + "-updated"))
+			Eventually(func() bool {
+				secret := getSecret(k8sClient, oneSecretName, namespaceName)
+				return string(secret.Data[testutils.SecretDataKey]) == updatedValue
+			}, testutils.Timeout, testutils.Interval).Should(BeTrue())
+		})
+
+		It("Should handle update of a not found Secret in a namespace", func() {
+			baseURI := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName, testutils.SecretsKey, oneSecretName+testutils.NonExistentSuffix)
+			requestData := mocks.PrepareSecretRequestType([]types.KeyValue{{Key: testutils.SecretDataKey, Value: testutils.SecretDataValue + "-updated"}})
+			payload, err := json.Marshal(requestData)
+			Expect(err).Should(Not(HaveOccurred()))
+
+			status, response := performAuthorizedHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPut, baseURI, "", "", userToken)
+			expectedResponse := map[string]interface{}{
+				testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.SecretsKey, oneSecretName+testutils.NonExistentSuffix),
+				testutils.ErrorKey:   testutils.OperationFailed,
+			}
+
+			Expect(status).Should(Equal(http.StatusNotFound))
+			compareResponses(response, expectedResponse)
+		})
+
+		It("Should handle update of a Secret in a not found namespace", func() {
+			baseURI := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName+testutils.NonExistentSuffix, testutils.SecretsKey, oneSecretName)
+			requestData := mocks.PrepareSecretRequestType([]types.KeyValue{{Key: testutils.SecretDataKey, Value: testutils.SecretDataValue + "-updated"}})
+			payload, err := json.Marshal(requestData)
+			Expect(err).Should(Not(HaveOccurred()))
+
+			status, response := performAuthorizedHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPut, baseURI, "", "", userToken)
+			expectedResponse := map[string]interface{}{
+				testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.SecretsKey, oneSecretName),
+				testutils.ErrorKey:   testutils.OperationFailed,
+			}
+
+			Expect(status).Should(Equal(http.StatusNotFound))
+			compareResponses(response, expectedResponse)
+		})
+
+		It("Should fail to update a Secret with invalid body", func() {
+			baseURI := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName, testutils.SecretsKey, oneSecretName)
+			requestData := mocks.PrepareSecretRequestType(nil)
+			payload, err := json.Marshal(requestData)
+			Expect(err).Should(Not(HaveOccurred()))
+
+			status, response := performAuthorizedHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPut, baseURI, "", "", userToken)
+			expectedResponse := map[string]interface{}{
+				testutils.DetailsKey: "Key: 'UpdateSecretRequest.Data' Error:Field validation for 'Data' failed on the 'required' tag",
+				testutils.ErrorKey:   testutils.InvalidRequest,
+			}
+
+			Expect(status).Should(Equal(http.StatusBadRequest))
+			compareResponses(response, expectedResponse)
+		})
+	})
+
+	Context("Validate delete Secret route", func() {
+		It("Should delete a Secret in a namespace", func() {
+			baseURI := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName, testutils.SecretsKey, oneSecretName)
+			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodDelete, baseURI, "", "", userToken)
+
+			expectedResponse := map[string]interface{}{
+				testutils.MessageKey: fmt.Sprintf("Deleted secret %q in namespace %q successfully", oneSecretName, namespaceName),
+			}
+
+			Expect(status).Should(Equal(http.StatusOK))
+			compareResponses(response, expectedResponse)
+
+			secret := mocks.PrepareSecret(oneSecretName, namespaceName, "", "")
+			Eventually(func() bool {
+				return doesResourceExist(k8sClient, &secret)
+			}, testutils.Timeout, testutils.Interval).Should(BeFalse())
+		})
+
+		It("Should handle deletion of a not found Secret in a namespace", func() {
+			baseURI := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName, testutils.SecretsKey, oneSecretName+testutils.NonExistentSuffix)
+			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodDelete, baseURI, "", "", userToken)
+
+			expectedResponse := map[string]interface{}{
+				testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.SecretsKey, oneSecretName+testutils.NonExistentSuffix),
+				testutils.ErrorKey:   testutils.OperationFailed,
+			}
+
+			Expect(status).Should(Equal(http.StatusNotFound))
+			compareResponses(response, expectedResponse)
+		})
+
+		It("Should handle deletion of a Secret in a not found namespace", func() {
+			baseURI := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName+testutils.NonExistentSuffix, testutils.SecretsKey, oneSecretName)
+			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodDelete, baseURI, "", "", userToken)
+
+			expectedResponse := map[string]interface{}{
+				testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.SecretsKey, oneSecretName),
+				testutils.ErrorKey:   testutils.OperationFailed,
+			}
+
+			Expect(status).Should(Equal(http.StatusNotFound))
+			compareResponses(response, expectedResponse)
+		})
+	})
+})

@@ -13,7 +13,7 @@ RUN go mod download
 COPY . .
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux go build -a -o backend cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -a -o manager cmd/main.go
 
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /

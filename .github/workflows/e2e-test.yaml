@@ -1,0 +1,88 @@
+name: e2e-tests
+on:
+  pull_request_target:
+    branches:
+      - main
+    types: [opened, reopened, synchronize]
+
+jobs:
+  e2e-tests:
+    name: e2e-tests
+    runs-on: ubuntu-latest
+    env:
+      REGISTRY: ghcr.io
+      REPOSITORY_NAME: ${{ github.repository }}
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Get user permission
+        id: checkAccess
+        uses: actions-cool/check-user-permission@v2
+        with:
+          require: write
+          username: ${{ github.triggering_actor }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check User Permission
+        if: steps.checkAccess.outputs.require-result == 'false'
+        run: |
+          echo "${{ github.triggering_actor }} does not have permissions on this repo."
+          echo "Current permission level is ${{ steps.checkAccess.outputs.user-permission }}"
+          echo "Job originally triggered by ${{ github.actor }}"
+          exit 1
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{  github.event.pull_request.head.sha }} # This is dangerous without the access check
+
+      - name: Setup go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Log into ghcr.io
+        uses: docker/login-action@0d4c9c5ea7693da7b068278f7b52bda2a190a446
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Add IMAGE_TAG env property with commit short sha
+        run: echo "IMAGE_TAG=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
+
+      - name: Build and push docker image
+        run: make docker-build docker-push IMG=${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}:${IMAGE_TAG}
+
+      - name: Set Kubernetes context
+        uses: Azure/k8s-set-context@v4
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.BACKEND_CI_CLUSTER_KUBECONFIG }}
+
+      - name: Deploy Capp
+        run: make deploy-capp
+
+      - name: Deploy backend
+        run: make deploy IMG=${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}:${IMAGE_TAG} CLUSTER_NAME=${{ secrets.BACKEND_CI_CLUSTER_NAME }} CLUSTER_DOMAIN=${{ secrets.BACKEND_CI_CLUSTER_DOMAIN }}
+
+      - name: Await backend to be ready
+        uses: jupyterhub/action-k8s-await-workloads@v3
+        with:
+          workloads: ""
+          namespace: "platform-backend-system"
+          max-restarts: 0
+
+      - name: Run e2e tests
+        run: make test-e2e
+
+      - name: Undeploy backend
+        run: make undeploy
+
+      - name: Undeploy Capp
+        run: make undeploy-capp

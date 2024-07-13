@@ -96,7 +96,7 @@ func setupRouter(logger *zap.Logger) *gin.Engine {
 }
 
 func createTestNamespace(name string) {
-	namespace := mocks.PrepareNamespace(name)
+	namespace := mocks.PrepareNamespace(name, nil)
 	_, err := fakeClient.CoreV1().Namespaces().Create(context.TODO(), &namespace, metav1.CreateOptions{})
 
 	if err != nil {

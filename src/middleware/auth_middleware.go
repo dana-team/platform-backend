@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"fmt"
+	"github.com/go-logr/logr"
 	"net/http"
 	"os"
 	"strings"
@@ -10,7 +11,6 @@ import (
 	"github.com/dana-team/platform-backend/src/auth"
 	"github.com/dana-team/platform-backend/src/utils"
 	"github.com/gin-gonic/gin"
-	"github.com/go-logr/logr"
 	"go.uber.org/zap"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"

@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	nsName = testutils.TestNamespace + "-" + testutils.NameSpaceKey
+	nsName = testutils.TestNamespace + "-" + testutils.NamespaceKey
 )
 
 func TestGetNamespaces(t *testing.T) {
@@ -33,8 +33,8 @@ func TestGetNamespaces(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					testutils.Count:        2,
-					testutils.NameSpaceKey: []types.Namespace{{Name: testNamespaceName + "-1"}, {Name: testNamespaceName + "-2"}},
+					testutils.CountKey:     2,
+					testutils.NamespaceKey: []types.Namespace{{Name: testNamespaceName + "-1"}, {Name: testNamespaceName + "-2"}},
 				},
 			},
 		},
@@ -102,7 +102,7 @@ func TestGetNamespace(t *testing.T) {
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
 					testutils.ErrorKey:   testutils.OperationFailed,
-					testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.NameSpaceKey, testNamespaceName+"-1"+testutils.NonExistentSuffix),
+					testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.NamespaceKey, testNamespaceName+"-1"+testutils.NonExistentSuffix),
 				},
 			},
 		},
@@ -171,7 +171,7 @@ func TestCreateNamespace(t *testing.T) {
 			want: want{
 				statusCode: http.StatusConflict,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s %q already exists", testutils.NameSpaceKey, testNamespaceName+"-1"),
+					testutils.DetailsKey: fmt.Sprintf("%s %q already exists", testutils.NamespaceKey, testNamespaceName+"-1"),
 					testutils.ErrorKey:   testutils.OperationFailed,
 				},
 			},
@@ -245,7 +245,7 @@ func TestDeleteNamespace(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.NameSpaceKey, testNamespaceName+testutils.NonExistentSuffix),
+					testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.NamespaceKey, testNamespaceName+testutils.NonExistentSuffix),
 					testutils.ErrorKey:   testutils.OperationFailed,
 				},
 			},

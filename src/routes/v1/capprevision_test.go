@@ -15,12 +15,6 @@ import (
 	"testing"
 )
 
-const (
-	cappRevisionName      = testutils.TestName + "-capp-revision"
-	capprevisionsKey      = "capprevisions"
-	cappRevisionNamespace = testutils.TestNamespace + "-" + capprevisionsKey
-)
-
 // createTestCappRevision creates a test CappRevision object.
 func createTestCappRevision(name, namespace string, labels, annotations map[string]string) {
 	cappRevision := mocks.PrepareCappRevision(name, namespace, labels, annotations)
@@ -31,7 +25,7 @@ func createTestCappRevision(name, namespace string, labels, annotations map[stri
 }
 
 func TestGetCappRevisions(t *testing.T) {
-	testNamespaceName := cappRevisionNamespace + "-get"
+	testNamespaceName := testutils.CappRevisionNamespace + "-get"
 
 	type selector struct {
 		keys   []string
@@ -59,8 +53,8 @@ func TestGetCappRevisions(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					capprevisionsKey: []string{cappRevisionName + "-1", cappRevisionName + "-2"},
-					testutils.Count:  2,
+					testutils.CapprevisionsKey: []string{testutils.CappRevisionName + "-1", testutils.CappRevisionName + "-2"},
+					testutils.CountKey:         2,
 				},
 			},
 		},
@@ -75,8 +69,8 @@ func TestGetCappRevisions(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					capprevisionsKey: []string{cappRevisionName + "-1"},
-					testutils.Count:  1,
+					testutils.CapprevisionsKey: []string{testutils.CappRevisionName + "-1"},
+					testutils.CountKey:         1,
 				},
 			},
 		},
@@ -107,8 +101,8 @@ func TestGetCappRevisions(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					capprevisionsKey: nil,
-					testutils.Count:  0,
+					testutils.CapprevisionsKey: nil,
+					testutils.CountKey:         0,
 				},
 			},
 		},
@@ -116,8 +110,8 @@ func TestGetCappRevisions(t *testing.T) {
 
 	setup()
 	createTestNamespace(testNamespaceName)
-	createTestCappRevision(cappRevisionName+"-1", testNamespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, nil)
-	createTestCappRevision(cappRevisionName+"-2", testNamespaceName, map[string]string{testutils.LabelKey + "-2": testutils.LabelValue + "-2"}, nil)
+	createTestCappRevision(testutils.CappRevisionName+"-1", testNamespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, nil)
+	createTestCappRevision(testutils.CappRevisionName+"-2", testNamespaceName, map[string]string{testutils.LabelKey + "-2": testutils.LabelValue + "-2"}, nil)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -150,7 +144,7 @@ func TestGetCappRevisions(t *testing.T) {
 }
 
 func TestGetCappRevision(t *testing.T) {
-	testNamespaceName := cappRevisionNamespace + "-get-one"
+	testNamespaceName := testutils.CappRevisionNamespace + "-get-one"
 
 	type requestURI struct {
 		name      string
@@ -169,28 +163,28 @@ func TestGetCappRevision(t *testing.T) {
 		"ShouldSucceedGettingCappRevision": {
 			requestURI: requestURI{
 				namespace: testNamespaceName,
-				name:      cappRevisionName,
+				name:      testutils.CappRevisionName,
 			},
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					testutils.Metadata:    types.Metadata{Name: cappRevisionName, Namespace: testNamespaceName},
-					testutils.Labels:      []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}},
-					testutils.Annotations: nil,
-					testutils.Spec:        mocks.PrepareCappRevisionSpec(),
-					testutils.Status:      mocks.PrepareCappRevisionStatus(),
+					testutils.MetadataKey:    types.Metadata{Name: testutils.CappRevisionName, Namespace: testNamespaceName},
+					testutils.LabelsKey:      []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}},
+					testutils.AnnotationsKey: nil,
+					testutils.SpecKey:        mocks.PrepareCappRevisionSpec(),
+					testutils.StatusKey:      mocks.PrepareCappRevisionStatus(),
 				},
 			},
 		},
 		"ShouldHandleNotFoundCappRevision": {
 			requestURI: requestURI{
 				namespace: testNamespaceName,
-				name:      cappRevisionName + testutils.NonExistentSuffix,
+				name:      testutils.CappRevisionName + testutils.NonExistentSuffix,
 			},
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", capprevisionsKey, cappv1alpha1.GroupVersion.Group, cappRevisionName+testutils.NonExistentSuffix),
+					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CapprevisionsKey, cappv1alpha1.GroupVersion.Group, testutils.CappRevisionName+testutils.NonExistentSuffix),
 					testutils.ErrorKey:   testutils.OperationFailed,
 				},
 			},
@@ -198,12 +192,12 @@ func TestGetCappRevision(t *testing.T) {
 		"ShouldHandleNotFoundNamespace": {
 			requestURI: requestURI{
 				namespace: testNamespaceName + testutils.NonExistentSuffix,
-				name:      cappRevisionName,
+				name:      testutils.CappRevisionName,
 			},
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("capprevisions.%s %q not found", cappv1alpha1.GroupVersion.Group, cappRevisionName),
+					testutils.DetailsKey: fmt.Sprintf("capprevisions.%s %q not found", cappv1alpha1.GroupVersion.Group, testutils.CappRevisionName),
 					testutils.ErrorKey:   testutils.OperationFailed,
 				},
 			},
@@ -212,7 +206,7 @@ func TestGetCappRevision(t *testing.T) {
 
 	setup()
 	createTestNamespace(testNamespaceName)
-	createTestCappRevision(cappRevisionName, testNamespaceName, map[string]string{testutils.LabelKey: testutils.LabelValue}, nil)
+	createTestCappRevision(testutils.CappRevisionName, testNamespaceName, map[string]string{testutils.LabelKey: testutils.LabelValue}, nil)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {

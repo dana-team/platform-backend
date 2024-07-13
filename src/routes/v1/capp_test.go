@@ -19,7 +19,7 @@ import (
 
 // createTestCapp creates a test Capp object.
 func createTestCapp(name, namespace string, labels, annotations map[string]string) {
-	capp := mocks.PrepareCapp(name, namespace, labels, annotations)
+	capp := mocks.PrepareCapp(name, namespace, testutils.Domain, labels, annotations)
 	err := dynClient.Create(context.TODO(), &capp)
 	if err != nil {
 		panic(err)
@@ -64,7 +64,7 @@ func TestGetCapps(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					testutils.Count: 4,
+					testutils.CountKey: 4,
 					testutils.CappsKey: []types.CappSummary{
 						{Name: testutils.CappName + "-1", URL: fmt.Sprintf("https://%s-%s.%s", testutils.CappName+"-1", testNamespaceName, testutils.Domain), Images: []string{testutils.CappImage}},
 						{Name: testutils.CappName + "-2", URL: fmt.Sprintf("https://%s-%s.%s", testutils.CappName+"-2", testNamespaceName, testutils.Domain), Images: []string{testutils.CappImage}},
@@ -85,7 +85,7 @@ func TestGetCapps(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					testutils.Count: 1,
+					testutils.CountKey: 1,
 					testutils.CappsKey: []types.CappSummary{
 						{Name: testutils.CappName + "-1", URL: fmt.Sprintf("https://%s-%s.%s", testutils.CappName+"-1", testNamespaceName, testutils.Domain), Images: []string{testutils.CappImage}},
 					},
@@ -119,7 +119,7 @@ func TestGetCapps(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					testutils.Count:    0,
+					testutils.CountKey: 0,
 					testutils.CappsKey: nil,
 				},
 			},
@@ -189,11 +189,11 @@ func TestGetCapp(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					testutils.Metadata:    types.Metadata{Name: testutils.CappName, Namespace: testNamespaceName},
-					testutils.Labels:      []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}},
-					testutils.Annotations: nil,
-					testutils.Spec:        mocks.PrepareCappSpec(),
-					testutils.Status:      mocks.PrepareCappStatus(testutils.CappName, testNamespaceName),
+					testutils.MetadataKey:    types.Metadata{Name: testutils.CappName, Namespace: testNamespaceName},
+					testutils.LabelsKey:      []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}},
+					testutils.AnnotationsKey: nil,
+					testutils.SpecKey:        mocks.PrepareCappSpec(),
+					testutils.StatusKey:      mocks.PrepareCappStatus(testutils.CappName, testNamespaceName, testutils.Domain),
 				},
 			},
 		},
@@ -278,11 +278,11 @@ func TestCreateCapp(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					testutils.Metadata:    types.Metadata{Name: testutils.CappName, Namespace: testNamespaceName},
-					testutils.Labels:      []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}},
-					testutils.Annotations: nil,
-					testutils.Spec:        mocks.PrepareCappSpec(),
-					testutils.Status:      cappv1alpha1.CappStatus{},
+					testutils.MetadataKey:    types.Metadata{Name: testutils.CappName, Namespace: testNamespaceName},
+					testutils.LabelsKey:      []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}},
+					testutils.AnnotationsKey: nil,
+					testutils.SpecKey:        mocks.PrepareCappSpec(),
+					testutils.StatusKey:      cappv1alpha1.CappStatus{},
 				},
 			},
 			requestData: mocks.PrepareCreateCappType(testutils.CappName, []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}}, nil),
@@ -374,11 +374,11 @@ func TestUpdateCapp(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					testutils.Metadata:    types.Metadata{Name: testutils.CappName, Namespace: testNamespaceName},
-					testutils.Labels:      []types.KeyValue{{Key: testutils.LabelKey + "-updated", Value: testutils.LabelValue + "-updated"}},
-					testutils.Annotations: nil,
-					testutils.Spec:        mocks.PrepareCappSpec(),
-					testutils.Status:      mocks.PrepareCappStatus(testutils.CappName, testNamespaceName),
+					testutils.MetadataKey:    types.Metadata{Name: testutils.CappName, Namespace: testNamespaceName},
+					testutils.LabelsKey:      []types.KeyValue{{Key: testutils.LabelKey + "-updated", Value: testutils.LabelValue + "-updated"}},
+					testutils.AnnotationsKey: nil,
+					testutils.SpecKey:        mocks.PrepareCappSpec(),
+					testutils.StatusKey:      mocks.PrepareCappStatus(testutils.CappName, testNamespaceName, testutils.Domain),
 				},
 			},
 			requestData: mocks.PrepareUpdateCappType([]types.KeyValue{{Key: testutils.LabelKey + "-updated", Value: testutils.LabelValue + "-updated"}}, nil),
