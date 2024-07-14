@@ -69,7 +69,7 @@ func TestGetCapp(t *testing.T) {
 	}
 	setup()
 	cappController := NewCappController(dynClient, context.TODO(), logger)
-	createTestNamespace(namespaceName)
+	createTestNamespace(namespaceName, map[string]string{})
 	mocks.CreateTestCapp(testutils.CappName+"-1", namespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{}, dynClient)
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -156,7 +156,7 @@ func TestGetCapps(t *testing.T) {
 	}
 	setup()
 	cappController := NewCappController(dynClient, context.TODO(), logger)
-	createTestNamespace(namespaceName)
+	createTestNamespace(namespaceName, map[string]string{})
 	mocks.CreateTestCapp(testutils.CappName+"-1", namespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{}, dynClient)
 	mocks.CreateTestCapp(testutils.CappName+"-2", namespaceName, map[string]string{testutils.LabelKey + "-2": testutils.LabelValue + "-2"}, map[string]string{}, dynClient)
 	for name, test := range cases {
@@ -217,7 +217,7 @@ func TestCreateCapp(t *testing.T) {
 	}
 	setup()
 	cappController := NewCappController(dynClient, context.TODO(), logger)
-	createTestNamespace(namespaceName)
+	createTestNamespace(namespaceName, map[string]string{})
 	mocks.CreateTestCapp(testutils.CappName+"-1", namespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{}, dynClient)
 
 	for name, test := range cases {
@@ -281,7 +281,7 @@ func TestUpdateCapp(t *testing.T) {
 	}
 	setup()
 	cappController := NewCappController(dynClient, context.TODO(), logger)
-	createTestNamespace(namespaceName)
+	createTestNamespace(namespaceName, map[string]string{})
 	mocks.CreateTestCapp(testutils.CappName+"-1", namespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{}, dynClient)
 
 	for name, test := range cases {
@@ -338,7 +338,7 @@ func TestDeleteCapp(t *testing.T) {
 	}
 	setup()
 	cappController := NewCappController(dynClient, context.TODO(), logger)
-	createTestNamespace(namespaceName)
+	createTestNamespace(namespaceName, map[string]string{})
 	mocks.CreateTestCapp(testutils.CappName+"-1", namespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{}, dynClient)
 
 	for name, test := range cases {

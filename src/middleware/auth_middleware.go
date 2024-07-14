@@ -2,18 +2,17 @@ package middleware
 
 import (
 	"fmt"
+	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/runtime"
 	"net/http"
 	"os"
 	"strings"
 
-	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/auth"
 	"github.com/dana-team/platform-backend/src/utils"
 	"github.com/gin-gonic/gin"
-	"github.com/go-logr/logr"
 	"go.uber.org/zap"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -33,7 +32,7 @@ const (
 )
 
 // TokenAuthMiddleware validates the Authorization header and sets up Kubernetes client.
-func TokenAuthMiddleware(tokenProvider auth.TokenProvider) gin.HandlerFunc {
+func TokenAuthMiddleware(tokenProvider auth.TokenProvider, scheme *runtime.Scheme) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctxLogger, exists := c.Get("logger")
 		if !exists {
@@ -71,22 +70,14 @@ func TokenAuthMiddleware(tokenProvider auth.TokenProvider) gin.HandlerFunc {
 			return
 		}
 
-		schema := scheme.Scheme
-		if err := cappv1alpha1.AddToScheme(scheme.Scheme); err != nil {
-			userLogger.Error("Failed to create Kubernetes dynamic client schema", zap.Error(err))
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to create Kubernetes dynamic client schema"})
-			return
-		}
-
-		dynClient, err := client.New(config, client.Options{Scheme: schema})
+		dynClient, err := client.New(config, client.Options{Scheme: scheme})
 		if err != nil {
 			userLogger.Error("Failed to create Kubernetes dynamic client", zap.Error(err))
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to create Kubernetes dynamic client"})
 			return
 		}
 
-		var logrLogger logr.Logger
-		log.SetLogger(logrLogger)
+		log.SetLogger(logr.New(log.NullLogSink{}))
 
 		// Update the logger with the username
 		c.Set("logger", userLogger)

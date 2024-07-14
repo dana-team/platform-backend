@@ -1,6 +1,10 @@
 package middleware
 
 import (
+	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -38,7 +42,7 @@ func TestTokenAuthMiddleware(t *testing.T) {
 		c.Next()
 	})
 
-	router.Use(TokenAuthMiddleware(MockTokenProvider{Token: "valid_token", Username: "user", Err: nil}))
+	router.Use(TokenAuthMiddleware(MockTokenProvider{Token: "valid_token", Username: "user", Err: nil}, newScheme()))
 	router.GET("/ping", func(c *gin.Context) {
 		_, ok := c.Get("kubeClient")
 		if !ok {
@@ -109,4 +113,13 @@ func TestTokenAuthMiddleware(t *testing.T) {
 			}
 		})
 	}
+}
+
+// newScheme adds the relevant APIs to the scheme for the K8S client.
+func newScheme() *runtime.Scheme {
+	scheme := runtime.NewScheme()
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(cappv1alpha1.AddToScheme(scheme))
+
+	return scheme
 }
