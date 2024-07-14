@@ -7,7 +7,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 
-	"github.com/dana-team/container-app-operator/api/v1alpha1"
+	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/types"
 	"go.uber.org/zap"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -38,7 +38,7 @@ func NewCappRevisionController(client client.Client, context context.Context, lo
 func (c *cappRevisionController) GetCappRevision(namespace string, name string) (types.CappRevision, error) {
 	c.logger.Debug(fmt.Sprintf("Trying to fetch capp revision %q in namespace %q", name, namespace))
 
-	cappRevision := v1alpha1.CappRevision{}
+	cappRevision := cappv1alpha1.CappRevision{}
 	if err := c.client.Get(c.ctx, client.ObjectKey{Namespace: namespace, Name: name}, &cappRevision); err != nil {
 		c.logger.Error(fmt.Sprintf("Could not fetch capp revision %q in namespace %q with error: %s", name, namespace, err.Error()))
 		return types.CappRevision{}, err
@@ -50,7 +50,7 @@ func (c *cappRevisionController) GetCappRevision(namespace string, name string) 
 func (c *cappRevisionController) GetCappRevisions(namespace string, cappQuery types.CappRevisionQuery) (types.CappRevisionList, error) {
 	c.logger.Debug(fmt.Sprintf("Trying to fetch all capp revisions in namespace: %q", namespace))
 
-	cappRevisionList := &v1alpha1.CappRevisionList{}
+	cappRevisionList := &cappv1alpha1.CappRevisionList{}
 	selector, err := labels.Parse(cappQuery.LabelSelector)
 	if err != nil {
 		c.logger.Error(fmt.Sprintf("Could not parse labelSelector with error: %v", err.Error()))
@@ -76,7 +76,7 @@ func (c *cappRevisionController) GetCappRevisions(namespace string, cappQuery ty
 }
 
 // convertCappRevisionToType converts an API CappRevision to a Type CappRevision.
-func convertCappRevisionToType(cappRevision v1alpha1.CappRevision) types.CappRevision {
+func convertCappRevisionToType(cappRevision cappv1alpha1.CappRevision) types.CappRevision {
 	return types.CappRevision{
 		Metadata: types.Metadata{
 			Name:      cappRevision.Name,
@@ -84,10 +84,10 @@ func convertCappRevisionToType(cappRevision v1alpha1.CappRevision) types.CappRev
 		},
 		Annotations: utils.ConvertMapToKeyValue(cappRevision.Annotations),
 		Labels:      utils.ConvertMapToKeyValue(cappRevision.Labels),
-		Spec: v1alpha1.CappRevisionSpec{
+		Spec: cappv1alpha1.CappRevisionSpec{
 			RevisionNumber: cappRevision.Spec.RevisionNumber,
 			CappTemplate:   cappRevision.Spec.CappTemplate,
 		},
-		Status: v1alpha1.CappRevisionStatus{},
+		Status: cappv1alpha1.CappRevisionStatus{},
 	}
 }

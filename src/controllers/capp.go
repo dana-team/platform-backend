@@ -7,7 +7,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 
-	"github.com/dana-team/container-app-operator/api/v1alpha1"
+	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/types"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -57,7 +57,7 @@ func (c *cappController) CreateCapp(namespace string, capp types.CreateCapp) (ty
 	return createCappFromV1Capp(newCapp), nil
 }
 
-func createCappFromV1Capp(capp v1alpha1.Capp) types.Capp {
+func createCappFromV1Capp(capp cappv1alpha1.Capp) types.Capp {
 	return types.Capp{
 		Metadata: types.Metadata{
 			Name:      capp.Name,
@@ -65,7 +65,7 @@ func createCappFromV1Capp(capp v1alpha1.Capp) types.Capp {
 		},
 		Annotations: utils.ConvertMapToKeyValue(capp.Annotations),
 		Labels:      utils.ConvertMapToKeyValue(capp.Labels),
-		Spec: v1alpha1.CappSpec{
+		Spec: cappv1alpha1.CappSpec{
 			ScaleMetric:       capp.Spec.ScaleMetric,
 			Site:              capp.Spec.Site,
 			State:             capp.Spec.State,
@@ -74,7 +74,7 @@ func createCappFromV1Capp(capp v1alpha1.Capp) types.Capp {
 			LogSpec:           capp.Spec.LogSpec,
 			VolumesSpec:       capp.Spec.VolumesSpec,
 		},
-		Status: v1alpha1.CappStatus{
+		Status: cappv1alpha1.CappStatus{
 			ApplicationLinks:    capp.Status.ApplicationLinks,
 			KnativeObjectStatus: capp.Status.KnativeObjectStatus,
 			RevisionInfo:        capp.Status.RevisionInfo,
@@ -90,7 +90,7 @@ func createCappFromV1Capp(capp v1alpha1.Capp) types.Capp {
 func (c *cappController) GetCapps(namespace string, cappQuery types.CappQuery) (types.CappList, error) {
 	c.logger.Debug(fmt.Sprintf("Trying to fetch all capps in namespace: %q", namespace))
 
-	cappList := &v1alpha1.CappList{}
+	cappList := &cappv1alpha1.CappList{}
 	selector, err := labels.Parse(cappQuery.LabelSelector)
 	if err != nil {
 		c.logger.Error(fmt.Sprintf("Could not parse labelSelector with error: %v", err.Error()))
@@ -123,7 +123,7 @@ func (c *cappController) GetCapps(namespace string, cappQuery types.CappQuery) (
 func (c *cappController) GetCapp(namespace, name string) (types.Capp, error) {
 	c.logger.Debug(fmt.Sprintf("Trying to fetch capp %q in namespace %q", name, namespace))
 
-	capp := &v1alpha1.Capp{}
+	capp := &cappv1alpha1.Capp{}
 	err := c.client.Get(c.ctx, client.ObjectKey{Namespace: namespace, Name: name}, capp)
 	if err != nil {
 		c.logger.Error(fmt.Sprintf("Could not fetch capp %q in namespace %q with error: %v", name, namespace, err.Error()))
@@ -136,7 +136,7 @@ func (c *cappController) GetCapp(namespace, name string) (types.Capp, error) {
 func (c *cappController) UpdateCapp(namespace, name string, newCapp types.UpdateCapp) (types.Capp, error) {
 	c.logger.Debug(fmt.Sprintf("Trying to update capp %q in namespace %q", name, namespace))
 
-	capp := &v1alpha1.Capp{}
+	capp := &cappv1alpha1.Capp{}
 	err := c.client.Get(c.ctx, client.ObjectKey{Namespace: namespace, Name: name}, capp)
 	if err != nil {
 		c.logger.Error(fmt.Sprintf("Could not fetch capp %q in namespace %q with error: %v", name, namespace, err.Error()))
@@ -158,7 +158,7 @@ func (c *cappController) UpdateCapp(namespace, name string, newCapp types.Update
 func (c *cappController) DeleteCapp(namespace, name string) (types.CappError, error) {
 	c.logger.Debug(fmt.Sprintf("Trying to delete capp %q in namespace %q", name, namespace))
 
-	capp := &v1alpha1.Capp{
+	capp := &cappv1alpha1.Capp{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
 			Name:      name,
@@ -174,15 +174,15 @@ func (c *cappController) DeleteCapp(namespace, name string) (types.CappError, er
 	}, nil
 }
 
-func createCappFromType(namespace string, capp types.CreateCapp) v1alpha1.Capp {
-	return v1alpha1.Capp{
+func createCappFromType(namespace string, capp types.CreateCapp) cappv1alpha1.Capp {
+	return cappv1alpha1.Capp{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        capp.Metadata.Name,
 			Namespace:   namespace,
 			Annotations: utils.ConvertKeyValueToMap(capp.Annotations),
 			Labels:      utils.ConvertKeyValueToMap(capp.Labels),
 		},
-		Spec: v1alpha1.CappSpec{
+		Spec: cappv1alpha1.CappSpec{
 			ScaleMetric:       capp.Spec.ScaleMetric,
 			Site:              capp.Spec.Site,
 			State:             capp.Spec.State,
@@ -194,7 +194,7 @@ func createCappFromType(namespace string, capp types.CreateCapp) v1alpha1.Capp {
 	}
 }
 
-func convertCappToType(capp v1alpha1.Capp) types.Capp {
+func convertCappToType(capp cappv1alpha1.Capp) types.Capp {
 	return types.Capp{
 		Metadata: types.Metadata{
 			Name:      capp.Name,
@@ -202,7 +202,7 @@ func convertCappToType(capp v1alpha1.Capp) types.Capp {
 		},
 		Annotations: utils.ConvertMapToKeyValue(capp.Annotations),
 		Labels:      utils.ConvertMapToKeyValue(capp.Labels),
-		Spec: v1alpha1.CappSpec{
+		Spec: cappv1alpha1.CappSpec{
 			ScaleMetric:       capp.Spec.ScaleMetric,
 			Site:              capp.Spec.Site,
 			State:             capp.Spec.State,
@@ -211,7 +211,7 @@ func convertCappToType(capp v1alpha1.Capp) types.Capp {
 			LogSpec:           capp.Spec.LogSpec,
 			VolumesSpec:       capp.Spec.VolumesSpec,
 		},
-		Status: v1alpha1.CappStatus{
+		Status: cappv1alpha1.CappStatus{
 			ApplicationLinks:    capp.Status.ApplicationLinks,
 			KnativeObjectStatus: capp.Status.KnativeObjectStatus,
 			RevisionInfo:        capp.Status.RevisionInfo,
@@ -226,7 +226,7 @@ func convertCappToType(capp v1alpha1.Capp) types.Capp {
 
 // getCappURL returns the URL of Capp; the shortened hostname is returned
 // if it exists, otherwise the default URL is returned.
-func getCappURL(capp v1alpha1.Capp) string {
+func getCappURL(capp cappv1alpha1.Capp) string {
 	if capp.Status.RouteStatus.DomainMappingObjectStatus.URL != nil {
 		return capp.Status.RouteStatus.DomainMappingObjectStatus.URL.URL().String()
 	} else if capp.Status.KnativeObjectStatus.URL != nil {
@@ -237,7 +237,7 @@ func getCappURL(capp v1alpha1.Capp) string {
 }
 
 // getCappImages returns the images of all containers of Capp.
-func getCappImages(capp v1alpha1.Capp) []string {
+func getCappImages(capp cappv1alpha1.Capp) []string {
 	var images []string
 	for _, container := range capp.Spec.ConfigurationSpec.Template.Spec.Containers {
 		images = append(images, container.Image)

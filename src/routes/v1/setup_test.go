@@ -5,7 +5,7 @@ import (
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	"testing"
 
-	cappv1 "github.com/dana-team/container-app-operator/api/v1alpha1"
+	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -106,6 +106,6 @@ func createTestNamespace(name string) {
 
 func setupScheme() *runtime.Scheme {
 	schema := scheme.Scheme
-	_ = cappv1.AddToScheme(schema)
+	_ = cappv1alpha1.AddToScheme(schema)
 	return schema
 }

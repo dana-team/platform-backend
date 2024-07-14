@@ -55,7 +55,7 @@ func NewUserController(client kubernetes.Interface, context context.Context, log
 func (u *userController) GetUsers(namespace string) (types.UsersOutput, error) {
 	u.logger.Debug(fmt.Sprintf("Trying to get all rolebindings in %q namespace", namespace))
 
-	roleBindings, err := u.client.RbacV1().RoleBindings(namespace).List(u.ctx, metav1.ListOptions{LabelSelector: utils.ManagedLabelSelctor})
+	roleBindings, err := u.client.RbacV1().RoleBindings(namespace).List(u.ctx, metav1.ListOptions{LabelSelector: utils.ManagedLabelSelector})
 	userOutputs := types.UsersOutput{}
 	if err != nil {
 		u.logger.Error(fmt.Sprintf("Could not get rolebindings with error: %v", err.Error()))

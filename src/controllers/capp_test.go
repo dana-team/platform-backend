@@ -3,7 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
-	cappv1 "github.com/dana-team/container-app-operator/api/v1alpha1"
+	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
@@ -198,7 +198,7 @@ func TestCreateCapp(t *testing.T) {
 				response: types.Capp{
 					Metadata: mocks.PrepareCappMetadata(testutils.CappName+"-2", namespaceName),
 					Spec:     mocks.PrepareCappSpec(),
-					Status:   cappv1.CappStatus{},
+					Status:   cappv1alpha1.CappStatus{},
 					Labels:   []types.KeyValue{{Key: testutils.LabelKey + "-2", Value: testutils.LabelValue + "-2"}},
 				},
 				errorStatus: metav1.StatusSuccess,

@@ -7,7 +7,7 @@ import (
 
 	"github.com/dana-team/platform-backend/src/types"
 	"go.uber.org/zap"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -37,7 +37,7 @@ func (n *namespaceController) GetNamespaces() (types.NamespaceList, error) {
 	n.logger.Debug("Trying to fetch all namespaces")
 
 	namespaceList := types.NamespaceList{}
-	namespaces, err := n.client.CoreV1().Namespaces().List(n.ctx, metav1.ListOptions{LabelSelector: utils.ManagedLabelSelctor})
+	namespaces, err := n.client.CoreV1().Namespaces().List(n.ctx, metav1.ListOptions{LabelSelector: utils.ManagedLabelSelector})
 	if err != nil {
 		n.logger.Error(fmt.Sprintf("Could not fetch namespaces with error: %s", err.Error()))
 		return namespaceList, err
@@ -68,7 +68,7 @@ func (n *namespaceController) GetNamespace(name string) (types.Namespace, error)
 func (n *namespaceController) CreateNamespace(name string) (types.Namespace, error) {
 	n.logger.Debug(fmt.Sprintf("Trying to create namespace: %q", name))
 
-	newNamespace := v1.Namespace{}
+	newNamespace := corev1.Namespace{}
 	newNamespace.Name = name
 	newNamespace.Labels = utils.AddManagedLabel(map[string]string{})
 	namespace, err := n.client.CoreV1().Namespaces().Create(n.ctx, &newNamespace, metav1.CreateOptions{})
