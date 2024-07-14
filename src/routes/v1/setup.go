@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"k8s.io/apimachinery/pkg/runtime"
 	"net/http"
 
 	"github.com/dana-team/platform-backend/src/auth"
@@ -8,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider) {
+func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider, scheme *runtime.Scheme) {
 	v1 := engine.Group("/v1")
 
 	engine.GET("/ping", func(c *gin.Context) {
@@ -23,7 +24,7 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider) {
 	}
 
 	namespacesGroup := v1.Group("/namespaces")
-	namespacesGroup.Use(middleware.TokenAuthMiddleware(tokenProvider))
+	namespacesGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
 	{
 		namespacesGroup.GET("", GetNamespaces())
 		namespacesGroup.GET("/:namespaceName", GetNamespace())
@@ -32,7 +33,7 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider) {
 	}
 
 	secretsGroup := namespacesGroup.Group("/:namespaceName/secrets")
-	secretsGroup.Use(middleware.TokenAuthMiddleware(tokenProvider))
+	secretsGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
 	{
 		secretsGroup.POST("", CreateSecret())
 		secretsGroup.GET("", GetSecrets())
@@ -42,7 +43,7 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider) {
 	}
 
 	cappGroup := namespacesGroup.Group("/:namespaceName/capps")
-	cappGroup.Use(middleware.TokenAuthMiddleware(tokenProvider))
+	cappGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
 	{
 		cappGroup.POST("", CreateCapp())
 		cappGroup.GET("", GetCapps())
@@ -52,14 +53,14 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider) {
 	}
 
 	cappRevisionGroup := namespacesGroup.Group("/:namespaceName/capprevisions")
-	cappRevisionGroup.Use(middleware.TokenAuthMiddleware(tokenProvider))
+	cappRevisionGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
 	{
 		cappRevisionGroup.GET("", GetCappRevisions())
 		cappRevisionGroup.GET("/:cappRevisionName", GetCappRevision())
 	}
 
 	usersGroup := namespacesGroup.Group("/:namespaceName/users")
-	usersGroup.Use(middleware.TokenAuthMiddleware(tokenProvider))
+	usersGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
 	{
 		usersGroup.POST("", CreateUser())
 		usersGroup.GET("", GetUsers())
@@ -69,7 +70,7 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider) {
 	}
 
 	configMapGroup := namespacesGroup.Group("/:namespaceName/configmaps")
-	configMapGroup.Use(middleware.TokenAuthMiddleware(tokenProvider))
+	configMapGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
 	{
 		configMapGroup.GET("/:configMapName", GetConfigMap())
 	}
