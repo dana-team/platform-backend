@@ -7,15 +7,15 @@ import (
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/dana-team/platform-backend/src/utils"
 	"go.uber.org/zap"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
 const (
-	TLSType    = "tls"
-	OpaqueType = "opaque"
+	tlsType    = "tls"
+	opaqueType = "opaque"
 )
 
 type SecretController interface {
@@ -76,7 +76,7 @@ func (n *secretController) CreateSecret(namespace string, request types.CreateSe
 func (n *secretController) GetSecrets(namespace string) (types.GetSecretsResponse, error) {
 	n.logger.Debug(fmt.Sprintf("Trying to get all secrets in %q namespace", namespace))
 
-	secrets, err := n.client.CoreV1().Secrets(namespace).List(n.ctx, metav1.ListOptions{LabelSelector: utils.ManagedLabelSelctor})
+	secrets, err := n.client.CoreV1().Secrets(namespace).List(n.ctx, metav1.ListOptions{LabelSelector: utils.ManagedLabelSelector})
 	if err != nil {
 		n.logger.Error(fmt.Sprintf("Could not get secrets with error: %v", err.Error()))
 		return types.GetSecretsResponse{}, err
@@ -173,8 +173,8 @@ func (n *secretController) DeleteSecret(namespace, name string) (types.DeleteSec
 
 // createSecretFromRequest returns a new secret based on different secret
 // types, either TLS or Opaque.
-func newSecretFromRequest(namespace string, request types.CreateSecretRequest) (*v1.Secret, error) {
-	secret := &v1.Secret{
+func newSecretFromRequest(namespace string, request types.CreateSecretRequest) (*corev1.Secret, error) {
+	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      request.SecretName,
 			Namespace: namespace,
@@ -183,20 +183,20 @@ func newSecretFromRequest(namespace string, request types.CreateSecretRequest) (
 	}
 
 	switch request.Type {
-	case TLSType:
+	case tlsType:
 		if request.Cert == "" || request.Key == "" {
 			return secret, k8serrors.NewBadRequest("cert and key are required for TLS secrets")
 		}
-		secret.Type = v1.SecretTypeTLS
+		secret.Type = corev1.SecretTypeTLS
 		secret.Data = map[string][]byte{
 			"tls.crt": []byte(base64.StdEncoding.EncodeToString([]byte(request.Cert))),
 			"tls.key": []byte(base64.StdEncoding.EncodeToString([]byte(request.Key))),
 		}
-	case OpaqueType:
+	case opaqueType:
 		if len(request.Data) == 0 {
 			return secret, k8serrors.NewBadRequest("data is required for Opaque secrets")
 		}
-		secret.Type = v1.SecretTypeOpaque
+		secret.Type = corev1.SecretTypeOpaque
 		secret.Data = map[string][]byte{}
 		for _, kv := range request.Data {
 			secret.Data[kv.Key] = []byte(base64.StdEncoding.EncodeToString([]byte(kv.Value)))
