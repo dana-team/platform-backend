@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/dana-team/platform-backend/src/types"
+	"github.com/dana-team/platform-backend/src/utils"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	"github.com/stretchr/testify/assert"
@@ -12,8 +13,6 @@ import (
 	"strings"
 	"testing"
 )
-
-const newNamespace = "newNamespace"
 
 func TestGetSecret(t *testing.T) {
 	namespaceName := testutils.SecretNamespace + "-get"
@@ -73,9 +72,9 @@ func TestGetSecret(t *testing.T) {
 	}
 	setup()
 	secretController := NewSecretController(fakeClient, context.TODO(), logger)
-	createTestNamespace(namespaceName)
-	createTestSecret(testutils.SecretName+"-1", namespaceName)
-	createTestSecret(testutils.SecretName+"-2", namespaceName)
+	createTestNamespace(namespaceName, utils.AddManagedLabel(map[string]string{}))
+	createTestSecret(testutils.SecretName+"-1", namespaceName, utils.AddManagedLabel(map[string]string{}))
+	createTestSecret(testutils.SecretName+"-2", namespaceName, utils.AddManagedLabel(map[string]string{}))
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
 			response, err := secretController.GetSecret(test.requestParams.namespace, test.requestParams.name)
@@ -128,9 +127,9 @@ func TestGetSecrets(t *testing.T) {
 	}
 	setup()
 	secretController := NewSecretController(fakeClient, context.TODO(), logger)
-	createTestSecret(testutils.SecretName+"-1", namespaceName)
-	createTestSecret(testutils.SecretName+"-2", namespaceName)
-	createTestNamespace(newNamespace)
+	createTestNamespace(namespaceName, utils.AddManagedLabel(map[string]string{}))
+	createTestSecret(testutils.SecretName+"-1", namespaceName, utils.AddManagedLabel(map[string]string{}))
+	createTestSecret(testutils.SecretName+"-2", namespaceName, utils.AddManagedLabel(map[string]string{}))
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
 			response, err := secretController.GetSecrets(test.requestParams.namespace)
@@ -216,9 +215,9 @@ func TestCreateSecret(t *testing.T) {
 	}
 	setup()
 	secretController := NewSecretController(fakeClient, context.TODO(), logger)
-	createTestNamespace(namespaceName)
-	createTestSecret(testutils.SecretName+"-1", namespaceName)
-	createTestSecret(testutils.SecretName+"-2", namespaceName)
+	createTestNamespace(namespaceName, utils.AddManagedLabel(map[string]string{}))
+	createTestSecret(testutils.SecretName+"-1", namespaceName, utils.AddManagedLabel(map[string]string{}))
+	createTestSecret(testutils.SecretName+"-2", namespaceName, utils.AddManagedLabel(map[string]string{}))
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
 			response, err := secretController.CreateSecret(test.requestParams.namespace, test.requestParams.request)
@@ -289,9 +288,9 @@ func TestUpdateSecret(t *testing.T) {
 	}
 	setup()
 	secretController := NewSecretController(fakeClient, context.TODO(), logger)
-	createTestNamespace(namespaceName)
-	createTestSecret(testutils.SecretName+"-1", namespaceName)
-	createTestSecret(testutils.SecretName+"-2", namespaceName)
+	createTestNamespace(namespaceName, utils.AddManagedLabel(map[string]string{}))
+	createTestSecret(testutils.SecretName+"-1", namespaceName, utils.AddManagedLabel(map[string]string{}))
+	createTestSecret(testutils.SecretName+"-2", namespaceName, utils.AddManagedLabel(map[string]string{}))
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
 			response, err := secretController.UpdateSecret(test.requestParams.namespace, test.requestParams.name, test.requestParams.request)
@@ -345,9 +344,9 @@ func TestDeleteSecret(t *testing.T) {
 	}
 	setup()
 	secretController := NewSecretController(fakeClient, context.TODO(), logger)
-	createTestNamespace(namespaceName)
-	createTestSecret(testutils.SecretName+"-1", namespaceName)
-	createTestSecret(testutils.SecretName+"-2", namespaceName)
+	createTestNamespace(namespaceName, utils.AddManagedLabel(map[string]string{}))
+	createTestSecret(testutils.SecretName+"-1", namespaceName, utils.AddManagedLabel(map[string]string{}))
+	createTestSecret(testutils.SecretName+"-2", namespaceName, utils.AddManagedLabel(map[string]string{}))
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
 			response, err := secretController.DeleteSecret(test.requestParams.namespace, test.requestParams.name)

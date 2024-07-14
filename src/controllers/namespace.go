@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/dana-team/platform-backend/src/utils"
 
 	"github.com/dana-team/platform-backend/src/types"
 	"go.uber.org/zap"
@@ -36,7 +37,7 @@ func (n *namespaceController) GetNamespaces() (types.NamespaceList, error) {
 	n.logger.Debug("Trying to fetch all namespaces")
 
 	namespaceList := types.NamespaceList{}
-	namespaces, err := n.client.CoreV1().Namespaces().List(n.ctx, metav1.ListOptions{})
+	namespaces, err := n.client.CoreV1().Namespaces().List(n.ctx, metav1.ListOptions{LabelSelector: utils.ManagedLabelSelctor})
 	if err != nil {
 		n.logger.Error(fmt.Sprintf("Could not fetch namespaces with error: %s", err.Error()))
 		return namespaceList, err
@@ -69,6 +70,7 @@ func (n *namespaceController) CreateNamespace(name string) (types.Namespace, err
 
 	newNamespace := v1.Namespace{}
 	newNamespace.Name = name
+	newNamespace.Labels = utils.AddManagedLabel(map[string]string{})
 	namespace, err := n.client.CoreV1().Namespaces().Create(n.ctx, &newNamespace, metav1.CreateOptions{})
 	if err != nil {
 		n.logger.Error(fmt.Sprintf("Could not create namespace %q with error: %s", name, err.Error()))

@@ -81,7 +81,7 @@ func TestGetCappRevision(t *testing.T) {
 	}
 	setup()
 	cappRevisionController := NewCappRevisionController(dynClient, context.TODO(), logger)
-	createTestNamespace(namespaceName)
+	createTestNamespace(namespaceName, map[string]string{})
 	createTestCappRevision(testutils.CappRevisionName+"-1", namespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{})
 	createTestCappRevision(testutils.CappRevisionName+"-2", namespaceName, map[string]string{testutils.LabelKey + "-2": testutils.LabelValue + "-2"}, map[string]string{})
 	for name, test := range cases {
@@ -160,7 +160,7 @@ func TestGetCappRevisions(t *testing.T) {
 	}
 	setup()
 	cappRevisionController := NewCappRevisionController(dynClient, context.TODO(), logger)
-	createTestNamespace(namespaceName)
+	createTestNamespace(namespaceName, map[string]string{})
 	createTestCappRevision(testutils.CappRevisionName+"-1", namespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{})
 	createTestCappRevision(testutils.CappRevisionName+"-2", namespaceName, map[string]string{testutils.LabelKey + "-2": testutils.LabelValue + "-2"}, map[string]string{})
 	for name, test := range cases {

@@ -33,10 +33,11 @@ func setup() {
 
 }
 
-func createTestNamespace(name string) {
+func createTestNamespace(name string, labels map[string]string) {
 	namespace := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:   name,
+			Labels: labels,
 		},
 	}
 	_, err := fakeClient.CoreV1().Namespaces().Create(context.TODO(), namespace, metav1.CreateOptions{})
@@ -44,11 +45,12 @@ func createTestNamespace(name string) {
 		panic(err)
 	}
 }
-func createTestSecret(secretName string, namespace string) {
+func createTestSecret(secretName string, namespace string, labels map[string]string) {
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      secretName,
 			Namespace: namespace,
+			Labels:    labels,
 		},
 		Type: v1.SecretTypeOpaque,
 		Data: map[string][]byte{
