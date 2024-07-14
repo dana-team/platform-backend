@@ -2,12 +2,11 @@ package v1
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -16,15 +15,6 @@ import (
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/stretchr/testify/assert"
 )
-
-// createTestSecret creates a test Secret object.
-func createTestSecret(name, namespace string) {
-	secret := mocks.PrepareSecret(name, namespace, testutils.SecretDataKey, testutils.SecretDataValueEncoded)
-	_, err := fakeClient.CoreV1().Secrets(namespace).Create(context.TODO(), &secret, metav1.CreateOptions{})
-	if err != nil {
-		panic(err)
-	}
-}
 
 func TestGetSecrets(t *testing.T) {
 	testNamespaceName := testutils.SecretNamespace + "-get"
@@ -49,19 +39,19 @@ func TestGetSecrets(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					testutils.Count: 2,
+					testutils.CountKey: 2,
 					testutils.SecretsKey: []types.Secret{
-						{SecretName: testutils.SecretName + "-1", NamespaceName: testNamespaceName, Type: testutils.SecretType},
-						{SecretName: testutils.SecretName + "-2", NamespaceName: testNamespaceName, Type: testutils.SecretType}},
+						{SecretName: testutils.SecretName + "-1", NamespaceName: testNamespaceName, Type: string(corev1.SecretTypeOpaque)},
+						{SecretName: testutils.SecretName + "-2", NamespaceName: testNamespaceName, Type: string(corev1.SecretTypeOpaque)}},
 				},
 			},
 		},
 	}
 
 	setup()
-	createTestNamespace(testNamespaceName)
-	createTestSecret(testutils.SecretName+"-1", testNamespaceName)
-	createTestSecret(testutils.SecretName+"-2", testNamespaceName)
+	mocks.CreateTestNamespace(fakeClient, testNamespaceName)
+	mocks.CreateTestSecret(fakeClient, testutils.SecretName+"-1", testNamespaceName)
+	mocks.CreateTestSecret(fakeClient, testutils.SecretName+"-2", testNamespaceName)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -114,8 +104,8 @@ func TestGetSecret(t *testing.T) {
 				response: map[string]interface{}{
 					testutils.SecretNameKey: testutils.SecretName,
 					testutils.IdKey:         "",
-					testutils.TypeKey:       testutils.SecretType,
-					testutils.Data:          []types.KeyValue{{Key: testutils.SecretDataKey, Value: testutils.SecretDataValue}},
+					testutils.TypeKey:       string(corev1.SecretTypeOpaque),
+					testutils.DataKey:       []types.KeyValue{{Key: testutils.SecretDataKey, Value: testutils.SecretDataValue}},
 				},
 			},
 		},
@@ -148,8 +138,8 @@ func TestGetSecret(t *testing.T) {
 	}
 
 	setup()
-	createTestNamespace(testNamespaceName)
-	createTestSecret(testutils.SecretName, testNamespaceName)
+	mocks.CreateTestNamespace(fakeClient, testNamespaceName)
+	mocks.CreateTestSecret(fakeClient, testutils.SecretName, testNamespaceName)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -185,7 +175,7 @@ func TestCreateSecret(t *testing.T) {
 
 	type want struct {
 		statusCode int
-		response   map[string]string
+		response   map[string]interface{}
 	}
 
 	cases := map[string]struct {
@@ -199,13 +189,13 @@ func TestCreateSecret(t *testing.T) {
 			},
 			want: want{
 				statusCode: http.StatusOK,
-				response: map[string]string{
+				response: map[string]interface{}{
 					testutils.SecretNameKey:    testutils.SecretName,
-					testutils.TypeKey:          testutils.SecretType,
-					testutils.NameSpaceNameKey: testNamespaceName,
+					testutils.TypeKey:          string(corev1.SecretTypeOpaque),
+					testutils.NamespacenameKey: testNamespaceName,
 				},
 			},
-			requestData: mocks.PrepareCreateSecretRequestType(testutils.SecretName, strings.ToLower(testutils.OpaqueType), "", "",
+			requestData: mocks.PrepareCreateSecretRequestType(testutils.SecretName, strings.ToLower(string(corev1.SecretTypeOpaque)), "", "",
 				[]types.KeyValue{{Key: testutils.SecretDataKey, Value: testutils.SecretDataValue}}),
 		},
 		"ShouldFailWithBadRequestBody": {
@@ -214,11 +204,11 @@ func TestCreateSecret(t *testing.T) {
 			},
 			requestData: map[string]interface{}{
 				testutils.SecretNameKey: testutils.SecretName,
-				testutils.TypeKey:       strings.ToLower(testutils.OpaqueType),
+				testutils.TypeKey:       strings.ToLower(string(corev1.SecretTypeOpaque)),
 			},
 			want: want{
 				statusCode: http.StatusBadRequest,
-				response: map[string]string{
+				response: map[string]interface{}{
 					testutils.DetailsKey: "data is required for Opaque secrets",
 					testutils.ErrorKey:   testutils.OperationFailed,
 				},
@@ -230,19 +220,19 @@ func TestCreateSecret(t *testing.T) {
 			},
 			want: want{
 				statusCode: http.StatusConflict,
-				response: map[string]string{
+				response: map[string]interface{}{
 					testutils.DetailsKey: fmt.Sprintf("%s %q already exists", testutils.SecretsKey, testutils.SecretName+"-1"),
 					testutils.ErrorKey:   testutils.OperationFailed,
 				},
 			},
-			requestData: mocks.PrepareCreateSecretRequestType(testutils.SecretName+"-1", strings.ToLower(testutils.OpaqueType), "", "",
+			requestData: mocks.PrepareCreateSecretRequestType(testutils.SecretName+"-1", strings.ToLower(string(corev1.SecretTypeOpaque)), "", "",
 				[]types.KeyValue{{Key: testutils.SecretDataKey, Value: testutils.SecretDataValue}}),
 		},
 	}
 
 	setup()
-	createTestNamespace(testNamespaceName)
-	createTestSecret(testutils.SecretName+"-1", testNamespaceName)
+	mocks.CreateTestNamespace(fakeClient, testNamespaceName)
+	mocks.CreateTestSecret(fakeClient, testutils.SecretName+"-1", testNamespaceName)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -299,9 +289,9 @@ func TestUpdateSecret(t *testing.T) {
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
 					testutils.SecretNameKey:    testutils.SecretName,
-					testutils.TypeKey:          testutils.SecretType,
-					testutils.NameSpaceNameKey: testNamespaceName,
-					testutils.Data:             []types.KeyValue{{Key: testutils.SecretDataKey, Value: testutils.SecretDataValue}},
+					testutils.TypeKey:          string(corev1.SecretTypeOpaque),
+					testutils.NamespacenameKey: testNamespaceName,
+					testutils.DataKey:          []types.KeyValue{{Key: testutils.SecretDataKey, Value: testutils.SecretDataValue}},
 				},
 			},
 			requestData: mocks.PrepareSecretRequestType([]types.KeyValue{{Key: testutils.SecretDataKey, Value: testutils.SecretDataValue}}),
@@ -351,8 +341,8 @@ func TestUpdateSecret(t *testing.T) {
 	}
 
 	setup()
-	createTestNamespace(testNamespaceName)
-	createTestSecret(testutils.SecretName, testNamespaceName)
+	mocks.CreateTestNamespace(fakeClient, testNamespaceName)
+	mocks.CreateTestSecret(fakeClient, testutils.SecretName, testNamespaceName)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -438,8 +428,8 @@ func TestDeleteSecret(t *testing.T) {
 	}
 
 	setup()
-	createTestNamespace(testNamespaceName)
-	createTestSecret(testutils.SecretName, testNamespaceName)
+	mocks.CreateTestNamespace(fakeClient, testNamespaceName)
+	mocks.CreateTestSecret(fakeClient, testutils.SecretName, testNamespaceName)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {

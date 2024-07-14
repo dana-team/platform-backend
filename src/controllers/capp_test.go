@@ -40,7 +40,7 @@ func TestGetCapp(t *testing.T) {
 				capp: types.Capp{
 					Metadata: mocks.PrepareCappMetadata(testutils.CappName+"-1", namespaceName),
 					Spec:     mocks.PrepareCappSpec(),
-					Status:   mocks.PrepareCappStatus(testutils.CappName+"-1", namespaceName),
+					Status:   mocks.PrepareCappStatus(testutils.CappName+"-1", namespaceName, testutils.Domain),
 					Labels:   []types.KeyValue{{Key: testutils.LabelKey + "-1", Value: testutils.LabelValue + "-1"}},
 				},
 				errorStatus: metav1.StatusSuccess,
@@ -70,7 +70,7 @@ func TestGetCapp(t *testing.T) {
 	setup()
 	cappController := NewCappController(dynClient, context.TODO(), logger)
 	createTestNamespace(namespaceName, map[string]string{})
-	mocks.CreateTestCapp(testutils.CappName+"-1", namespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{}, dynClient)
+	mocks.CreateTestCapp(dynClient, testutils.CappName+"-1", namespaceName, testutils.Domain, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{})
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
 			response, err := cappController.GetCapp(test.requestParams.namespace, test.requestParams.name)
@@ -157,8 +157,8 @@ func TestGetCapps(t *testing.T) {
 	setup()
 	cappController := NewCappController(dynClient, context.TODO(), logger)
 	createTestNamespace(namespaceName, map[string]string{})
-	mocks.CreateTestCapp(testutils.CappName+"-1", namespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{}, dynClient)
-	mocks.CreateTestCapp(testutils.CappName+"-2", namespaceName, map[string]string{testutils.LabelKey + "-2": testutils.LabelValue + "-2"}, map[string]string{}, dynClient)
+	mocks.CreateTestCapp(dynClient, testutils.CappName+"-1", namespaceName, testutils.Domain, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{})
+	mocks.CreateTestCapp(dynClient, testutils.CappName+"-2", namespaceName, testutils.Domain, map[string]string{testutils.LabelKey + "-2": testutils.LabelValue + "-2"}, map[string]string{})
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
 			response, err := cappController.GetCapps(test.requestParams.namespace, test.requestParams.cappQuery)
@@ -218,7 +218,7 @@ func TestCreateCapp(t *testing.T) {
 	setup()
 	cappController := NewCappController(dynClient, context.TODO(), logger)
 	createTestNamespace(namespaceName, map[string]string{})
-	mocks.CreateTestCapp(testutils.CappName+"-1", namespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{}, dynClient)
+	mocks.CreateTestCapp(dynClient, testutils.CappName+"-1", namespaceName, testutils.Domain, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{})
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -261,7 +261,7 @@ func TestUpdateCapp(t *testing.T) {
 				response: types.Capp{
 					Metadata: mocks.PrepareCappMetadata(testutils.CappName+"-1", namespaceName),
 					Spec:     mocks.PrepareCappSpec(),
-					Status:   mocks.PrepareCappStatus(testutils.CappName+"-1", namespaceName),
+					Status:   mocks.PrepareCappStatus(testutils.CappName+"-1", namespaceName, testutils.Domain),
 					Labels:   []types.KeyValue{{Key: testutils.LabelKey + "-3", Value: testutils.LabelValue + "-3"}},
 				},
 				errorStatus: metav1.StatusSuccess,
@@ -282,7 +282,7 @@ func TestUpdateCapp(t *testing.T) {
 	setup()
 	cappController := NewCappController(dynClient, context.TODO(), logger)
 	createTestNamespace(namespaceName, map[string]string{})
-	mocks.CreateTestCapp(testutils.CappName+"-1", namespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{}, dynClient)
+	mocks.CreateTestCapp(dynClient, testutils.CappName+"-1", namespaceName, testutils.Domain, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{})
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -339,7 +339,7 @@ func TestDeleteCapp(t *testing.T) {
 	setup()
 	cappController := NewCappController(dynClient, context.TODO(), logger)
 	createTestNamespace(namespaceName, map[string]string{})
-	mocks.CreateTestCapp(testutils.CappName+"-1", namespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{}, dynClient)
+	mocks.CreateTestCapp(dynClient, testutils.CappName+"-1", namespaceName, testutils.Domain, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{})
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {

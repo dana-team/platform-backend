@@ -8,6 +8,7 @@ import (
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strings"
@@ -37,7 +38,7 @@ func TestGetSecret(t *testing.T) {
 			},
 			want: want{
 				response: types.GetSecretResponse{
-					Type:       testutils.SecretType,
+					Type:       string(corev1.SecretTypeOpaque),
 					SecretName: testutils.SecretName + "-1",
 					Data: []types.KeyValue{
 						{
@@ -110,8 +111,8 @@ func TestGetSecrets(t *testing.T) {
 				response: types.GetSecretsResponse{
 					Count: 2,
 					Secrets: []types.Secret{
-						{NamespaceName: namespaceName, SecretName: testutils.SecretName + "-1", Type: testutils.SecretType},
-						{NamespaceName: namespaceName, SecretName: testutils.SecretName + "-2", Type: testutils.SecretType},
+						{NamespaceName: namespaceName, SecretName: testutils.SecretName + "-1", Type: string(corev1.SecretTypeOpaque)},
+						{NamespaceName: namespaceName, SecretName: testutils.SecretName + "-2", Type: string(corev1.SecretTypeOpaque)},
 					},
 				},
 			},
@@ -157,7 +158,7 @@ func TestCreateSecret(t *testing.T) {
 				namespace: namespaceName,
 				request: types.CreateSecretRequest{
 					SecretName: testutils.SecretName,
-					Type:       strings.ToLower(testutils.SecretType),
+					Type:       strings.ToLower(string(corev1.SecretTypeOpaque)),
 					Data: []types.KeyValue{
 						{
 							Key:   testutils.SecretDataKey,
@@ -167,7 +168,7 @@ func TestCreateSecret(t *testing.T) {
 			},
 			want: want{
 				response: types.CreateSecretResponse{
-					Type:          testutils.SecretType,
+					Type:          string(corev1.SecretTypeOpaque),
 					SecretName:    testutils.SecretName,
 					NamespaceName: namespaceName,
 				},
@@ -198,7 +199,7 @@ func TestCreateSecret(t *testing.T) {
 				namespace: namespaceName,
 				request: types.CreateSecretRequest{
 					SecretName: testutils.SecretName + "-1",
-					Type:       strings.ToLower(testutils.SecretType),
+					Type:       strings.ToLower(string(corev1.SecretTypeOpaque)),
 					Data: []types.KeyValue{
 						{
 							Key:   testutils.SecretDataKey,
@@ -260,7 +261,7 @@ func TestUpdateSecret(t *testing.T) {
 			},
 			want: want{
 				response: types.UpdateSecretResponse{
-					Type:          testutils.SecretType,
+					Type:          string(corev1.SecretTypeOpaque),
 					SecretName:    testutils.SecretName + "-1",
 					NamespaceName: namespaceName,
 					Data: []types.KeyValue{

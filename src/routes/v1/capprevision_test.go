@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
@@ -20,15 +19,6 @@ const (
 	capprevisionsKey      = "capprevisions"
 	cappRevisionNamespace = testutils.TestNamespace + "-" + capprevisionsKey
 )
-
-// createTestCappRevision creates a test CappRevision object.
-func createTestCappRevision(name, namespace string, labels, annotations map[string]string) {
-	cappRevision := mocks.PrepareCappRevision(name, namespace, labels, annotations)
-	err := dynClient.Create(context.TODO(), &cappRevision)
-	if err != nil {
-		panic(err)
-	}
-}
 
 func TestGetCappRevisions(t *testing.T) {
 	testNamespaceName := cappRevisionNamespace + "-get"
@@ -59,8 +49,8 @@ func TestGetCappRevisions(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					capprevisionsKey: []string{cappRevisionName + "-1", cappRevisionName + "-2"},
-					testutils.Count:  2,
+					capprevisionsKey:   []string{cappRevisionName + "-1", cappRevisionName + "-2"},
+					testutils.CountKey: 2,
 				},
 			},
 		},
@@ -75,8 +65,8 @@ func TestGetCappRevisions(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					capprevisionsKey: []string{cappRevisionName + "-1"},
-					testutils.Count:  1,
+					capprevisionsKey:   []string{cappRevisionName + "-1"},
+					testutils.CountKey: 1,
 				},
 			},
 		},
@@ -107,17 +97,17 @@ func TestGetCappRevisions(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					capprevisionsKey: nil,
-					testutils.Count:  0,
+					capprevisionsKey:   nil,
+					testutils.CountKey: 0,
 				},
 			},
 		},
 	}
 
 	setup()
-	createTestNamespace(testNamespaceName)
-	createTestCappRevision(cappRevisionName+"-1", testNamespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, nil)
-	createTestCappRevision(cappRevisionName+"-2", testNamespaceName, map[string]string{testutils.LabelKey + "-2": testutils.LabelValue + "-2"}, nil)
+	mocks.CreateTestNamespace(fakeClient, testNamespaceName)
+	mocks.CreateTestCappRevision(dynClient, cappRevisionName+"-1", testNamespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, nil)
+	mocks.CreateTestCappRevision(dynClient, cappRevisionName+"-2", testNamespaceName, map[string]string{testutils.LabelKey + "-2": testutils.LabelValue + "-2"}, nil)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -174,11 +164,11 @@ func TestGetCappRevision(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					testutils.Metadata:    types.Metadata{Name: cappRevisionName, Namespace: testNamespaceName},
-					testutils.Labels:      []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}},
-					testutils.Annotations: nil,
-					testutils.Spec:        mocks.PrepareCappRevisionSpec(),
-					testutils.Status:      mocks.PrepareCappRevisionStatus(),
+					testutils.MetadataKey:    types.Metadata{Name: cappRevisionName, Namespace: testNamespaceName},
+					testutils.LabelsKey:      []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}},
+					testutils.AnnotationsKey: nil,
+					testutils.SpecKey:        mocks.PrepareCappRevisionSpec(),
+					testutils.StatusKey:      mocks.PrepareCappRevisionStatus(),
 				},
 			},
 		},
@@ -211,8 +201,8 @@ func TestGetCappRevision(t *testing.T) {
 	}
 
 	setup()
-	createTestNamespace(testNamespaceName)
-	createTestCappRevision(cappRevisionName, testNamespaceName, map[string]string{testutils.LabelKey: testutils.LabelValue}, nil)
+	mocks.CreateTestNamespace(fakeClient, testNamespaceName)
+	mocks.CreateTestCappRevision(dynClient, cappRevisionName, testNamespaceName, map[string]string{testutils.LabelKey: testutils.LabelValue}, nil)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
