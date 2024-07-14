@@ -1,12 +1,10 @@
 package v1
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -17,20 +15,8 @@ import (
 
 const (
 	configMapName      = testutils.TestName + "-configmap"
-	configKey          = "key"
-	configValue        = "value"
-	configmapsKey      = "configmaps"
-	configMapNamespace = testutils.TestNamespace + configmapsKey
+	configMapNamespace = testutils.TestNamespace + testutils.ConfigmapsKey
 )
-
-// createTestConfigMap creates a test ConfigMap object.
-func createTestConfigMap(name, namespace string) {
-	configMap := mocks.PrepareConfigMap(name, namespace, map[string]string{configKey: configValue})
-	_, err := fakeClient.CoreV1().ConfigMaps(namespace).Create(context.TODO(), &configMap, metav1.CreateOptions{})
-	if err != nil {
-		panic(err)
-	}
-}
 
 func TestGetConfigMap(t *testing.T) {
 	testNamespaceName := configMapNamespace + "-get"
@@ -57,7 +43,7 @@ func TestGetConfigMap(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					testutils.Data: []types.KeyValue{{Key: configKey, Value: configValue}},
+					testutils.DataKey: []types.KeyValue{{Key: testutils.ConfigMapDataKey, Value: testutils.ConfigMapDataValue}},
 				},
 			},
 		},
@@ -69,7 +55,7 @@ func TestGetConfigMap(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s %q not found", configmapsKey, configMapName+testutils.NonExistentSuffix),
+					testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.ConfigmapsKey, configMapName+testutils.NonExistentSuffix),
 					testutils.ErrorKey:   testutils.OperationFailed,
 				},
 			},
@@ -82,7 +68,7 @@ func TestGetConfigMap(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s %q not found", configmapsKey, configMapName),
+					testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.ConfigmapsKey, configMapName),
 					testutils.ErrorKey:   testutils.OperationFailed,
 				},
 			},
@@ -90,8 +76,8 @@ func TestGetConfigMap(t *testing.T) {
 	}
 
 	setup()
-	createTestNamespace(testNamespaceName)
-	createTestConfigMap(configMapName, testNamespaceName)
+	mocks.CreateTestNamespace(fakeClient, testNamespaceName)
+	mocks.CreateTestConfigMap(fakeClient, configMapName, testNamespaceName)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {

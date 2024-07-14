@@ -9,11 +9,10 @@ const (
 const (
 	CappRevisionNamespace = TestName + "-capp-revision-ns"
 	CappRevisionName      = TestName + "-capp-revision"
+	CapprevisionsKey      = "capprevisions"
 )
 const (
 	SecretsKey             = "secrets"
-	OpaqueType             = "opaque"
-	SecretType             = "Opaque"
 	SecretNameKey          = "secretName"
 	SecretDataKey          = "test-key"
 	SecretDataValue        = "fake"
@@ -30,16 +29,33 @@ const (
 )
 
 const (
+	ConfigmapsKey      = "configmaps"
+	ConfigMapDataKey   = "key"
+	ConfigMapDataValue = "value"
+)
+
+const (
+	RoleKey              = "role"
+	AdminKey             = "admin"
+	ViewerKey            = "viewer"
+	RoleBindingsKey      = "rolebindings"
+	UsersKey             = "users"
+	RoleBindingsGroupKey = "rbac.authorization.k8s.io"
+	CappUserPrefix       = "capp-user-"
+)
+
+const (
 	LabelSelectorKey     = "labelSelector"
 	LabelKey             = "key"
 	LabelValue           = "value"
 	InvalidLabelSelector = ":--"
+	LabelCappName        = "rcs.dana.io/cappName"
 )
 
 const (
 	NameKey          = "name"
-	NameSpaceKey     = "namespaces"
-	NameSpaceNameKey = "namespaceName"
+	NamespaceKey     = "namespaces"
+	NamespacenameKey = "namespaceName"
 	IdKey            = "id"
 	OperationFailed  = "Operation failed"
 	InvalidRequest   = "Invalid request"
@@ -50,13 +66,13 @@ const (
 )
 
 const (
-	Metadata    = "metadata"
-	Labels      = "labels"
-	Annotations = "annotations"
-	Spec        = "spec"
-	Status      = "status"
-	Count       = "count"
-	Data        = "data"
+	MetadataKey    = "metadata"
+	LabelsKey      = "labels"
+	AnnotationsKey = "annotations"
+	SpecKey        = "spec"
+	StatusKey      = "status"
+	CountKey       = "count"
+	DataKey        = "data"
 )
 
 const (

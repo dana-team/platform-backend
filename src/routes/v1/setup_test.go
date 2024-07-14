@@ -1,14 +1,11 @@
 package v1
 
 import (
-	"context"
-	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	"testing"
 
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -93,15 +90,6 @@ func setupRouter(logger *zap.Logger) *gin.Engine {
 		}
 	}
 	return engine
-}
-
-func createTestNamespace(name string) {
-	namespace := mocks.PrepareNamespace(name)
-	_, err := fakeClient.CoreV1().Namespaces().Create(context.TODO(), &namespace, metav1.CreateOptions{})
-
-	if err != nil {
-		panic(err)
-	}
 }
 
 func setupScheme() *runtime.Scheme {

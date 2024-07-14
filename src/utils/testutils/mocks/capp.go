@@ -1,7 +1,6 @@
 package mocks
 
 import (
-	"context"
 	"fmt"
 
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
@@ -12,11 +11,15 @@ import (
 	knativeapis "knative.dev/pkg/apis"
 	knativev1 "knative.dev/serving/pkg/apis/serving/v1"
 	knativev1beta1 "knative.dev/serving/pkg/apis/serving/v1beta1"
-	runtimeClient "sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	concurrencyKey = "concurrency"
+	enabledKey     = "enabled"
 )
 
 // PrepareCapp returns a mock Capp object.
-func PrepareCapp(name, namespace string, labels, annotations map[string]string) cappv1alpha1.Capp {
+func PrepareCapp(name, namespace, domain string, labels, annotations map[string]string) cappv1alpha1.Capp {
 	return cappv1alpha1.Capp{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
@@ -25,7 +28,7 @@ func PrepareCapp(name, namespace string, labels, annotations map[string]string) 
 			Labels:      labels,
 		},
 		Spec:   PrepareCappSpec(),
-		Status: PrepareCappStatus(name, namespace),
+		Status: PrepareCappStatus(name, namespace, domain),
 	}
 }
 
@@ -46,6 +49,8 @@ func PrepareCappWithHostname(name, namespace string, labels, annotations map[str
 // PrepareCappSpec returns a mock Capp spec.
 func PrepareCappSpec() cappv1alpha1.CappSpec {
 	return cappv1alpha1.CappSpec{
+		ScaleMetric: concurrencyKey,
+		State:       enabledKey,
 		ConfigurationSpec: knativev1.ConfigurationSpec{
 			Template: knativev1.RevisionTemplateSpec{
 				Spec: knativev1.RevisionSpec{
@@ -87,12 +92,11 @@ func PrepareCappSpecWithHostname() cappv1alpha1.CappSpec {
 }
 
 // PrepareCappStatus returns a mock Capp status.
-func PrepareCappStatus(name, namespace string) cappv1alpha1.CappStatus {
+func PrepareCappStatus(name, namespace, domain string) cappv1alpha1.CappStatus {
 	return cappv1alpha1.CappStatus{
 		KnativeObjectStatus: knativev1.ServiceStatus{
 			RouteStatusFields: knativev1.RouteStatusFields{
-				URL: knativeapis.HTTPS(fmt.Sprintf("%s-%s.%s", name, namespace, testutils.Domain)),
-			},
+				URL: knativeapis.HTTPS(fmt.Sprintf("%s-%s.%s", name, namespace, domain))},
 		},
 	}
 }
@@ -113,6 +117,7 @@ func PrepareCappStatusWithHostname(name, namespace string) cappv1alpha1.CappStat
 	}
 }
 
+// PrepareUpdateCappType returns an UpdateCappType object.
 func PrepareUpdateCappType(labels, annotations []types.KeyValue) types.UpdateCapp {
 	return types.UpdateCapp{
 		Annotations: annotations,
@@ -121,7 +126,7 @@ func PrepareUpdateCappType(labels, annotations []types.KeyValue) types.UpdateCap
 	}
 }
 
-// PrepareCreateCappType returns a CreateCapp type object.
+// PrepareCreateCappType returns a CreateCapp object.
 func PrepareCreateCappType(name string, labels, annotations []types.KeyValue) types.CreateCapp {
 	return types.CreateCapp{
 		Metadata: types.CreateMetadata{
@@ -133,6 +138,7 @@ func PrepareCreateCappType(name string, labels, annotations []types.KeyValue) ty
 	}
 }
 
+// PrepareCappMetadata returns a CappMetadata object.
 func PrepareCappMetadata(name, namespace string) types.Metadata {
 	return types.Metadata{
 		Name:      name,
@@ -140,28 +146,11 @@ func PrepareCappMetadata(name, namespace string) types.Metadata {
 	}
 }
 
+// PrepareCappSummary returns a CappSummary object.
 func PrepareCappSummary(name string, namespace string) types.CappSummary {
 	return types.CappSummary{
 		Name:   name,
 		Images: []string{testutils.CappImage},
 		URL:    fmt.Sprintf("https://%s-%s.%s", name, namespace, testutils.Domain),
-	}
-}
-
-// CreateTestCapp creates a test Capp object.
-func CreateTestCapp(name, namespace string, labels, annotations map[string]string, dynClient runtimeClient.WithWatch) {
-	cappRevision := PrepareCapp(name, namespace, labels, annotations)
-	err := dynClient.Create(context.TODO(), &cappRevision)
-	if err != nil {
-		panic(err)
-	}
-}
-
-// CreateTestCappWithHostname creates a test Capp object with a hostname.
-func CreateTestCappWithHostname(name, namespace string, labels, annotations map[string]string, dynClient runtimeClient.WithWatch) {
-	capp := PrepareCappWithHostname(name, namespace, labels, annotations)
-	err := dynClient.Create(context.TODO(), &capp)
-	if err != nil {
-		panic(err)
 	}
 }

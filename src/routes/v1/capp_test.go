@@ -45,7 +45,7 @@ func TestGetCapps(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					testutils.Count: 4,
+					testutils.CountKey: 4,
 					testutils.CappsKey: []types.CappSummary{
 						{Name: testutils.CappName + "-1", URL: fmt.Sprintf("https://%s-%s.%s", testutils.CappName+"-1", testNamespaceName, testutils.Domain), Images: []string{testutils.CappImage}},
 						{Name: testutils.CappName + "-2", URL: fmt.Sprintf("https://%s-%s.%s", testutils.CappName+"-2", testNamespaceName, testutils.Domain), Images: []string{testutils.CappImage}},
@@ -66,7 +66,7 @@ func TestGetCapps(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					testutils.Count: 1,
+					testutils.CountKey: 1,
 					testutils.CappsKey: []types.CappSummary{
 						{Name: testutils.CappName + "-1", URL: fmt.Sprintf("https://%s-%s.%s", testutils.CappName+"-1", testNamespaceName, testutils.Domain), Images: []string{testutils.CappImage}},
 					},
@@ -100,7 +100,7 @@ func TestGetCapps(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					testutils.Count:    0,
+					testutils.CountKey: 0,
 					testutils.CappsKey: nil,
 				},
 			},
@@ -108,11 +108,11 @@ func TestGetCapps(t *testing.T) {
 	}
 
 	setup()
-	createTestNamespace(testNamespaceName)
-	mocks.CreateTestCapp(testutils.CappName+"-1", testNamespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, nil, dynClient)
-	mocks.CreateTestCapp(testutils.CappName+"-2", testNamespaceName, map[string]string{testutils.LabelKey + "-2": testutils.LabelValue + "-2"}, nil, dynClient)
-	mocks.CreateTestCappWithHostname(testutils.CappName+"-3", testNamespaceName, map[string]string{testutils.LabelKey + "-3": testutils.LabelValue + "-3"}, nil, dynClient)
-	mocks.CreateTestCappWithHostname(testutils.CappName+"-4", testNamespaceName, map[string]string{testutils.LabelKey + "-4": testutils.LabelValue + "-4"}, nil, dynClient)
+	mocks.CreateTestNamespace(fakeClient, testNamespaceName)
+	mocks.CreateTestCapp(dynClient, testutils.CappName+"-1", testNamespaceName, testutils.Domain, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, nil)
+	mocks.CreateTestCapp(dynClient, testutils.CappName+"-2", testNamespaceName, testutils.Domain, map[string]string{testutils.LabelKey + "-2": testutils.LabelValue + "-2"}, nil)
+	mocks.CreateTestCappWithHostname(dynClient, testutils.CappName+"-3", testNamespaceName, map[string]string{testutils.LabelKey + "-3": testutils.LabelValue + "-3"}, nil)
+	mocks.CreateTestCappWithHostname(dynClient, testutils.CappName+"-4", testNamespaceName, map[string]string{testutils.LabelKey + "-4": testutils.LabelValue + "-4"}, nil)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -170,11 +170,11 @@ func TestGetCapp(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					testutils.Metadata:    types.Metadata{Name: testutils.CappName, Namespace: testNamespaceName},
-					testutils.Labels:      []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}},
-					testutils.Annotations: nil,
-					testutils.Spec:        mocks.PrepareCappSpec(),
-					testutils.Status:      mocks.PrepareCappStatus(testutils.CappName, testNamespaceName),
+					testutils.MetadataKey:    types.Metadata{Name: testutils.CappName, Namespace: testNamespaceName},
+					testutils.LabelsKey:      []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}},
+					testutils.AnnotationsKey: nil,
+					testutils.SpecKey:        mocks.PrepareCappSpec(),
+					testutils.StatusKey:      mocks.PrepareCappStatus(testutils.CappName, testNamespaceName, testutils.Domain),
 				},
 			},
 		},
@@ -207,8 +207,8 @@ func TestGetCapp(t *testing.T) {
 	}
 
 	setup()
-	createTestNamespace(testNamespaceName)
-	mocks.CreateTestCapp(testutils.CappName, testNamespaceName, map[string]string{testutils.LabelKey: testutils.LabelValue}, nil, dynClient)
+	mocks.CreateTestNamespace(fakeClient, testNamespaceName)
+	mocks.CreateTestCapp(dynClient, testutils.CappName, testNamespaceName, testutils.Domain, map[string]string{testutils.LabelKey: testutils.LabelValue}, nil)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -259,11 +259,11 @@ func TestCreateCapp(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					testutils.Metadata:    types.Metadata{Name: testutils.CappName, Namespace: testNamespaceName},
-					testutils.Labels:      []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}},
-					testutils.Annotations: nil,
-					testutils.Spec:        mocks.PrepareCappSpec(),
-					testutils.Status:      cappv1alpha1.CappStatus{},
+					testutils.MetadataKey:    types.Metadata{Name: testutils.CappName, Namespace: testNamespaceName},
+					testutils.LabelsKey:      []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}},
+					testutils.AnnotationsKey: nil,
+					testutils.SpecKey:        mocks.PrepareCappSpec(),
+					testutils.StatusKey:      cappv1alpha1.CappStatus{},
 				},
 			},
 			requestData: mocks.PrepareCreateCappType(testutils.CappName, []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}}, nil),
@@ -297,8 +297,8 @@ func TestCreateCapp(t *testing.T) {
 	}
 
 	setup()
-	createTestNamespace(testNamespaceName)
-	mocks.CreateTestCapp(testutils.CappName+"-1", testNamespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, nil, dynClient)
+	mocks.CreateTestNamespace(fakeClient, testNamespaceName)
+	mocks.CreateTestCapp(dynClient, testutils.CappName+"-1", testNamespaceName, testutils.Domain, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, nil)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -355,11 +355,11 @@ func TestUpdateCapp(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					testutils.Metadata:    types.Metadata{Name: testutils.CappName, Namespace: testNamespaceName},
-					testutils.Labels:      []types.KeyValue{{Key: testutils.LabelKey + "-updated", Value: testutils.LabelValue + "-updated"}},
-					testutils.Annotations: nil,
-					testutils.Spec:        mocks.PrepareCappSpec(),
-					testutils.Status:      mocks.PrepareCappStatus(testutils.CappName, testNamespaceName),
+					testutils.MetadataKey:    types.Metadata{Name: testutils.CappName, Namespace: testNamespaceName},
+					testutils.LabelsKey:      []types.KeyValue{{Key: testutils.LabelKey + "-updated", Value: testutils.LabelValue + "-updated"}},
+					testutils.AnnotationsKey: nil,
+					testutils.SpecKey:        mocks.PrepareCappSpec(),
+					testutils.StatusKey:      mocks.PrepareCappStatus(testutils.CappName, testNamespaceName, testutils.Domain),
 				},
 			},
 			requestData: mocks.PrepareUpdateCappType([]types.KeyValue{{Key: testutils.LabelKey + "-updated", Value: testutils.LabelValue + "-updated"}}, nil),
@@ -395,7 +395,7 @@ func TestUpdateCapp(t *testing.T) {
 	}
 
 	setup()
-	mocks.CreateTestCapp(testutils.CappName, testNamespaceName, map[string]string{testutils.LabelKey: testutils.LabelValue}, nil, dynClient)
+	mocks.CreateTestCapp(dynClient, testutils.CappName, testNamespaceName, testutils.Domain, map[string]string{testutils.LabelKey: testutils.LabelValue}, nil)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -484,7 +484,7 @@ func TestDeleteCapp(t *testing.T) {
 	}
 
 	setup()
-	mocks.CreateTestCapp(testutils.CappName, testNamespaceName, map[string]string{testutils.LabelKey: testutils.LabelValue}, nil, dynClient)
+	mocks.CreateTestCapp(dynClient, testutils.CappName, testNamespaceName, testutils.Domain, map[string]string{testutils.LabelKey: testutils.LabelValue}, nil)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
