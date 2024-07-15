@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"fmt"
-	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"net/http"
 	"os"
@@ -14,8 +13,9 @@ import (
 	"go.uber.org/zap"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	zapctrl "sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 const (
@@ -77,7 +77,8 @@ func TokenAuthMiddleware(tokenProvider auth.TokenProvider, scheme *runtime.Schem
 			return
 		}
 
-		log.SetLogger(logr.New(log.NullLogSink{}))
+		opts := zapctrl.Options{Development: true}
+		ctrl.SetLogger(zapctrl.New(zapctrl.UseFlagOptions(&opts)))
 
 		// Update the logger with the username
 		c.Set("logger", userLogger)
