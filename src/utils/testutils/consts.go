@@ -1,5 +1,7 @@
 package testutils
 
+import "time"
+
 const (
 	Domain       = "dana-team.io"
 	Hostname     = "custom-capp"
@@ -21,6 +23,8 @@ const (
 	SecretName             = TestName + "-secret"
 	SecretDataValueEncoded = "ZmFrZQ=="
 	SecretNamespace        = SecretName + "-ns"
+	KeyField               = "key"
+	ValueField             = "value"
 )
 const (
 	TestName          = "test"
@@ -55,7 +59,7 @@ const (
 const (
 	NameKey          = "name"
 	NamespaceKey     = "namespaces"
-	NamespacenameKey = "namespaceName"
+	NamespaceNameKey = "namespaceName"
 	IdKey            = "id"
 	OperationFailed  = "Operation failed"
 	InvalidRequest   = "Invalid request"
@@ -63,6 +67,7 @@ const (
 	ErrorKey         = "error"
 	MessageKey       = "message"
 	TypeKey          = "type"
+	KubeSystem       = "kube-system"
 )
 
 const (
@@ -85,4 +90,10 @@ const (
 	CappNamespace = TestNamespace + "-" + CappsKey
 	CappImage     = "ghcr.io/dana-team/capp-gin-app:v0.2.0"
 	ContainerName = "capp-container"
+)
+
+const (
+	Timeout           = 300 * time.Second
+	Interval          = 10 * time.Second
+	DefaultEventually = 2 * time.Second
 )

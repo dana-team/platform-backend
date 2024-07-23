@@ -192,7 +192,7 @@ func TestCreateSecret(t *testing.T) {
 				response: map[string]interface{}{
 					testutils.SecretNameKey:    testutils.SecretName,
 					testutils.TypeKey:          string(corev1.SecretTypeOpaque),
-					testutils.NamespacenameKey: testNamespaceName,
+					testutils.NamespaceNameKey: testNamespaceName,
 				},
 			},
 			requestData: mocks.PrepareCreateSecretRequestType(testutils.SecretName, strings.ToLower(string(corev1.SecretTypeOpaque)), "", "",
@@ -290,7 +290,7 @@ func TestUpdateSecret(t *testing.T) {
 				response: map[string]interface{}{
 					testutils.SecretNameKey:    testutils.SecretName,
 					testutils.TypeKey:          string(corev1.SecretTypeOpaque),
-					testutils.NamespacenameKey: testNamespaceName,
+					testutils.NamespaceNameKey: testNamespaceName,
 					testutils.DataKey:          []types.KeyValue{{Key: testutils.SecretDataKey, Value: testutils.SecretDataValue}},
 				},
 			},

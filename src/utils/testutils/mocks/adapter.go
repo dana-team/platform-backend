@@ -10,7 +10,7 @@ import (
 
 // CreateTestNamespace creates a test Namespace object.
 func CreateTestNamespace(fakeClient *fake.Clientset, name string) {
-	namespace := PrepareNamespace(name)
+	namespace := PrepareNamespace(name, map[string]string{})
 	_, err := fakeClient.CoreV1().Namespaces().Create(context.TODO(), &namespace, metav1.CreateOptions{})
 
 	if err != nil {

@@ -1,0 +1,27 @@
+# Default values for logging-operator.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# -- Cluster name where the code is deployed
+clusterName: cluster-test
+
+# -- Domain of the cluster where the code is deployed
+clusterDomain: domain-test.com
+
+# -- Port of the API Server of the cluster
+apiPort: 6443
+
+# -- The image to run the Capp with.
+image: ghcr.io/dana-team/platform-backend:main
+
+# -- [Image pull policy](https://kubernetes.io/docs/concepts/containers/images/#updating-images) for updating already existing images on a node.
+imagePullPolicy: Always
+
+# -- Name of the ConfigMap where authentication endpoints are stored
+authConfig:
+  name: auth-config
+  insecureSkipVerify: true
+  kubeClientID: openshift-challenging-client
+
+# -- Name of the scale metric to use for Capp
+scaleMetric: concurrency
