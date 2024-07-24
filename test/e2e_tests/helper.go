@@ -65,7 +65,7 @@ func compareResponses(response, expectedResponse map[string]interface{}) {
 	Expect(response).Should(Equal(expectedResponseNormalized))
 }
 
-// prepareAuthorizedHTTPRequest prepares an authorized HTTP request.
+// prepareAuthorizedHTTPRequest prepares an HTTP request.
 // It creates a new HTTP request, sets the content type, and adds authorization headers as needed.
 func prepareAuthorizedHTTPRequest(body io.Reader, httpMethod, baseURI, username, password, userToken string) *http.Request {
 	request, err := http.NewRequest(httpMethod, baseURI, body)
@@ -87,8 +87,8 @@ func addAuthorization(request *http.Request, username, password, userToken strin
 	}
 }
 
-// performAuthorizedHTTPRequest makes an HTTP request and returns a response.
-func performAuthorizedHTTPRequest(httpClient http.Client, body io.Reader, httpMethod, baseURI, username, password, userToken string) (int, map[string]interface{}) {
+// performHTTPRequest makes an HTTP request and returns a response.
+func performHTTPRequest(httpClient http.Client, body io.Reader, httpMethod, baseURI, username, password, userToken string) (int, map[string]interface{}) {
 	request := prepareAuthorizedHTTPRequest(body, httpMethod, baseURI, username, password, userToken)
 
 	response, err := httpClient.Do(request)

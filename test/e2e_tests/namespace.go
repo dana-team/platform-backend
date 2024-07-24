@@ -25,7 +25,7 @@ var _ = Describe("Validate Namespace routes and functionality", func() {
 	Context("Validate get Namespaces route", func() {
 		It("Should get namespaces", func() {
 			uri := fmt.Sprintf("%s/v1/%s", platformURL, testutils.NamespaceKey)
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.CountKey: 2,
@@ -48,7 +48,7 @@ var _ = Describe("Validate Namespace routes and functionality", func() {
 
 		It("Should not get namespaces without a Managed label", func() {
 			uri := fmt.Sprintf("%s/v1/%s", platformURL, testutils.NamespaceKey)
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
 
 			Expect(status).Should(Equal(http.StatusOK))
 			Expect(testutils.KubeSystem).ToNot(BeElementOf(response[testutils.NamespaceKey]))
@@ -58,7 +58,7 @@ var _ = Describe("Validate Namespace routes and functionality", func() {
 	Context("Validate get Namespace route", func() {
 		It("Should get a specific namespace", func() {
 			uri := fmt.Sprintf("%s/v1/%s/%s", platformURL, testutils.NamespaceKey, oneNamespaceName)
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.NameKey: oneNamespaceName,
@@ -70,7 +70,7 @@ var _ = Describe("Validate Namespace routes and functionality", func() {
 
 		It("Should handle getting a not found namespace", func() {
 			uri := fmt.Sprintf("%s/v1/%s/%s", platformURL, testutils.NamespaceKey, oneNamespaceName+testutils.NonExistentSuffix)
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.NamespaceKey, oneNamespaceName+testutils.NonExistentSuffix),
@@ -93,7 +93,7 @@ var _ = Describe("Validate Namespace routes and functionality", func() {
 			payload, err := json.Marshal(requestData)
 			Expect(err).Should(Not(HaveOccurred()))
 
-			status, response := performAuthorizedHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, uri, "", "", userToken)
 			expectedResponse := map[string]interface{}{
 				testutils.NameKey: newNamespaceName,
 			}
@@ -115,7 +115,7 @@ var _ = Describe("Validate Namespace routes and functionality", func() {
 			payload, err := json.Marshal(requestData)
 			Expect(err).Should(Not(HaveOccurred()))
 
-			status, response := performAuthorizedHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, uri, "", "", userToken)
 			expectedResponse := map[string]interface{}{
 				testutils.DetailsKey: "Key: 'Namespace.Name' Error:Field validation for 'Name' failed on the 'required' tag",
 				testutils.ErrorKey:   testutils.InvalidRequest,
@@ -131,7 +131,7 @@ var _ = Describe("Validate Namespace routes and functionality", func() {
 			payload, err := json.Marshal(requestData)
 			Expect(err).Should(Not(HaveOccurred()))
 
-			status, response := performAuthorizedHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, uri, "", "", userToken)
 			expectedResponse := map[string]interface{}{
 				testutils.DetailsKey: fmt.Sprintf("%s %q already exists", testutils.NamespaceKey, oneNamespaceName),
 				testutils.ErrorKey:   testutils.OperationFailed,
@@ -145,7 +145,7 @@ var _ = Describe("Validate Namespace routes and functionality", func() {
 	Context("Validate delete Namespace route", func() {
 		It("Should delete namespace", func() {
 			uri := fmt.Sprintf("%s/v1/%s/%s", platformURL, testutils.NamespaceKey, oneNamespaceName)
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodDelete, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodDelete, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.MessageKey: fmt.Sprintf("Deleted namespace successfully %q", oneNamespaceName),
@@ -162,7 +162,7 @@ var _ = Describe("Validate Namespace routes and functionality", func() {
 
 		It("Should handle deletion of not found namespace", func() {
 			uri := fmt.Sprintf("%s/v1/%s/%s", platformURL, testutils.NamespaceKey, oneNamespaceName+testutils.NonExistentSuffix)
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodDelete, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodDelete, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.NamespaceKey, oneNamespaceName+testutils.NonExistentSuffix),

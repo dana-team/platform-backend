@@ -32,7 +32,7 @@ var _ = Describe("Validate CappRevision routes and functionality", func() {
 	Context("Validate get CappRevisions route", func() {
 		It("Should get all CappRevisions in a namespace", func() {
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s", platformURL, namespaceName, testutils.CapprevisionsKey)
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.CapprevisionsKey: append(oneCappRevisionNames, secondCappRevisionNames...),
@@ -48,7 +48,7 @@ var _ = Describe("Validate CappRevision routes and functionality", func() {
 			params := url.Values{}
 			params.Add(testutils.LabelSelectorKey, fmt.Sprintf("%s=%s", testutils.LabelCappName, secondCappName))
 
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodGet, fmt.Sprintf("%s?%s", uri, params.Encode()), "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, fmt.Sprintf("%s?%s", uri, params.Encode()), "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.CapprevisionsKey: secondCappRevisionNames,
@@ -64,7 +64,7 @@ var _ = Describe("Validate CappRevision routes and functionality", func() {
 			params := url.Values{}
 			params.Add(testutils.LabelSelectorKey, fmt.Sprintf("%s=%s", testutils.LabelCappName, testutils.InvalidLabelSelector))
 
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodGet, fmt.Sprintf("%s?%s", uri, params.Encode()), "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, fmt.Sprintf("%s?%s", uri, params.Encode()), "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.DetailsKey: fmt.Sprintf("unable to parse requirement: values[0][%s]: Invalid value: %q: "+
@@ -84,7 +84,7 @@ var _ = Describe("Validate CappRevision routes and functionality", func() {
 			params := url.Values{}
 			params.Add(testutils.LabelSelectorKey, fmt.Sprintf("%s=%s%s", testutils.LabelCappName, secondCappName, testutils.NonExistentSuffix))
 
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodGet, fmt.Sprintf("%s?%s", uri, params.Encode()), "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, fmt.Sprintf("%s?%s", uri, params.Encode()), "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.CapprevisionsKey: nil,
@@ -99,7 +99,7 @@ var _ = Describe("Validate CappRevision routes and functionality", func() {
 	Context("Validate get CappRevision route", func() {
 		It("Should get a specific CappRevision in a namespace", func() {
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName, testutils.CapprevisionsKey, oneCappRevisionNames[0])
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.MetadataKey:    types.Metadata{Name: oneCappRevisionNames[0], Namespace: namespaceName},
@@ -115,7 +115,7 @@ var _ = Describe("Validate CappRevision routes and functionality", func() {
 
 		It("Should handle a not found CappRevision in a namespace", func() {
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName, testutils.CapprevisionsKey, oneCappName+testutils.NonExistentSuffix)
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CapprevisionsKey, cappv1alpha1.GroupVersion.Group, oneCappName+testutils.NonExistentSuffix),
@@ -130,7 +130,7 @@ var _ = Describe("Validate CappRevision routes and functionality", func() {
 
 		It("Should handle a get of a CappRevision in a not found namespace", func() {
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName+testutils.NonExistentSuffix, testutils.CapprevisionsKey, oneCappName)
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CapprevisionsKey, cappv1alpha1.GroupVersion.Group, oneCappName),

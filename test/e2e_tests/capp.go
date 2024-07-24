@@ -36,7 +36,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 	Context("Validate get Capps route", func() {
 		It("Should get all Capps in a namespace", func() {
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s", platformURL, namespaceName, testutils.CappsKey)
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.CappsKey: []types.CappSummary{
@@ -55,7 +55,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 			params := url.Values{}
 			params.Add(testutils.LabelSelectorKey, fmt.Sprintf("%s=%s", secondLabelKey, secondLabelValue))
 
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodGet, fmt.Sprintf("%s?%s", uri, params.Encode()), "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, fmt.Sprintf("%s?%s", uri, params.Encode()), "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.CappsKey: []types.CappSummary{
@@ -73,7 +73,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 			params := url.Values{}
 			params.Add(testutils.LabelSelectorKey, fmt.Sprintf("%s=%s", testutils.LabelCappName, testutils.InvalidLabelSelector))
 
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodGet, fmt.Sprintf("%s?%s", uri, params.Encode()), "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, fmt.Sprintf("%s?%s", uri, params.Encode()), "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.DetailsKey: fmt.Sprintf("unable to parse requirement: values[0][%s]: Invalid value: %q: "+
@@ -93,7 +93,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 			params := url.Values{}
 			params.Add(testutils.LabelSelectorKey, fmt.Sprintf("%s=%s", secondLabelKey, secondLabelValue+testutils.NonExistentSuffix))
 
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodGet, fmt.Sprintf("%s?%s", uri, params.Encode()), "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, fmt.Sprintf("%s?%s", uri, params.Encode()), "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.CappsKey: nil,
@@ -108,7 +108,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 	Context("Validate get Capp route", func() {
 		It("Should get a specific Capp in a namespace", func() {
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName, testutils.CappsKey, oneCappName)
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.MetadataKey: types.Metadata{Name: oneCappName, Namespace: namespaceName},
@@ -124,7 +124,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 
 		It("Should handle a not found Capp in a namespace", func() {
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName, testutils.CappsKey, oneCappName+testutils.NonExistentSuffix)
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, oneCappName+testutils.NonExistentSuffix),
@@ -139,7 +139,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 
 		It("Should handle a get of a Capp in a not found namespace", func() {
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName+testutils.NonExistentSuffix, testutils.CappsKey, oneCappName)
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, oneCappName),
@@ -162,7 +162,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 			payload, err := json.Marshal(requestData)
 			Expect(err).Should(Not(HaveOccurred()))
 
-			status, response := performAuthorizedHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, uri, "", "", userToken)
 			expectedResponse := map[string]interface{}{
 				testutils.MetadataKey:    types.Metadata{Name: newCappName, Namespace: namespaceName},
 				testutils.LabelsKey:      []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}},
@@ -186,7 +186,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 			payload, err := json.Marshal(requestData)
 			Expect(err).Should(Not(HaveOccurred()))
 
-			status, response := performAuthorizedHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, uri, "", "", userToken)
 			expectedResponse := map[string]interface{}{
 				testutils.DetailsKey: "Key: 'CreateCapp.Metadata.Name' Error:Field validation for 'Name' failed on the 'required' tag",
 				testutils.ErrorKey:   testutils.InvalidRequest,
@@ -202,7 +202,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 			payload, err := json.Marshal(requestData)
 			Expect(err).Should(Not(HaveOccurred()))
 
-			status, response := performAuthorizedHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, uri, "", "", userToken)
 			expectedResponse := map[string]interface{}{
 				testutils.DetailsKey: fmt.Sprintf("%s.%s %q already exists", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, oneCappName),
 				testutils.ErrorKey:   testutils.OperationFailed,
@@ -220,7 +220,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 			payload, err := json.Marshal(requestData)
 			Expect(err).Should(Not(HaveOccurred()))
 
-			status, response := performAuthorizedHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPut, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPut, uri, "", "", userToken)
 			expectedResponse := map[string]interface{}{
 				testutils.MetadataKey: types.Metadata{Name: oneCappName, Namespace: namespaceName},
 				testutils.LabelsKey:   []types.KeyValue{{Key: oneLabelKey, Value: oneLabelValue + "-updated"}},
@@ -244,7 +244,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 			payload, err := json.Marshal(requestData)
 			Expect(err).Should(Not(HaveOccurred()))
 
-			status, response := performAuthorizedHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPut, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPut, uri, "", "", userToken)
 			expectedResponse := map[string]interface{}{
 				testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, oneCappName+testutils.NonExistentSuffix),
 				testutils.ErrorKey:   testutils.OperationFailed,
@@ -262,7 +262,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 			payload, err := json.Marshal(requestData)
 			Expect(err).Should(Not(HaveOccurred()))
 
-			status, response := performAuthorizedHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPut, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPut, uri, "", "", userToken)
 			expectedResponse := map[string]interface{}{
 				testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, oneCappName),
 				testutils.ErrorKey:   testutils.OperationFailed,
@@ -278,7 +278,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 	Context("Validate delete Capp route", func() {
 		It("Should delete Capp from namespace", func() {
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName, testutils.CappsKey, oneCappName)
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodDelete, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodDelete, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.MessageKey: fmt.Sprintf("Deleted capp %q in namespace %q successfully", oneCappName, namespaceName),
@@ -295,7 +295,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 
 		It("Should handle deletion of not found Capp", func() {
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName, testutils.CappsKey, oneCappName+testutils.NonExistentSuffix)
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodDelete, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodDelete, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, oneCappName+testutils.NonExistentSuffix),
@@ -310,7 +310,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 
 		It("Should handle deletion of Capp in a not found namespace", func() {
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName+testutils.NonExistentSuffix, testutils.CappsKey, oneCappName)
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodDelete, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodDelete, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, oneCappName),
