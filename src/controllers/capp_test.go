@@ -299,6 +299,68 @@ func TestUpdateCapp(t *testing.T) {
 	}
 }
 
+func TestEditCapp(t *testing.T) {
+	namespaceName := testutils.CappNamespace + "-update"
+	type requestParams struct {
+		name      string
+		state     string
+		namespace string
+	}
+
+	type want struct {
+		response    types.CappStateReponse
+		errorStatus metav1.StatusReason
+	}
+	cases := map[string]struct {
+		requestParams requestParams
+		want          want
+	}{
+		"ShouldSucceedEditingCappState": {
+			requestParams: requestParams{
+				namespace: namespaceName,
+				name:      testutils.CappName + "-1",
+				state:     testutils.DisabledState,
+			},
+			want: want{
+				response: types.CappStateReponse{
+					State: testutils.DisabledState,
+					Name:  testutils.CappName + "-1",
+				},
+				errorStatus: metav1.StatusSuccess,
+			},
+		},
+		"ShouldFailedEditingNonExistingCapp": {
+			requestParams: requestParams{
+				namespace: namespaceName,
+				name:      testutils.CappName + testutils.NonExistentSuffix,
+				state:     testutils.DisabledState,
+			},
+			want: want{
+				response:    types.CappStateReponse{},
+				errorStatus: metav1.StatusReasonNotFound,
+			},
+		},
+	}
+	setup()
+	cappController := NewCappController(dynClient, context.TODO(), logger)
+	createTestNamespace(namespaceName, map[string]string{})
+	mocks.CreateTestCapp(dynClient, testutils.CappName+"-1", namespaceName, testutils.Domain, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{})
+
+	for name, test := range cases {
+		t.Run(name, func(t *testing.T) {
+			response, err := cappController.EditCappState(test.requestParams.namespace, test.requestParams.name, test.requestParams.state)
+			if test.want.errorStatus != metav1.StatusSuccess {
+				reason := err.(errors.APIStatus).Status().Reason
+
+				assert.Equal(t, test.want.errorStatus, reason)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, test.want.response, response)
+		})
+	}
+}
+
 func TestDeleteCapp(t *testing.T) {
 	namespaceName := testutils.CappNamespace + "-delete"
 	type requestParams struct {

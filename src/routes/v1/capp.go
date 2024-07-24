@@ -111,6 +111,25 @@ func UpdateCapp() gin.HandlerFunc {
 	}
 }
 
+func EditCappState() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var cappUri types.CappUri
+		if err := c.BindUri(&cappUri); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			return
+		}
+		var state types.CappState
+		if err := c.BindJSON(&state); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			return
+		}
+
+		cappHandler(func(controller controllers.CappController, c *gin.Context) (interface{}, error) {
+			return controller.EditCappState(cappUri.NamespaceName, cappUri.CappName, state.State)
+		})(c)
+	}
+}
+
 func DeleteCapp() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cappUri types.CappUri

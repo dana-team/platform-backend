@@ -426,6 +426,114 @@ func TestUpdateCapp(t *testing.T) {
 	}
 }
 
+func TestEditCappState(t *testing.T) {
+	testNamespaceName := testutils.CappNamespace + "-update"
+
+	type requestURI struct {
+		name      string
+		namespace string
+	}
+
+	type want struct {
+		statusCode int
+		response   map[string]interface{}
+	}
+
+	cases := map[string]struct {
+		requestURI  requestURI
+		want        want
+		requestData interface{}
+	}{
+		"ShouldSucceedEditingState": {
+			requestURI: requestURI{
+				name:      testutils.CappName,
+				namespace: testNamespaceName,
+			},
+			want: want{
+				statusCode: http.StatusOK,
+				response: map[string]interface{}{
+					testutils.NameKey:  testutils.CappName,
+					testutils.StateKey: testutils.DisabledState,
+				},
+			},
+			requestData: types.CappState{State: testutils.DisabledState},
+		},
+		"ShouldHandleNotFoundCapp": {
+			requestURI: requestURI{
+				name:      testutils.CappName + testutils.NonExistentSuffix,
+				namespace: testNamespaceName,
+			},
+			want: want{
+				statusCode: http.StatusNotFound,
+				response: map[string]interface{}{
+					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName+testutils.NonExistentSuffix),
+					testutils.ErrorKey:   testutils.OperationFailed,
+				},
+			},
+			requestData: types.CappState{State: testutils.DisabledState},
+		},
+		"ShouldHandleNotFoundNamespace": {
+			requestURI: requestURI{
+				name:      testutils.CappName,
+				namespace: testNamespaceName + testutils.NonExistentSuffix,
+			},
+			want: want{
+				statusCode: http.StatusNotFound,
+				response: map[string]interface{}{
+					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName),
+					testutils.ErrorKey:   testutils.OperationFailed,
+				},
+			},
+			requestData: types.CappState{State: testutils.DisabledState},
+		},
+		"ShouldHandleStateNotAllowed": {
+			requestURI: requestURI{
+				name:      testutils.CappName,
+				namespace: testNamespaceName + testutils.NonExistentSuffix,
+			},
+			want: want{
+				statusCode: http.StatusBadRequest,
+				response: map[string]interface{}{
+					testutils.DetailsKey: "Key: 'CappState.State' Error:Field validation for 'State' failed on the 'oneof' tag",
+					testutils.ErrorKey:   testutils.InvalidRequest,
+				},
+			},
+			requestData: types.CappState{State: "blabla"},
+		},
+	}
+
+	setup()
+	mocks.CreateTestCapp(dynClient, testutils.CappName, testNamespaceName, testutils.Domain, map[string]string{testutils.LabelKey: testutils.LabelValue}, nil)
+
+	for name, test := range cases {
+		t.Run(name, func(t *testing.T) {
+			payload, err := json.Marshal(test.requestData)
+			assert.NoError(t, err)
+
+			baseURI := fmt.Sprintf("/v1/namespaces/%s/capps/%s/state", test.requestURI.namespace, test.requestURI.name)
+			request, err := http.NewRequest(http.MethodPut, baseURI, bytes.NewBuffer(payload))
+			assert.NoError(t, err)
+			request.Header.Set(testutils.ContentType, testutils.ApplicationJson)
+
+			writer := httptest.NewRecorder()
+			router.ServeHTTP(writer, request)
+
+			assert.Equal(t, test.want.statusCode, writer.Code)
+
+			var response map[string]interface{}
+			err = json.Unmarshal(writer.Body.Bytes(), &response)
+			assert.NoError(t, err)
+
+			wantResponseJSON, err := json.Marshal(test.want.response)
+			assert.NoError(t, err)
+			var wantResponseNormalized map[string]interface{}
+			err = json.Unmarshal(wantResponseJSON, &wantResponseNormalized)
+			assert.NoError(t, err)
+			assert.Equal(t, wantResponseNormalized, response)
+		})
+	}
+}
+
 func TestDeleteCapp(t *testing.T) {
 	testNamespaceName := testutils.CappNamespace + "-delete"
 
