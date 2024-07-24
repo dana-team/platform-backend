@@ -20,3 +20,63 @@ jobs:
 
       - name: Run unit-tests
         run: make test
+
+  e2e-tests:
+    name: e2e-tests
+    runs-on: ubuntu-latest
+    env:
+      REGISTRY: ghcr.io
+      REPOSITORY_NAME: ${{ github.repository }}
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Log into ghcr.io
+        uses: docker/login-action@0d4c9c5ea7693da7b068278f7b52bda2a190a446
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Add IMAGE_TAG env property with commit short sha
+        run: echo "IMAGE_TAG=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
+
+      - name: Build and push docker image
+        run: make docker-build docker-push IMG=${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}:${IMAGE_TAG}
+
+      - name: Set Kubernetes context
+        uses: Azure/k8s-set-context@v4
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.BACKEND_CI_CLUSTER_KUBECONFIG }}
+
+      - name: Deploy Capp
+        run: make deploy-capp
+
+      - name: Deploy backend
+        run: make deploy IMG=${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}:${IMAGE_TAG} CLUSTER_NAME=${{ secrets.BACKEND_CI_CLUSTER_NAME }} CLUSTER_DOMAIN=${{ secrets.BACKEND_CI_CLUSTER_DOMAIN }}
+
+      - name: Await backend to be ready
+        run: until kubectl get capp platform-backend -n platform-backend-system -o jsonpath='{.status.knativeObjectStatus.conditions[?(@.type=="Ready")].status}' | grep -q "True"; do echo "Waiting for Capp to be ready..."; sleep 5; done; echo "Capp is ready"
+
+      - name: Run e2e tests
+        run: make test-e2e
+
+      - name: Undeploy backend
+        run: make undeploy
+        if: always()
+
+      - name: Undeploy Capp
+        run: make undeploy-capp
+        if: always()

@@ -1,0 +1,17 @@
+apiVersion: rcs.dana.io/v1alpha1
+kind: Capp
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  configurationSpec:
+    template:
+      spec:
+        containers:
+          - envFrom:
+              - configMapRef:
+                  name: {{ .Release.Name }}-{{ .Values.authConfig.name }}
+            image: {{ .Values.image }}
+            imagePullPolicy: {{ .Values.imagePullPolicy }}
+            name: {{ .Release.Name }}
+  scaleMetric: {{ .Values.scaleMetric }}
