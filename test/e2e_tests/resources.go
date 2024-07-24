@@ -3,8 +3,8 @@ package e2e_tests
 import (
 	"context"
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
-	"github.com/dana-team/platform-backend/src/utils/testutils"
-	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
+	"github.com/dana-team/platform-backend/internal/utils/testutils"
+	"github.com/dana-team/platform-backend/internal/utils/testutils/mocks"
 	. "github.com/onsi/gomega"
 	configv1 "github.com/openshift/api/config/v1"
 	corev1 "k8s.io/api/core/v1"

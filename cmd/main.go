@@ -2,9 +2,9 @@ package main
 
 import (
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
-	"github.com/dana-team/platform-backend/src/auth"
-	"github.com/dana-team/platform-backend/src/middleware"
-	"github.com/dana-team/platform-backend/src/routes/v1"
+	"github.com/dana-team/platform-backend/internal/auth"
+	"github.com/dana-team/platform-backend/internal/middleware"
+	"github.com/dana-team/platform-backend/internal/routes/v1"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
