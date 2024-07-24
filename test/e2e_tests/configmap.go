@@ -24,7 +24,7 @@ var _ = Describe("Validate ConfigMap routes and functionality", func() {
 	Context("Validate get ConfigMap route", func() {
 		It("Should get a specific ConfigMap in a namespace", func() {
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName, testutils.ConfigmapsKey, configMapName)
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.DataKey: []types.KeyValue{{Key: testutils.ConfigMapDataKey, Value: testutils.ConfigMapDataValue}},
@@ -36,7 +36,7 @@ var _ = Describe("Validate ConfigMap routes and functionality", func() {
 
 		It("Should handle a not found ConfigMap in a namespace", func() {
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName, testutils.ConfigmapsKey, configMapName+testutils.NonExistentSuffix)
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.ConfigmapsKey, configMapName+testutils.NonExistentSuffix),
@@ -51,7 +51,7 @@ var _ = Describe("Validate ConfigMap routes and functionality", func() {
 
 		It("Should handle a get of a ConfigMap in a not found namespace", func() {
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName+testutils.NonExistentSuffix, testutils.ConfigmapsKey, configMapName)
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.ConfigmapsKey, configMapName),

@@ -92,7 +92,6 @@ const (
 	ContainerName = "capp-container"
 	StateKey      = "state"
 	DisabledState = "disabled"
-	EnabledState  = "enabled"
 )
 
 const (

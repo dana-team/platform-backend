@@ -14,4 +14,15 @@ spec:
             image: {{ .Values.image }}
             imagePullPolicy: {{ .Values.imagePullPolicy }}
             name: {{ .Release.Name }}
+            readinessProbe:
+              tcpSocket:
+                port: {{ .Values.readinessProbe.port }}
+              initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+              periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            livenessProbe:
+              httpGet:
+                path: {{ .Values.livenessProbe.path }}
+                port: {{ .Values.livenessProbe.port }}
+              initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+              periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
   scaleMetric: {{ .Values.scaleMetric }}

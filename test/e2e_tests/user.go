@@ -28,7 +28,7 @@ var _ = Describe("Validate Secret routes and functionality", func() {
 	Context("Validate get Users route", func() {
 		It("Should get users with a managed label in a namespace", func() {
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s", platformURL, namespaceName, testutils.UsersKey)
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.CountKey: 2,
@@ -52,7 +52,7 @@ var _ = Describe("Validate Secret routes and functionality", func() {
 	Context("Validate get User route", func() {
 		It("Should get an existing User in a namespace", func() {
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName, testutils.UsersKey, oneUserName)
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.NameKey: oneUserName,
@@ -65,7 +65,7 @@ var _ = Describe("Validate Secret routes and functionality", func() {
 
 		It("Should handle getting a not found User in a namespace", func() {
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName, testutils.UsersKey, oneUserName+testutils.NonExistentSuffix)
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, oneUserName+testutils.NonExistentSuffix),
@@ -80,7 +80,7 @@ var _ = Describe("Validate Secret routes and functionality", func() {
 
 		It("Should handle getting a User in a not found namespace", func() {
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName+testutils.NonExistentSuffix, testutils.UsersKey, oneUserName)
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, oneUserName),
@@ -103,7 +103,7 @@ var _ = Describe("Validate Secret routes and functionality", func() {
 			payload, err := json.Marshal(requestData)
 			Expect(err).Should(Not(HaveOccurred()))
 
-			status, response := performAuthorizedHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, uri, "", "", userToken)
 			expectedResponse := map[string]interface{}{
 				testutils.NameKey: newUserName,
 				testutils.RoleKey: testutils.ViewerKey,
@@ -129,7 +129,7 @@ var _ = Describe("Validate Secret routes and functionality", func() {
 			payload, err := json.Marshal(requestData)
 			Expect(err).Should(Not(HaveOccurred()))
 
-			status, response := performAuthorizedHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, uri, "", "", userToken)
 			expectedResponse := map[string]interface{}{
 				testutils.DetailsKey: fmt.Sprintf("%s.%s %q already exists", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, oneUserName),
 				testutils.ErrorKey:   testutils.OperationFailed,
@@ -145,7 +145,7 @@ var _ = Describe("Validate Secret routes and functionality", func() {
 			payload, err := json.Marshal(requestData)
 			Expect(err).Should(Not(HaveOccurred()))
 
-			status, response := performAuthorizedHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, uri, "", "", userToken)
 			expectedResponse := map[string]interface{}{
 				testutils.DetailsKey: "Key: 'User.Role' Error:Field validation for 'Role' failed on the 'oneof' tag",
 				testutils.ErrorKey:   testutils.InvalidRequest,
@@ -163,7 +163,7 @@ var _ = Describe("Validate Secret routes and functionality", func() {
 			payload, err := json.Marshal(requestData)
 			Expect(err).Should(Not(HaveOccurred()))
 
-			status, response := performAuthorizedHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPut, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPut, uri, "", "", userToken)
 			expectedResponse := map[string]interface{}{
 				testutils.NameKey: oneUserName,
 				testutils.RoleKey: testutils.ViewerKey,
@@ -184,7 +184,7 @@ var _ = Describe("Validate Secret routes and functionality", func() {
 			payload, err := json.Marshal(requestData)
 			Expect(err).Should(Not(HaveOccurred()))
 
-			status, response := performAuthorizedHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPut, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPut, uri, "", "", userToken)
 			expectedResponse := map[string]interface{}{
 				testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, oneUserName+testutils.NonExistentSuffix),
 				testutils.ErrorKey:   testutils.OperationFailed,
@@ -200,7 +200,7 @@ var _ = Describe("Validate Secret routes and functionality", func() {
 			payload, err := json.Marshal(requestData)
 			Expect(err).Should(Not(HaveOccurred()))
 
-			status, response := performAuthorizedHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPut, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPut, uri, "", "", userToken)
 			expectedResponse := map[string]interface{}{
 				testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, oneUserName),
 				testutils.ErrorKey:   testutils.OperationFailed,
@@ -216,7 +216,7 @@ var _ = Describe("Validate Secret routes and functionality", func() {
 			payload, err := json.Marshal(requestData)
 			Expect(err).Should(Not(HaveOccurred()))
 
-			status, response := performAuthorizedHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPut, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPut, uri, "", "", userToken)
 			expectedResponse := map[string]interface{}{
 				testutils.DetailsKey: "Key: 'UpdateUserData.Role' Error:Field validation for 'Role' failed on the 'oneof' tag",
 				testutils.ErrorKey:   testutils.InvalidRequest,
@@ -230,7 +230,7 @@ var _ = Describe("Validate Secret routes and functionality", func() {
 	Context("Validate delete User route", func() {
 		It("Should delete a User in an existing namespace", func() {
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName, testutils.UsersKey, oneUserName)
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodDelete, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodDelete, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.MessageKey: fmt.Sprintf("Deleted roleBinding %q in namespace %q successfully", oneUserName, namespaceName),
@@ -247,7 +247,7 @@ var _ = Describe("Validate Secret routes and functionality", func() {
 
 		It("Should handle deletion of a not found User in a namespace", func() {
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName, testutils.UsersKey, oneUserName+testutils.NonExistentSuffix)
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodDelete, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodDelete, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, oneUserName+testutils.NonExistentSuffix),
@@ -260,7 +260,7 @@ var _ = Describe("Validate Secret routes and functionality", func() {
 
 		It("Should handle deletion of a User in a not found namespace", func() {
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName+testutils.NonExistentSuffix, testutils.UsersKey, oneUserName)
-			status, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodDelete, uri, "", "", userToken)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodDelete, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
 				testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, oneUserName),

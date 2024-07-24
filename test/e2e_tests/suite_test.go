@@ -172,7 +172,7 @@ func getTokenFromLogin() {
 	userToken = ""
 
 	Eventually(func() bool {
-		_, response := performAuthorizedHTTPRequest(httpClient, nil, http.MethodPost, baseURI, e2eUser, e2ePassword, "")
+		_, response := performHTTPRequest(httpClient, nil, http.MethodPost, baseURI, e2eUser, e2ePassword, "")
 		token, ok := response[tokenKey]
 
 		if !ok {
