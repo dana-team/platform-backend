@@ -30,7 +30,6 @@ func setup() {
 	fakeClient = fake.NewSimpleClientset()
 	dynClient = runtimeFake.NewClientBuilder().WithScheme(setupScheme()).Build()
 	logger, _ = zap.NewProduction()
-
 }
 
 func createTestNamespace(name string, labels map[string]string) {
@@ -45,6 +44,7 @@ func createTestNamespace(name string, labels map[string]string) {
 		panic(err)
 	}
 }
+
 func createTestSecret(secretName string, namespace string, labels map[string]string) {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -62,6 +62,7 @@ func createTestSecret(secretName string, namespace string, labels map[string]str
 		panic(err)
 	}
 }
+
 func setupScheme() *runtime.Scheme {
 	schema := scheme.Scheme
 	_ = cappv1alpha1.AddToScheme(schema)
