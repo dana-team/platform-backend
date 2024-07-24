@@ -44,6 +44,11 @@ type CappSummary struct {
 	Images []string `json:"images"`
 }
 
+type CappStateReponse struct {
+	Name  string `json:"name"`
+	State string `json:"state" binding:"oneof=enabled disabled"`
+}
+
 type CappNamespaceUri struct {
 	NamespaceName string `uri:"namespaceName" binding:"required"`
 }
@@ -55,4 +60,8 @@ type CappUri struct {
 
 type CappError struct {
 	Message string `json:"message"`
+}
+
+type CappState struct {
+	State string `json:"state" binding:"required,oneof=enabled disabled"`
 }

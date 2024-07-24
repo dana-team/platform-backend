@@ -29,6 +29,9 @@ type CappController interface {
 
 	// DeleteCapp deletes a specific Capp in the specified namespace.
 	DeleteCapp(namespace, name string) (types.CappError, error)
+
+	// EditCappState edits the state of a specific Capp in the specified namespace.
+	EditCappState(namespace string, cappName string, state string) (types.CappStateReponse, error)
 }
 
 type cappController struct {
@@ -153,6 +156,25 @@ func (c *cappController) UpdateCapp(namespace, name string, newCapp types.Update
 	}
 
 	return convertCappToType(*capp), nil
+}
+
+func (c *cappController) EditCappState(namespace string, cappName string, state string) (types.CappStateReponse, error) {
+	c.logger.Debug(fmt.Sprintf("Trying to update capp %q in namespace %q", cappName, namespace))
+
+	capp := &cappv1alpha1.Capp{}
+	err := c.client.Get(c.ctx, client.ObjectKey{Namespace: namespace, Name: cappName}, capp)
+	if err != nil {
+		c.logger.Error(fmt.Sprintf("Could not fetch capp %q in namespace %q with error: %v", cappName, namespace, err.Error()))
+		return types.CappStateReponse{}, err
+	}
+
+	capp.Spec.State = state
+	if err := c.client.Update(c.ctx, capp); err != nil {
+		c.logger.Error(fmt.Sprintf("Could not update capp %q in namespace %q with error: %v", state, namespace, err.Error()))
+		return types.CappStateReponse{}, err
+	}
+
+	return types.CappStateReponse{Name: capp.Name, State: capp.Spec.State}, nil
 }
 
 func (c *cappController) DeleteCapp(namespace, name string) (types.CappError, error) {
