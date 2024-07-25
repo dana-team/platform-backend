@@ -24,7 +24,7 @@ kubectl wait --for=condition=ready pods -l control-plane=controller-manager -n c
 
 kubectl get configmap dns-zone -n capp-operator-system &> /dev/null
 if [ $? -ne 0 ]; then
-    kubectl create configmap dns-zone --from-literal=zone=capp-zone. -n capp-operator-system
+    kubectl create configmap dns-config --from-literal=zone=capp-zone. --from-literal=cname=cname.capp-zone -n capp-operator-system
 fi
 
 rm -rf container-app-operator/
