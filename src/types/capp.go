@@ -65,3 +65,8 @@ type CappError struct {
 type CappState struct {
 	State string `json:"state" binding:"required,oneof=enabled disabled"`
 }
+type GetCappStateResponse struct {
+	LastCreatedRevision string `json:"lastCreatedRevision"`
+	LastReadyRevision   string `json:"lastReadyRevision"`
+	State               string `json:"state" binding:"required,oneof=enabled disabled"`
+}

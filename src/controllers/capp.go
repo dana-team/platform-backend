@@ -14,6 +14,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	disabledState = "disabled"
+	noRevision    = "No revision available"
+)
+
 type CappController interface {
 	// CreateCapp creates a new Capp in the specified namespace.
 	CreateCapp(namespace string, capp types.CreateCapp) (types.Capp, error)
@@ -32,6 +37,9 @@ type CappController interface {
 
 	// EditCappState edits the state of a specific Capp in the specified namespace.
 	EditCappState(namespace string, cappName string, state string) (types.CappStateReponse, error)
+
+	// GetCappState gets the state of a specific Capp from the specified namespace.
+	GetCappState(namespace, name string) (types.GetCappStateResponse, error)
 }
 
 type cappController struct {
@@ -134,6 +142,34 @@ func (c *cappController) GetCapp(namespace, name string) (types.Capp, error) {
 	}
 
 	return convertCappToType(*capp), nil
+}
+
+func (c *cappController) GetCappState(namespace, name string) (types.GetCappStateResponse, error) {
+	c.logger.Debug(fmt.Sprintf("Trying to fetch capp %q in namespace %q", name, namespace))
+
+	capp := &cappv1alpha1.Capp{}
+	err := c.client.Get(c.ctx, client.ObjectKey{Namespace: namespace, Name: name}, capp)
+	if err != nil {
+		c.logger.Error(fmt.Sprintf("Could not fetch capp %q in namespace %q with error: %v", name, namespace, err.Error()))
+		return types.GetCappStateResponse{}, err
+	}
+
+	var cappState types.GetCappStateResponse
+
+	if capp.Status.StateStatus.State == disabledState {
+		cappState = types.GetCappStateResponse{
+			LastCreatedRevision: noRevision,
+			LastReadyRevision:   noRevision,
+			State:               capp.Status.StateStatus.State}
+	} else {
+		cappState = types.GetCappStateResponse{
+			LastCreatedRevision: capp.Status.KnativeObjectStatus.LatestCreatedRevisionName,
+			LastReadyRevision:   capp.Status.KnativeObjectStatus.LatestReadyRevisionName,
+			State:               capp.Status.StateStatus.State}
+
+	}
+
+	return cappState, nil
 }
 
 func (c *cappController) UpdateCapp(namespace, name string, newCapp types.UpdateCapp) (types.Capp, error) {

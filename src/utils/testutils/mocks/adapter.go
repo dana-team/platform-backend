@@ -36,6 +36,15 @@ func CreateTestCapp(dynClient runtimeClient.WithWatch, name, namespace, domain s
 	}
 }
 
+// CreateTestCappWithState creates a test Capp object with given state.
+func CreateTestCappWithState(dynClient runtimeClient.WithWatch, name, namespace, state string, labels, annotations map[string]string) {
+	cappRevision := PrepareCappWithKnativeObject(name, namespace, state, labels, annotations)
+	err := dynClient.Create(context.TODO(), &cappRevision)
+	if err != nil {
+		panic(err)
+	}
+}
+
 // CreateTestCappWithHostname creates a test Capp object with a hostname.
 func CreateTestCappWithHostname(dynClient runtimeClient.WithWatch, name, namespace string, labels, annotations map[string]string) {
 	capp := PrepareCappWithHostname(name, namespace, labels, annotations)
