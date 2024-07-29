@@ -64,6 +64,7 @@ func setupRouter(logger *zap.Logger) *gin.Engine {
 				cappGroup.GET("/:cappName", GetCapp())
 				cappGroup.PUT("/:cappName", UpdateCapp())
 				cappGroup.PUT("/:cappName/state", EditCappState())
+				cappGroup.GET("/:cappName/state", GetCappState())
 				cappGroup.DELETE("/:cappName", DeleteCapp())
 
 			}

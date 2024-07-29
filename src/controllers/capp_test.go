@@ -88,6 +88,98 @@ func TestGetCapp(t *testing.T) {
 
 }
 
+func TestGetCappState(t *testing.T) {
+	namespaceName := testutils.CappNamespace + "-getState"
+
+	type requestParams struct {
+		name      string
+		namespace string
+	}
+
+	type want struct {
+		cappState   types.GetCappStateResponse
+		errorStatus metav1.StatusReason
+	}
+
+	cases := map[string]struct {
+		requestParams requestParams
+		want          want
+	}{
+		"ShouldSucceedGettingEnabledCapp": {
+			requestParams: requestParams{
+				namespace: namespaceName,
+				name:      fmt.Sprintf("%s-%s", testutils.CappName, testutils.EnabledState),
+			},
+			want: want{
+				cappState: types.GetCappStateResponse{
+					LastCreatedRevision: fmt.Sprintf("%s-%s-%s", testutils.CappName, testutils.EnabledState, "00001"),
+					LastReadyRevision:   fmt.Sprintf("%s-%s-%s", testutils.CappName, testutils.EnabledState, "00001"),
+					State:               testutils.EnabledState,
+				},
+				errorStatus: metav1.StatusSuccess,
+			},
+		},
+		"ShouldSucceedGettingDisabledCapp": {
+			requestParams: requestParams{
+				namespace: namespaceName,
+				name:      fmt.Sprintf("%s-%s", testutils.CappName, testutils.DisabledState),
+			},
+			want: want{
+				cappState: types.GetCappStateResponse{
+					LastCreatedRevision: testutils.NoRevision,
+					LastReadyRevision:   testutils.NoRevision,
+					State:               testutils.DisabledState,
+				},
+				errorStatus: metav1.StatusSuccess,
+			},
+		},
+		"ShouldFailGettingNonExistingCapp": {
+			requestParams: requestParams{
+				namespace: namespaceName,
+				name:      testutils.CappName + testutils.NonExistentSuffix,
+			},
+			want: want{
+				cappState:   types.GetCappStateResponse{},
+				errorStatus: metav1.StatusReasonNotFound,
+			},
+		},
+		"ShouldFailGettingCappInNonExistingNamespace": {
+			requestParams: requestParams{
+				namespace: namespaceName + testutils.NonExistentSuffix,
+				name:      testutils.CappName,
+			},
+			want: want{
+				cappState:   types.GetCappStateResponse{},
+				errorStatus: metav1.StatusReasonNotFound,
+			},
+		},
+	}
+	setup()
+	cappController := NewCappController(dynClient, context.TODO(), logger)
+
+	createTestNamespace(namespaceName, map[string]string{})
+	mocks.CreateTestCappWithState(dynClient, fmt.Sprintf("%s-%s", testutils.CappName, testutils.EnabledState),
+		namespaceName, testutils.EnabledState, map[string]string{}, map[string]string{})
+	mocks.CreateTestCappWithState(dynClient, fmt.Sprintf("%s-%s", testutils.CappName, testutils.DisabledState),
+		namespaceName, testutils.DisabledState, map[string]string{}, map[string]string{})
+
+	for name, test := range cases {
+		t.Run(name, func(t *testing.T) {
+			response, err := cappController.GetCappState(test.requestParams.namespace, test.requestParams.name)
+			if test.want.errorStatus != metav1.StatusSuccess {
+				reason := err.(errors.APIStatus).Status().Reason
+
+				assert.Equal(t, test.want.errorStatus, reason)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, test.want.cappState, response)
+		})
+
+	}
+
+}
+
 func TestGetCapps(t *testing.T) {
 	namespaceName := testutils.CappNamespace + "-getmany"
 

@@ -46,6 +46,20 @@ func PrepareCappWithHostname(name, namespace string, labels, annotations map[str
 	}
 }
 
+// PrepareCappWithKnativeObject returns a mock Capp object with knative object status.
+func PrepareCappWithKnativeObject(name, namespace, state string, labels, annotations map[string]string) cappv1alpha1.Capp {
+	return cappv1alpha1.Capp{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        name,
+			Namespace:   namespace,
+			Annotations: annotations,
+			Labels:      labels,
+		},
+		Spec:   PrepareCappSpec(),
+		Status: PrepareCappStatusWithKnativeObject(name, state),
+	}
+}
+
 // PrepareCappSpec returns a mock Capp spec.
 func PrepareCappSpec() cappv1alpha1.CappSpec {
 	return cappv1alpha1.CappSpec{
@@ -114,6 +128,19 @@ func PrepareCappStatusWithHostname(name, namespace string) cappv1alpha1.CappStat
 				URL: knativeapis.HTTPS(fmt.Sprintf("%s.%s", testutils.Hostname, testutils.Domain)),
 			},
 		},
+	}
+}
+
+// PrepareCappStatusWithKnativeObject returns a mock Capp status with KnativeObject set.
+func PrepareCappStatusWithKnativeObject(name string, state string) cappv1alpha1.CappStatus {
+	return cappv1alpha1.CappStatus{
+		KnativeObjectStatus: knativev1.ServiceStatus{
+			ConfigurationStatusFields: knativev1.ConfigurationStatusFields{
+				LatestReadyRevisionName:   name + "-00001",
+				LatestCreatedRevisionName: name + "-00001",
+			},
+		},
+		StateStatus: cappv1alpha1.StateStatus{State: state},
 	}
 }
 

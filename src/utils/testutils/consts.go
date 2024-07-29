@@ -85,13 +85,17 @@ const (
 	ApplicationJson = "application/json"
 )
 const (
-	CappName      = TestName + "-capp"
-	CappsKey      = "capps"
-	CappNamespace = TestNamespace + "-" + CappsKey
-	CappImage     = "ghcr.io/dana-team/capp-gin-app:v0.2.0"
-	ContainerName = "capp-container"
-	StateKey      = "state"
-	DisabledState = "disabled"
+	CappName            = TestName + "-capp"
+	CappsKey            = "capps"
+	CappNamespace       = TestNamespace + "-" + CappsKey
+	CappImage           = "ghcr.io/dana-team/capp-gin-app:v0.2.0"
+	ContainerName       = "capp-container"
+	StateKey            = "state"
+	DisabledState       = "disabled"
+	EnabledState        = "enabled"
+	LastCreatedRevision = "lastCreatedRevision"
+	LastReadyRevision   = "lastReadyRevision"
+	NoRevision          = "No revision available"
 )
 
 const (
