@@ -25,11 +25,10 @@ This API allowes retrieving the containers within a specified pod in a given nam
     }
     ```
 
-- **GET** `/v1/namespaces/{namespace}/capps/{cappName}/pods/{podName}/containers`
-  - **Description**: Retrieve a list of containers within a specific pod associated with a capp. This endpoint provides details about the containers running inside the specified pod.
+- **GET** `/v1/namespaces/{namespace}/pods/{podName}/containers`
+  - **Description**: Retrieve a list of containers within a specific pod. This endpoint provides details about the containers running inside the specified pod.
   - **Path Parameter**:
-    - `namespace` - The namespace of the capp.
-    - `cappName` - The name of the capp.
+    - `namespace` - The namespace of the pod.
     - `podName` -  The name of the pod whose containers are being listed.
   - **Query Params**:
     - `limit`: (optional) Specifies the maximum number of containers to return per page. Defaults to 9.

@@ -21,6 +21,14 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider, scheme *r
 		authGroup.POST("", Login(tokenProvider))
 	}
 
+	logsGroup := v1.Group("/logs")
+	logsGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
+	{
+		logsGroup.GET("/pod/:namespace/:cappName", GetPodLogs())
+		logsGroup.GET("/capp/:namespace/:cappName", GetCappLogs())
+
+	}
+
 	namespacesGroup := v1.Group("/namespaces")
 	namespacesGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
 	{
@@ -73,5 +81,17 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider, scheme *r
 	configMapGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
 	{
 		configMapGroup.GET("/:configMapName", GetConfigMap())
+	}
+
+	containersGroup := namespacesGroup.Group("/:namespaceName")
+	containersGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
+	{
+		containersGroup.GET("/pods/:podName/containers", GetContainers())
+	}
+
+	podsGroup := namespacesGroup.Group("/:namespaceName")
+	podsGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
+	{
+		podsGroup.GET("/capps/:cappName/pods", GetPods())
 	}
 }

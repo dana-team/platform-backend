@@ -21,6 +21,10 @@ The API is documented in the [docs/api](./docs/api) directory of this repository
 The backend uses `OpenShift`'s built-in `OAuth` Server to authenticate users. To run it, configure environment variables in a new `.env` file:
 
 ```bash
+# Define the allowed origin regex pattern for WebSocket connections from the frontend. If not specified, all origins will be approved.
+ALLOWED_ORIGIN_REGEX="http:localhost:8080|https:example.com.*"
+
+# Cluster configuration
 CLUSTER_NAME=ocp-rcs-example    # Change to match your own
 CLUSTER_DOMAIN=dana.com         # Change to match your own
 KUBE_AUTH_BASE_URL="https://oauth-openshift.apps.${CLUSTER_NAME}.${CLUSTER_DOMAIN}"
@@ -40,6 +44,7 @@ KUBE_AUTH_URL=${KUBE_AUTH_URL}
 KUBE_TOKEN_URL=${KUBE_TOKEN_URL}
 KUBE_USERINFO_URL=${KUBE_USERINFO_URL}
 KUBE_API_SERVER=${KUBE_API_SERVER}
+ALLOWED_ORIGIN_REGEX=${ALLOWED_ORIGIN_REGEX}
 EOF
 ```
 

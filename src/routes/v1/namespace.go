@@ -2,6 +2,7 @@ package v1
 
 import (
 	"fmt"
+	"github.com/dana-team/platform-backend/src/middleware"
 	"net/http"
 
 	"go.uber.org/zap"
@@ -15,13 +16,13 @@ import (
 
 func namespaceHandler(handler func(controller controllers.NamespaceController, c *gin.Context) (interface{}, error)) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		client, exists := c.Get("kubeClient")
+		client, exists := c.Get(middleware.KubeClientCtxKey)
 		if !exists {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Kubernetes client not found"})
 			return
 		}
 
-		ctxLogger, exists := c.Get("logger")
+		ctxLogger, exists := c.Get(middleware.LoggerCtxKey)
 		if !exists {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Logger not found in context"})
 			return

@@ -10,3 +10,4 @@ data:
   KUBE_TOKEN_URL: "https://oauth-openshift.apps.{{ .Values.clusterName }}.{{ .Values.clusterDomain }}/oauth/token"
   KUBE_USERINFO_URL: "https://api.{{ .Values.clusterName }}.{{ .Values.clusterDomain }}:{{ .Values.apiPort }}/apis/user.openshift.io/v1/users/~"
   KUBE_API_SERVER: "https://api.{{ .Values.clusterName }}.{{ .Values.clusterDomain }}:{{ .Values.apiPort }}"
+  ALLOWED_ORIGIN_REGEX: "{{ .Values.allowedOriginRegex }}"
