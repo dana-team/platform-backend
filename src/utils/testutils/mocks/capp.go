@@ -32,6 +32,19 @@ func PrepareCapp(name, namespace, domain string, labels, annotations map[string]
 	}
 }
 
+// PrepareCappWithState returns a mock Capp object with given state.
+func PrepareCappWithState(name, namespace, state string, labels, annotations map[string]string) cappv1alpha1.Capp {
+	return cappv1alpha1.Capp{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        name,
+			Namespace:   namespace,
+			Annotations: annotations,
+			Labels:      labels,
+		},
+		Spec: PrepareCappSpecWithState(state),
+	}
+}
+
 // PrepareCappWithHostname returns a mock Capp object with Hostname set in the spec.
 func PrepareCappWithHostname(name, namespace string, labels, annotations map[string]string) cappv1alpha1.Capp {
 	return cappv1alpha1.Capp{
@@ -65,6 +78,28 @@ func PrepareCappSpec() cappv1alpha1.CappSpec {
 	return cappv1alpha1.CappSpec{
 		ScaleMetric: concurrencyKey,
 		State:       enabledKey,
+		ConfigurationSpec: knativev1.ConfigurationSpec{
+			Template: knativev1.RevisionTemplateSpec{
+				Spec: knativev1.RevisionSpec{
+					PodSpec: corev1.PodSpec{
+						Containers: []corev1.Container{
+							{
+								Image: testutils.CappImage,
+								Name:  testutils.ContainerName,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+// PrepareCappSpecWithState returns a mock Capp spec witg given state.
+func PrepareCappSpecWithState(state string) cappv1alpha1.CappSpec {
+	return cappv1alpha1.CappSpec{
+		ScaleMetric: concurrencyKey,
+		State:       state,
 		ConfigurationSpec: knativev1.ConfigurationSpec{
 			Template: knativev1.RevisionTemplateSpec{
 				Spec: knativev1.RevisionSpec{
@@ -163,6 +198,11 @@ func PrepareCreateCappType(name string, labels, annotations []types.KeyValue) ty
 		Labels:      labels,
 		Spec:        PrepareCappSpec(),
 	}
+}
+
+// PrepareUpdateCappStateType returns a CappState object.
+func PrepareUpdateCappStateType(state string) types.CappState {
+	return types.CappState{State: state}
 }
 
 // PrepareCappMetadata returns a CappMetadata object.
