@@ -84,6 +84,7 @@ const (
 	ContentType     = "Content-Type"
 	ApplicationJson = "application/json"
 )
+
 const (
 	CappName            = TestName + "-capp"
 	CappsKey            = "capps"
@@ -96,6 +97,23 @@ const (
 	LastCreatedRevision = "lastCreatedRevision"
 	LastReadyRevision   = "lastReadyRevision"
 	NoRevision          = "No revision available"
+)
+
+const (
+	CappResourceKey = "rcs.dana.io/parent-capp"
+)
+
+const (
+	ContainersKey     = "containers"
+	ContainerNameKey  = "containerName"
+	TestContainerName = "test-container"
+	Image             = "nginx"
+)
+
+const (
+	PodsKey    = "pods"
+	PodNameKey = "podName"
+	PodName    = TestName + "-pod"
 )
 
 const (

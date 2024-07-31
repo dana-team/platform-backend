@@ -81,3 +81,12 @@ func CreateTestConfigMap(fakeClient *fake.Clientset, name, namespace string) {
 		panic(err)
 	}
 }
+
+// CreateTestPod creates a test Pod object.
+func CreateTestPod(fakeClient *fake.Clientset, namespace, name, cappName string, isMultipleContainers bool) {
+	pod := PreparePod(namespace, name, cappName, isMultipleContainers)
+	_, err := fakeClient.CoreV1().Pods(namespace).Create(context.TODO(), pod, metav1.CreateOptions{})
+	if err != nil {
+		panic(err)
+	}
+}

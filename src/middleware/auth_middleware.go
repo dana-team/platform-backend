@@ -24,6 +24,13 @@ const (
 	validBearerTokenPartsLength = 2
 	httpBearerTokenPrefixIndex  = 0
 	httpBearerTokenIndex        = 1
+	WebsocketTokenHeader        = "Sec-Websocket-Protocol"
+)
+
+const (
+	KubeClientCtxKey    = "kubeClient"
+	DynamicClientCtxKey = "dynClient"
+	TokenCtxKey         = "token"
 )
 
 const (
@@ -81,10 +88,10 @@ func TokenAuthMiddleware(tokenProvider auth.TokenProvider, scheme *runtime.Schem
 		ctrl.SetLogger(zapctrl.New(zapctrl.UseFlagOptions(&opts)))
 
 		// Update the logger with the username
-		c.Set("logger", userLogger)
-		c.Set("kubeClient", kubeClient)
-		c.Set("dynClient", dynClient)
-
+		c.Set(LoggerCtxKey, userLogger)
+		c.Set(KubeClientCtxKey, kubeClient)
+		c.Set(DynamicClientCtxKey, dynClient)
+		c.Set(TokenCtxKey, token)
 		c.Next()
 	}
 }
@@ -93,7 +100,7 @@ func TokenAuthMiddleware(tokenProvider auth.TokenProvider, scheme *runtime.Schem
 func validateToken(c *gin.Context) (string, error) {
 	token := c.GetHeader(httpAuthorizationHeader)
 	if token == "" {
-		return "", fmt.Errorf("authorization token not provided")
+		return validateTokenFromWS(c)
 	}
 
 	tokenParts := strings.Split(token, " ")
@@ -104,6 +111,16 @@ func validateToken(c *gin.Context) (string, error) {
 	}
 
 	return tokenParts[httpBearerTokenIndex], nil
+}
+
+// validateTokenFromWS extracts the WebSocket authorization token from the request headers.
+func validateTokenFromWS(c *gin.Context) (string, error) {
+	token := c.GetHeader(WebsocketTokenHeader)
+	if token == "" {
+		return "", fmt.Errorf("authorization token not provided")
+	}
+
+	return token, nil
 }
 
 // createKubernetesConfig creates a new Kubernetes client config using the provided token.

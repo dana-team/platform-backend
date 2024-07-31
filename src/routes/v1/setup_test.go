@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"github.com/dana-team/platform-backend/src/middleware"
 	"testing"
 
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
@@ -17,6 +18,7 @@ var (
 	router     *gin.Engine
 	fakeClient *fake.Clientset
 	dynClient  runtimeClient.WithWatch
+	token      string
 )
 
 func TestMain(m *testing.M) {
@@ -33,9 +35,10 @@ func setup() {
 func setupRouter(logger *zap.Logger) *gin.Engine {
 	engine := gin.Default()
 	engine.Use(func(c *gin.Context) {
-		c.Set("logger", logger)
-		c.Set("kubeClient", fakeClient)
-		c.Set("dynClient", dynClient)
+		c.Set(middleware.LoggerCtxKey, logger)
+		c.Set(middleware.KubeClientCtxKey, fakeClient)
+		c.Set(middleware.DynamicClientCtxKey, dynClient)
+		c.Set(middleware.TokenCtxKey, token)
 		c.Next()
 	})
 	v1 := engine.Group("/v1")
@@ -85,9 +88,25 @@ func setupRouter(logger *zap.Logger) *gin.Engine {
 				usersGroup.DELETE("/:userName", DeleteUser())
 			}
 
+			logsGroup := v1.Group("/logs")
+			{
+				logsGroup.GET("/pod/:namespace/:cappName", GetPodLogs())
+				logsGroup.GET("/capp/:namespace/:cappName", GetCappLogs())
+			}
+
 			configMapGroup := namespacesGroup.Group("/:namespaceName/configmaps")
 			{
 				configMapGroup.GET("/:configMapName", GetConfigMap())
+			}
+
+			containersGroup := namespacesGroup.Group("/:namespaceName")
+			{
+				containersGroup.GET("/pods/:podName/containers", GetContainers())
+			}
+
+			podsGroup := namespacesGroup.Group("/:namespaceName")
+			{
+				podsGroup.GET("/capps/:cappName/pods", GetPods())
 			}
 		}
 	}
