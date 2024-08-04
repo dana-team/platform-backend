@@ -3,6 +3,7 @@ package e2e_tests
 import (
 	"context"
 	"crypto/tls"
+	"flag"
 	"fmt"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
@@ -21,6 +22,7 @@ import (
 const (
 	platformBackendCappName      = "platform-backend"
 	platformBackendCappNamespace = platformBackendCappName + "-system"
+	platformURLFlag              = "platformUrl"
 
 	htpassEncoded = e2eUser + ":$apr1$D3cCCeru$cuVKr.hn1cbKrhg5NSaT20"
 	oauthName     = "cluster"
@@ -37,6 +39,10 @@ const (
 	loginKey = "login"
 )
 
+func init() {
+	flag.StringVar(&platformURL, platformURLFlag, "", "URL of the platform backend")
+}
+
 func TestE2E(t *testing.T) {
 	RegisterFailHandler(Fail)
 
@@ -49,13 +55,18 @@ var _ = SynchronizedBeforeSuite(func() {
 	initClients()
 	cleanup()
 	createTestUserIdentity()
-	getURLFromCapp()
+	if platformURL == "" {
+		getURLFromCapp()
+	}
 	getTokenFromLogin()
 	getClusterIngressDomain()
 }, func() {
 	newScheme()
 	initClients()
-	getURLFromCapp()
+	if platformURL == "" {
+		getURLFromCapp()
+	}
+
 	getTokenFromLogin()
 	getClusterIngressDomain()
 })
@@ -99,7 +110,7 @@ func initKubeClient() {
 	Expect(k8sClient).NotTo(BeNil())
 }
 
-// initKubeClient initializes an HTTP client.
+// initHTTPClient initializes an HTTP client.
 func initHTTPClient() {
 	httpClient = http.Client{
 		Transport: &http.Transport{
@@ -165,7 +176,7 @@ func getURLFromCapp() {
 }
 
 // getTokenFromLogin performs a login request and gets the token back in response.
-// It uses Eventually since it may take a while after OAuth object getting updated util
+// It uses Eventually since it may take a while after OAuth object getting updated until
 // the user can authenticate to the cluster; this is due to OAuth pods getting restarted.
 func getTokenFromLogin() {
 	baseURI := fmt.Sprintf("%s/v1/%s", platformURL, loginKey)
@@ -185,14 +196,14 @@ func getTokenFromLogin() {
 	}, testutils.Timeout, testutils.Interval).Should(Equal(true))
 }
 
-// getClusterIngressDomain returns the ingress domain of an OpenShift cluster
+// getClusterIngressDomain returns the ingress domain of an OpenShift cluster.
 func getClusterIngressDomain() {
 	ingress := &configv1.Ingress{}
 	getClusterResource(k8sClient, ingress, clusterIngressName)
 	clusterDomain = ingress.Spec.Domain
 }
 
-// cleanUpTestNamespaces() deletes test namespaces.
+// cleanUpTestNamespaces deletes test namespaces.
 func cleanUpTestNamespaces() {
 	namespaces := listNamespaces(k8sClient, e2eLabelKey, e2eLabelValue)
 	for _, namespace := range namespaces.Items {

@@ -53,6 +53,94 @@ var _ = Describe("Validate Secret routes and functionality", func() {
 			Expect(status).Should(Equal(http.StatusOK))
 			compareResponses(response, expectedResponse)
 		})
+
+		It("Should get all secrets in a namespace with limit of 50", func() {
+			limit := "50"
+			page := "1"
+
+			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s?limit=%s&page=%s", platformURL, namespaceName, testutils.SecretsKey, limit, page)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+
+			expectedResponse := map[string]interface{}{
+				testutils.CountKey: 2,
+				testutils.SecretsKey: []map[string]interface{}{
+					{
+						testutils.SecretNameKey:    oneSecretName,
+						testutils.NamespaceNameKey: namespaceName,
+						testutils.TypeKey:          string(corev1.SecretTypeOpaque),
+					},
+					{
+						testutils.SecretNameKey:    secondSecretName,
+						testutils.NamespaceNameKey: namespaceName,
+						testutils.TypeKey:          string(corev1.SecretTypeOpaque),
+					},
+				},
+			}
+
+			Expect(status).Should(Equal(http.StatusOK))
+			compareResponses(response, expectedResponse)
+		})
+
+		It("Should get one secret in a namespace with limit of 1 and page 1", func() {
+			limit := "1"
+			page := "1"
+
+			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s?limit=%s&page=%s", platformURL, namespaceName, testutils.SecretsKey, limit, page)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+
+			expectedResponse := map[string]interface{}{
+				testutils.CountKey: 1,
+				testutils.SecretsKey: []map[string]interface{}{
+					{
+						testutils.SecretNameKey:    oneSecretName,
+						testutils.NamespaceNameKey: namespaceName,
+						testutils.TypeKey:          string(corev1.SecretTypeOpaque),
+					},
+				},
+			}
+
+			Expect(status).Should(Equal(http.StatusOK))
+			compareResponses(response, expectedResponse)
+		})
+
+		It("Should get one secret in a namespace with limit of 1 and page 2", func() {
+			limit := "1"
+			page := "2"
+
+			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s?limit=%s&page=%s", platformURL, namespaceName, testutils.SecretsKey, limit, page)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+
+			expectedResponse := map[string]interface{}{
+				testutils.CountKey: 1,
+				testutils.SecretsKey: []map[string]interface{}{
+					{
+						testutils.SecretNameKey:    secondSecretName,
+						testutils.NamespaceNameKey: namespaceName,
+						testutils.TypeKey:          string(corev1.SecretTypeOpaque),
+					},
+				},
+			}
+
+			Expect(status).Should(Equal(http.StatusOK))
+			compareResponses(response, expectedResponse)
+		})
+
+		It("Should not get secrets with limit of 1 and page 3", func() {
+			limit := "1"
+			page := "3"
+
+			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s?limit=%s&page=%s", platformURL, namespaceName, testutils.SecretsKey, limit, page)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+
+			expectedResponse := map[string]interface{}{
+				testutils.CountKey:   0,
+				testutils.SecretsKey: nil,
+			}
+
+			Expect(status).Should(Equal(http.StatusOK))
+			compareResponses(response, expectedResponse)
+		})
+
 	})
 
 	Context("Validate get Secret route", func() {

@@ -5,12 +5,12 @@ import (
 	"fmt"
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/types"
+	"github.com/dana-team/platform-backend/src/utils/pagination"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"testing"
 )
 
@@ -80,7 +80,7 @@ func TestGetCappRevision(t *testing.T) {
 		},
 	}
 	setup()
-	cappRevisionController := NewCappRevisionController(dynClient, context.TODO(), logger)
+	cappRevisionController := NewCappRevisionController(dynClient, mocks.GinContext(), logger)
 	createTestNamespace(namespaceName, map[string]string{})
 	createTestCappRevision(testutils.CappRevisionName+"-1", namespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{})
 	createTestCappRevision(testutils.CappRevisionName+"-2", namespaceName, map[string]string{testutils.LabelKey + "-2": testutils.LabelValue + "-2"}, map[string]string{})
@@ -107,6 +107,8 @@ func TestGetCappRevisions(t *testing.T) {
 	type requestParams struct {
 		cappQuery types.CappRevisionQuery
 		namespace string
+		limit     int
+		page      int
 	}
 
 	type want struct {
@@ -124,7 +126,7 @@ func TestGetCappRevisions(t *testing.T) {
 				cappQuery: types.CappRevisionQuery{},
 			},
 			want: want{
-				cappRevisions: types.CappRevisionList{CappRevisions: []string{testutils.CappRevisionName + "-1", testutils.CappRevisionName + "-2"}, Count: 2},
+				cappRevisions: types.CappRevisionList{CappRevisions: []string{testutils.CappRevisionName + "-1", testutils.CappRevisionName + "-2"}, ListMetadata: types.ListMetadata{Count: 2}},
 				errorStatus:   metav1.StatusSuccess,
 			}},
 		"ShouldSucceedGettingCappRevisionsByLabels": {
@@ -133,7 +135,7 @@ func TestGetCappRevisions(t *testing.T) {
 				cappQuery: types.CappRevisionQuery{LabelSelector: fmt.Sprintf("%s-2=%s-2", testutils.LabelKey, testutils.LabelValue)},
 			},
 			want: want{
-				cappRevisions: types.CappRevisionList{CappRevisions: []string{testutils.CappRevisionName + "-2"}, Count: 1},
+				cappRevisions: types.CappRevisionList{CappRevisions: []string{testutils.CappRevisionName + "-2"}, ListMetadata: types.ListMetadata{Count: 1}},
 				errorStatus:   metav1.StatusSuccess,
 			},
 		},
@@ -159,13 +161,18 @@ func TestGetCappRevisions(t *testing.T) {
 		},
 	}
 	setup()
-	cappRevisionController := NewCappRevisionController(dynClient, context.TODO(), logger)
 	createTestNamespace(namespaceName, map[string]string{})
 	createTestCappRevision(testutils.CappRevisionName+"-1", namespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{})
 	createTestCappRevision(testutils.CappRevisionName+"-2", namespaceName, map[string]string{testutils.LabelKey + "-2": testutils.LabelValue + "-2"}, map[string]string{})
+
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
-			response, err := cappRevisionController.GetCappRevisions(test.requestParams.namespace, test.requestParams.cappQuery)
+			c := mocks.GinContext()
+			mocks.SetPaginationValues(c, test.requestParams.limit, test.requestParams.page)
+			cappRevisionController := NewCappRevisionController(dynClient, c, logger)
+
+			limit, page, _ := pagination.ExtractPaginationParamsFromCtx(c)
+			response, err := cappRevisionController.GetCappRevisions(test.requestParams.namespace, limit, page, test.requestParams.cappQuery)
 			if test.want.errorStatus != metav1.StatusSuccess {
 				reason := err.(errors.APIStatus).Status().Reason
 

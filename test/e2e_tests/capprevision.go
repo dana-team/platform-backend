@@ -30,6 +30,74 @@ var _ = Describe("Validate CappRevision routes and functionality", func() {
 	})
 
 	Context("Validate get CappRevisions route", func() {
+
+		It("Should get all CappRevisions in a namespace with limit of 50", func() {
+			limit := "50"
+			page := "1"
+
+			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s?limit=%s&page=%s", platformURL, namespaceName, testutils.CapprevisionsKey, limit, page)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+
+			expectedResponse := map[string]interface{}{
+				testutils.CapprevisionsKey: append(oneCappRevisionNames, secondCappRevisionNames...),
+				testutils.CountKey:         2,
+			}
+
+			Expect(status).Should(Equal(http.StatusOK))
+			compareResponses(response, expectedResponse)
+		})
+
+		It("Should get one CappRevisions in a namespace with limit of 1 and page 1", func() {
+			limit := "1"
+			page := "1"
+
+			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s?limit=%s&page=%s", platformURL, namespaceName, testutils.CapprevisionsKey, limit, page)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+
+			expectedResponse := map[string]interface{}{
+				testutils.CapprevisionsKey: oneCappRevisionNames,
+				testutils.CountKey:         1,
+			}
+
+			Expect(status).Should(Equal(http.StatusOK))
+			compareResponses(response, expectedResponse)
+		})
+
+		It("Should get one CappRevisions in a namespace with limit of 1 and page 2", func() {
+			limit := "1"
+			page := "2"
+
+			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s?limit=%s&page=%s", platformURL, namespaceName, testutils.CapprevisionsKey, limit, page)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+
+			expectedResponse := map[string]interface{}{
+				testutils.CapprevisionsKey: secondCappRevisionNames,
+				testutils.CountKey:         1,
+			}
+
+			Expect(status).Should(Equal(http.StatusOK))
+			compareResponses(response, expectedResponse)
+
+			Expect(status).Should(Equal(http.StatusOK))
+			compareResponses(response, expectedResponse)
+		})
+
+		It("Should not get CappRevisions with limit of 1 and page 10000", func() {
+			limit := "1"
+			page := "10000"
+
+			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s?limit=%s&page=%s", platformURL, namespaceName, testutils.CapprevisionsKey, limit, page)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+
+			expectedResponse := map[string]interface{}{
+				testutils.CapprevisionsKey: nil,
+				testutils.CountKey:         0,
+			}
+
+			Expect(status).Should(Equal(http.StatusOK))
+			compareResponses(response, expectedResponse)
+		})
+
 		It("Should get all CappRevisions in a namespace", func() {
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s", platformURL, namespaceName, testutils.CapprevisionsKey)
 			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)

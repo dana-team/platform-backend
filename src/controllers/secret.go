@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/dana-team/platform-backend/src/utils"
+	"github.com/dana-team/platform-backend/src/utils/pagination"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -23,7 +24,7 @@ type SecretController interface {
 	CreateSecret(namespace string, request types.CreateSecretRequest) (types.CreateSecretResponse, error)
 
 	// GetSecrets gets all secretes from the specified namespace.
-	GetSecrets(namespace string) (types.GetSecretsResponse, error)
+	GetSecrets(namespace string, limit, page int) (types.GetSecretsResponse, error)
 
 	// GetSecret gets a specific secret from the specified namespace.
 	GetSecret(namespace, name string) (types.GetSecretResponse, error)
@@ -41,6 +42,13 @@ type secretController struct {
 	logger *zap.Logger
 }
 
+// SecretPaginator paginates through secrets in a specified namespace.
+type SecretPaginator struct {
+	pagination.GenericPaginator
+	namespace string
+	client    kubernetes.Interface
+}
+
 // NewSecretController creates a new secrets controller to make requests of
 // CRUD operations using Kubernetes API.
 func NewSecretController(client kubernetes.Interface, context context.Context, logger *zap.Logger) SecretController {
@@ -51,6 +59,7 @@ func NewSecretController(client kubernetes.Interface, context context.Context, l
 	}
 }
 
+// CreateSecret creates a new secret in the specified namespace.
 func (n *secretController) CreateSecret(namespace string, request types.CreateSecretRequest) (types.CreateSecretResponse, error) {
 	n.logger.Debug(fmt.Sprintf("Trying to create secret: %q", request.SecretName))
 
@@ -73,20 +82,27 @@ func (n *secretController) CreateSecret(namespace string, request types.CreateSe
 	}, err
 }
 
-func (n *secretController) GetSecrets(namespace string) (types.GetSecretsResponse, error) {
+// GetSecrets retrieves all secrets from the specified namespace.
+func (n *secretController) GetSecrets(namespace string, limit, page int) (types.GetSecretsResponse, error) {
 	n.logger.Debug(fmt.Sprintf("Trying to get all secrets in %q namespace", namespace))
 
-	secrets, err := n.client.CoreV1().Secrets(namespace).List(n.ctx, metav1.ListOptions{LabelSelector: utils.ManagedLabelSelector})
+	secretPaginator := &SecretPaginator{
+		GenericPaginator: pagination.CreatePaginator(n.ctx, n.logger),
+		namespace:        namespace,
+		client:           n.client,
+	}
+
+	secrets, err := pagination.FetchPage[corev1.Secret](limit, page, secretPaginator)
 	if err != nil {
-		n.logger.Error(fmt.Sprintf("Could not get secrets with error: %v", err.Error()))
+		n.logger.Error(fmt.Sprintf("Could not get secrets with error: %v", err))
 		return types.GetSecretsResponse{}, err
 	}
 
 	n.logger.Debug("Fetched all secrets successfully")
 
 	response := types.GetSecretsResponse{}
-	response.Count = len(secrets.Items)
-	for _, secret := range secrets.Items {
+	response.Count = len(secrets)
+	for _, secret := range secrets {
 		response.Secrets = append(
 			response.Secrets,
 			types.Secret{
@@ -98,6 +114,7 @@ func (n *secretController) GetSecrets(namespace string) (types.GetSecretsRespons
 	return response, nil
 }
 
+// GetSecret retrieves a specific secret from the specified namespace.
 func (n *secretController) GetSecret(namespace, name string) (types.GetSecretResponse, error) {
 	n.logger.Debug(fmt.Sprintf("Trying to get %q secret in %q namespace", name, namespace))
 
@@ -125,6 +142,7 @@ func (n *secretController) GetSecret(namespace, name string) (types.GetSecretRes
 	return response, nil
 }
 
+// UpdateSecret updates a specific secret in the specified namespace.
 func (n *secretController) UpdateSecret(namespace, name string, request types.UpdateSecretRequest) (types.UpdateSecretResponse, error) {
 	n.logger.Debug(fmt.Sprintf("Trying to update an existing secret in %q namespace", namespace))
 
@@ -158,6 +176,7 @@ func (n *secretController) UpdateSecret(namespace, name string, request types.Up
 	return response, nil
 }
 
+// DeleteSecret deletes a specific secret in the specified namespace.
 func (n *secretController) DeleteSecret(namespace, name string) (types.DeleteSecretResponse, error) {
 	n.logger.Debug(fmt.Sprintf("Trying to delete an existing secret in %q namespace", namespace))
 
@@ -171,7 +190,18 @@ func (n *secretController) DeleteSecret(namespace, name string) (types.DeleteSec
 	}, nil
 }
 
-// createSecretFromRequest returns a new secret based on different secret
+// FetchList retrieves a list of secrets from the specified namespace with given options.
+func (p *SecretPaginator) FetchList(listOptions metav1.ListOptions) (*types.List[corev1.Secret], error) {
+	secrets, err := p.client.CoreV1().Secrets(p.namespace).List(p.Ctx, listOptions)
+	if err != nil {
+		p.Logger.Error(fmt.Sprintf("Could not get secrets with error: %v", err))
+		return nil, err
+	}
+
+	return (*types.List[corev1.Secret])(secrets), nil
+}
+
+// newSecretFromRequest returns a new secret based on different secret
 // types, either TLS or Opaque.
 func newSecretFromRequest(namespace string, request types.CreateSecretRequest) (*corev1.Secret, error) {
 	secret := &corev1.Secret{

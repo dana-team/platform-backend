@@ -8,6 +8,7 @@ NAMESPACE ?= platform-backend-system
 # scaffolded by default. However, you might want to replace it to use other
 # tools. (i.e. podman)
 CONTAINER_TOOL ?= docker
+platformUrl ?=
 
 ##@ Development
 
@@ -28,7 +29,7 @@ test-e2e: ginkgo
 	@test -n "${KUBECONFIG}" -o -r ${HOME}/.kube/config || (echo "Failed to find kubeconfig in ~/.kube/config or no KUBECONFIG set"; exit 1)
 	echo "Running e2e tests"
 	go clean -testcache
-	$(LOCALBIN)/ginkgo -p --vv ./test/e2e_tests/... -coverprofile cover.out -timeout
+	$(LOCALBIN)/ginkgo -p --vv ./test/e2e_tests/... -coverprofile cover.out -timeout -- -platformUrl=$(platformUrl)
 
 .PHONY: lint
 lint: golangci-lint ## Run golangci-lint linter & yamllint

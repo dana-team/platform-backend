@@ -1,8 +1,8 @@
 package types
 
 type GetContainersResponse struct {
-	Count      int         `json:"count"`
 	Containers []Container `json:"containers"`
+	ListMetadata
 }
 
 type Container struct {

@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"github.com/dana-team/platform-backend/src/utils/pagination"
 	"net/http"
 
 	"github.com/dana-team/platform-backend/src/controllers"
@@ -47,14 +48,21 @@ func GetCappRevisions() gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
 			return
 		}
+
 		var cappRevisionQuery types.CappRevisionQuery
 		if err := c.BindQuery(&cappRevisionQuery); err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
 			return
 		}
 
+		limit, page, err := pagination.ExtractPaginationParamsFromCtx(c)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			return
+		}
+
 		cappRevisionHandler(func(controller controllers.CappRevisionController, c *gin.Context) (interface{}, error) {
-			return controller.GetCappRevisions(cappRevisionUri.NamespaceName, cappRevisionQuery)
+			return controller.GetCappRevisions(cappRevisionUri.NamespaceName, limit, page, cappRevisionQuery)
 		})(c)
 	}
 }

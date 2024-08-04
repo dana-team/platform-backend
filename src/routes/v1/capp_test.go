@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
+	"github.com/dana-team/platform-backend/src/middleware"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	"net/http"
@@ -24,9 +25,15 @@ func TestGetCapps(t *testing.T) {
 		values []string
 	}
 
+	type pagination struct {
+		limit string
+		page  string
+	}
+
 	type requestURI struct {
-		namespace     string
-		labelSelector selector
+		namespace        string
+		labelSelector    selector
+		paginationParams pagination
 	}
 
 	type want struct {
@@ -41,6 +48,24 @@ func TestGetCapps(t *testing.T) {
 		"ShouldSucceedGettingCapps": {
 			requestURI: requestURI{
 				namespace: testNamespaceName,
+			},
+			want: want{
+				statusCode: http.StatusOK,
+				response: map[string]interface{}{
+					testutils.CountKey: 4,
+					testutils.CappsKey: []types.CappSummary{
+						{Name: testutils.CappName + "-1", URL: fmt.Sprintf("https://%s-%s.%s", testutils.CappName+"-1", testNamespaceName, testutils.Domain), Images: []string{testutils.CappImage}},
+						{Name: testutils.CappName + "-2", URL: fmt.Sprintf("https://%s-%s.%s", testutils.CappName+"-2", testNamespaceName, testutils.Domain), Images: []string{testutils.CappImage}},
+						{Name: testutils.CappName + "-3", URL: fmt.Sprintf("https://%s.%s", testutils.Hostname, testutils.Domain), Images: []string{testutils.CappImage}},
+						{Name: testutils.CappName + "-4", URL: fmt.Sprintf("https://%s.%s", testutils.Hostname, testutils.Domain), Images: []string{testutils.CappImage}},
+					},
+				},
+			},
+		},
+		"ShouldSucceedGettingAllCappsWithLimitOf4": {
+			requestURI: requestURI{
+				namespace:        testNamespaceName,
+				paginationParams: pagination{limit: "4", page: "1"},
 			},
 			want: want{
 				statusCode: http.StatusOK,
@@ -117,12 +142,18 @@ func TestGetCapps(t *testing.T) {
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
 			params := url.Values{}
-
 			for i, key := range test.requestURI.labelSelector.keys {
 				params.Add(testutils.LabelSelectorKey, fmt.Sprintf("%s=%s", key, test.requestURI.labelSelector.values[i]))
 			}
 
 			baseURI := fmt.Sprintf("/v1/namespaces/%s/capps", test.requestURI.namespace)
+			if test.requestURI.paginationParams.limit != "" {
+				params.Add(middleware.LimitCtxKey, test.requestURI.paginationParams.limit)
+			}
+
+			if test.requestURI.paginationParams.page != "" {
+				params.Add(middleware.PageCtxKey, test.requestURI.paginationParams.page)
+			}
 
 			request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s?%s", baseURI, params.Encode()), nil)
 			assert.NoError(t, err)

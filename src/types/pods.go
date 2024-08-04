@@ -1,8 +1,8 @@
 package types
 
 type GetPodsResponse struct {
-	Count int   `json:"count"`
-	Pods  []Pod `json:"pods"`
+	Pods []Pod `json:"pods"`
+	ListMetadata
 }
 
 type Pod struct {

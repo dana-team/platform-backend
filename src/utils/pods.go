@@ -14,10 +14,9 @@ var (
 )
 
 // GetPodsByLabel returns the pods in a namespace using a given label selector.
-func GetPodsByLabel(ctx context.Context, client kubernetes.Interface, namespace, labelSelector string) (*corev1.PodList, error) {
-	return client.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{
-		LabelSelector: labelSelector,
-	})
+func GetPodsByLabel(ctx context.Context, client kubernetes.Interface, namespace, labelSelector string, listOptions metav1.ListOptions) (*corev1.PodList, error) {
+	listOptions.LabelSelector = labelSelector
+	return client.CoreV1().Pods(namespace).List(ctx, listOptions)
 }
 
 // GetPodLogStream returns the logs of a container in a pod.

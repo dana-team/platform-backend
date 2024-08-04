@@ -32,7 +32,7 @@ func TestGetContainers(t *testing.T) {
 			},
 			want: want{
 				response: types.GetContainersResponse{
-					Count: 2,
+					ListMetadata: types.ListMetadata{Count: 2},
 					Containers: []types.Container{
 						{ContainerName: testutils.TestContainerName},
 						{ContainerName: testutils.CappName},

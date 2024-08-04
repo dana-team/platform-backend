@@ -50,6 +50,77 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 			compareResponses(response, expectedResponse)
 		})
 
+		It("Should get all Capps in a namespace with limit of 50", func() {
+			limit := "50"
+			page := "1"
+
+			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s?limit=%s&page=%s", platformURL, namespaceName, testutils.CappsKey, limit, page)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+
+			expectedResponse := map[string]interface{}{
+				testutils.CappsKey: []types.CappSummary{
+					{Name: oneCappName, Images: []string{CappImageName}, URL: fmt.Sprintf("https://%s-%s.%s", oneCappName, namespaceName, clusterDomain)},
+					{Name: secondCappName, Images: []string{CappImageName}, URL: fmt.Sprintf("https://%s-%s.%s", secondCappName, namespaceName, clusterDomain)},
+				},
+				testutils.CountKey: 2,
+			}
+
+			Expect(status).Should(Equal(http.StatusOK))
+			compareResponses(response, expectedResponse)
+		})
+
+		It("Should get one Capp in a namespace with limit of 1 and page 1", func() {
+			limit := "1"
+			page := "1"
+
+			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s?limit=%s&page=%s", platformURL, namespaceName, testutils.CappsKey, limit, page)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+
+			expectedResponse := map[string]interface{}{
+				testutils.CappsKey: []types.CappSummary{
+					{Name: oneCappName, Images: []string{CappImageName}, URL: fmt.Sprintf("https://%s-%s.%s", oneCappName, namespaceName, clusterDomain)},
+				},
+				testutils.CountKey: 1,
+			}
+
+			Expect(status).Should(Equal(http.StatusOK))
+			compareResponses(response, expectedResponse)
+		})
+
+		It("Should get one Capp in a namespace with limit of 1 and page 2", func() {
+			limit := "1"
+			page := "2"
+
+			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s?limit=%s&page=%s", platformURL, namespaceName, testutils.CappsKey, limit, page)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+
+			expectedResponse := map[string]interface{}{
+				testutils.CappsKey: []types.CappSummary{
+					{Name: secondCappName, Images: []string{CappImageName}, URL: fmt.Sprintf("https://%s-%s.%s", secondCappName, namespaceName, clusterDomain)},
+				},
+				testutils.CountKey: 1,
+			}
+
+			Expect(status).Should(Equal(http.StatusOK))
+			compareResponses(response, expectedResponse)
+		})
+
+		It("Should not get Capps with limit of 1 and page 3", func() {
+			limit := "1"
+			page := "3"
+
+			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s?limit=%s&page=%s", platformURL, namespaceName, testutils.CappsKey, limit, page)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+
+			expectedResponse := map[string]interface{}{
+				testutils.CappsKey: nil,
+				testutils.CountKey: 0,
+			}
+
+			Expect(status).Should(Equal(http.StatusOK))
+			compareResponses(response, expectedResponse)
+		})
+
 		It("Should get all Capps with a specific labelSelector in a namespace", func() {
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s", platformURL, namespaceName, testutils.CappsKey)
 			params := url.Values{}

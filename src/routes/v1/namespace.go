@@ -3,6 +3,7 @@ package v1
 import (
 	"fmt"
 	"github.com/dana-team/platform-backend/src/middleware"
+	"github.com/dana-team/platform-backend/src/utils/pagination"
 	"net/http"
 
 	"go.uber.org/zap"
@@ -44,9 +45,17 @@ func namespaceHandler(handler func(controller controllers.NamespaceController, c
 }
 
 func GetNamespaces() gin.HandlerFunc {
-	return namespaceHandler(func(controller controllers.NamespaceController, c *gin.Context) (interface{}, error) {
-		return controller.GetNamespaces()
-	})
+	return func(c *gin.Context) {
+		limit, page, err := pagination.ExtractPaginationParamsFromCtx(c)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			return
+		}
+
+		namespaceHandler(func(controller controllers.NamespaceController, c *gin.Context) (interface{}, error) {
+			return controller.GetNamespaces(limit, page)
+		})(c)
+	}
 }
 
 func GetNamespace() gin.HandlerFunc {

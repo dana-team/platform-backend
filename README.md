@@ -105,3 +105,26 @@ $ curl -H "Authorization: Bearer <TOKEN_VALUE>" \
   "count": 2
 }
 ```
+
+## Testing
+To ensure your backend is working correctly, you can run end-to-end (e2e) tests.
+
+### Running End-to-End Tests
+To run e2e tests, use the test-e2e target defined in the Makefile. You can pass the platformUrl flag to specify the URL of the platform backend.
+
+1. Run Tests with Specific Platform URL:
+    ```bash
+    make test-e2e platformUrl=<your-platform-url>
+    ```
+    Replace <your-platform-url> with the actual URL of the platform backend.
+    Example:
+    If your platform URL is http://localhost:8080, you would run:
+    ```bash
+    make test-e2e platformUrl=http://localhost:8080
+    ```
+2. Run Tests with Default URL:
+   ```bash
+   make test-e2e
+   ```
+   If you leave the platformUrl flag empty, the tests will automatically use the default URL of the backend deployed in OpenShift. 
+

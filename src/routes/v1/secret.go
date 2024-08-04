@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"github.com/dana-team/platform-backend/src/utils/pagination"
 	"net/http"
 
 	"github.com/dana-team/platform-backend/src/controllers"
@@ -70,8 +71,14 @@ func GetSecrets() gin.HandlerFunc {
 			return
 		}
 
+		limit, page, err := pagination.ExtractPaginationParamsFromCtx(c)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			return
+		}
+
 		secretHandler(func(controller controllers.SecretController, c *gin.Context) (interface{}, error) {
-			return controller.GetSecrets(request.NamespaceName)
+			return controller.GetSecrets(request.NamespaceName, limit, page)
 		})(c)
 	}
 }

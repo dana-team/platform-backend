@@ -63,3 +63,6 @@ livenessProbe:
   port: 8080
   initialDelaySeconds: 5
   periodSeconds: 10
+
+# -- Default pagination limit
+defaultPaginationLimit: 100

@@ -49,8 +49,8 @@ This document outlines the CRUD (Create, Read, Update, Delete) operations for ma
   - **Description**: Retrieve details of a specific secret, TLS, or opaque.
   - **Path Parameter**: `namespace` - The namespace of the secrets.
   - **Query Params**:
-    - `limit`: (optional) Specifies the maximum number of namespaces to return per page. Defaults to 9.
-    - `continue`: (optional) Used for fetching the next set of results.
+    - `limit`: (optional) Specifies the maximum number of namespaces to return per page.
+    - `page`: (optional) Used for setting the current pge.
   - **Response**: Returns the secret details or an error message if not found.
     ```json
     {

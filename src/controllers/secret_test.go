@@ -1,10 +1,10 @@
 package controllers
 
 import (
-	"context"
 	"fmt"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/dana-team/platform-backend/src/utils"
+	"github.com/dana-team/platform-backend/src/utils/pagination"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	"github.com/stretchr/testify/assert"
@@ -72,7 +72,7 @@ func TestGetSecret(t *testing.T) {
 		},
 	}
 	setup()
-	secretController := NewSecretController(fakeClient, context.TODO(), logger)
+	secretController := NewSecretController(fakeClient, mocks.GinContext(), logger)
 	createTestNamespace(namespaceName, utils.AddManagedLabel(map[string]string{}))
 	createTestSecret(testutils.SecretName+"-1", namespaceName, utils.AddManagedLabel(map[string]string{}))
 	createTestSecret(testutils.SecretName+"-2", namespaceName, utils.AddManagedLabel(map[string]string{}))
@@ -95,6 +95,8 @@ func TestGetSecrets(t *testing.T) {
 	namespaceName := testutils.SecretNamespace + "-getmany"
 	type requestParams struct {
 		namespace string
+		limit     int
+		page      int
 	}
 	type want struct {
 		response types.GetSecretsResponse
@@ -109,7 +111,7 @@ func TestGetSecrets(t *testing.T) {
 			},
 			want: want{
 				response: types.GetSecretsResponse{
-					Count: 2,
+					ListMetadata: types.ListMetadata{Count: 2},
 					Secrets: []types.Secret{
 						{NamespaceName: namespaceName, SecretName: testutils.SecretName + "-1", Type: string(corev1.SecretTypeOpaque)},
 						{NamespaceName: namespaceName, SecretName: testutils.SecretName + "-2", Type: string(corev1.SecretTypeOpaque)},
@@ -127,13 +129,17 @@ func TestGetSecrets(t *testing.T) {
 		},
 	}
 	setup()
-	secretController := NewSecretController(fakeClient, context.TODO(), logger)
 	createTestNamespace(namespaceName, utils.AddManagedLabel(map[string]string{}))
 	createTestSecret(testutils.SecretName+"-1", namespaceName, utils.AddManagedLabel(map[string]string{}))
 	createTestSecret(testutils.SecretName+"-2", namespaceName, utils.AddManagedLabel(map[string]string{}))
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
-			response, err := secretController.GetSecrets(test.requestParams.namespace)
+			c := mocks.GinContext()
+			mocks.SetPaginationValues(c, test.requestParams.limit, test.requestParams.page)
+			secretController := NewSecretController(fakeClient, c, logger)
+
+			limit, page, _ := pagination.ExtractPaginationParamsFromCtx(c)
+			response, err := secretController.GetSecrets(test.requestParams.namespace, limit, page)
 			assert.NoError(t, err)
 			assert.Equal(t, test.want.response, response)
 		})
@@ -215,7 +221,7 @@ func TestCreateSecret(t *testing.T) {
 		},
 	}
 	setup()
-	secretController := NewSecretController(fakeClient, context.TODO(), logger)
+	secretController := NewSecretController(fakeClient, mocks.GinContext(), logger)
 	createTestNamespace(namespaceName, utils.AddManagedLabel(map[string]string{}))
 	createTestSecret(testutils.SecretName+"-1", namespaceName, utils.AddManagedLabel(map[string]string{}))
 	createTestSecret(testutils.SecretName+"-2", namespaceName, utils.AddManagedLabel(map[string]string{}))
@@ -288,7 +294,7 @@ func TestUpdateSecret(t *testing.T) {
 		},
 	}
 	setup()
-	secretController := NewSecretController(fakeClient, context.TODO(), logger)
+	secretController := NewSecretController(fakeClient, mocks.GinContext(), logger)
 	createTestNamespace(namespaceName, utils.AddManagedLabel(map[string]string{}))
 	createTestSecret(testutils.SecretName+"-1", namespaceName, utils.AddManagedLabel(map[string]string{}))
 	createTestSecret(testutils.SecretName+"-2", namespaceName, utils.AddManagedLabel(map[string]string{}))
@@ -344,7 +350,7 @@ func TestDeleteSecret(t *testing.T) {
 		},
 	}
 	setup()
-	secretController := NewSecretController(fakeClient, context.TODO(), logger)
+	secretController := NewSecretController(fakeClient, mocks.GinContext(), logger)
 	createTestNamespace(namespaceName, utils.AddManagedLabel(map[string]string{}))
 	createTestSecret(testutils.SecretName+"-1", namespaceName, utils.AddManagedLabel(map[string]string{}))
 	createTestSecret(testutils.SecretName+"-2", namespaceName, utils.AddManagedLabel(map[string]string{}))

@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/dana-team/platform-backend/src/middleware"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	corev1 "k8s.io/api/core/v1"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -19,8 +21,14 @@ import (
 func TestGetSecrets(t *testing.T) {
 	testNamespaceName := testutils.SecretNamespace + "-get"
 
+	type pagination struct {
+		limit string
+		page  string
+	}
+
 	type requestURI struct {
-		namespace string
+		namespace        string
+		paginationParams pagination
 	}
 
 	type want struct {
@@ -46,6 +54,21 @@ func TestGetSecrets(t *testing.T) {
 				},
 			},
 		},
+		"ShouldSucceedGettingAllSecretsWithLimitOf2": {
+			requestURI: requestURI{
+				namespace:        testNamespaceName,
+				paginationParams: pagination{limit: "2", page: "1"},
+			},
+			want: want{
+				statusCode: http.StatusOK,
+				response: map[string]interface{}{
+					testutils.CountKey: 2,
+					testutils.SecretsKey: []types.Secret{
+						{SecretName: testutils.SecretName + "-1", NamespaceName: testNamespaceName, Type: string(corev1.SecretTypeOpaque)},
+						{SecretName: testutils.SecretName + "-2", NamespaceName: testNamespaceName, Type: string(corev1.SecretTypeOpaque)}},
+				},
+			},
+		},
 	}
 
 	setup()
@@ -55,8 +78,17 @@ func TestGetSecrets(t *testing.T) {
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
+			params := url.Values{}
+			if test.requestURI.paginationParams.limit != "" {
+				params.Add(middleware.LimitCtxKey, test.requestURI.paginationParams.limit)
+			}
+
+			if test.requestURI.paginationParams.page != "" {
+				params.Add(middleware.PageCtxKey, test.requestURI.paginationParams.page)
+			}
+
 			baseURI := fmt.Sprintf("/v1/namespaces/%s/secrets", test.requestURI.namespace)
-			request, err := http.NewRequest(http.MethodGet, baseURI, nil)
+			request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s?%s", baseURI, params.Encode()), nil)
 			assert.NoError(t, err)
 
 			writer := httptest.NewRecorder()
@@ -388,7 +420,7 @@ func TestDeleteSecret(t *testing.T) {
 		requestURI requestURI
 		want       want
 	}{
-		"ShouldSucceedDeletingSecret": {
+		"paShouldSucceedDeletingSecret": {
 			requestURI: requestURI{
 				name:      testutils.SecretName,
 				namespace: testNamespaceName,

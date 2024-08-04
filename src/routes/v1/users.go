@@ -3,6 +3,7 @@ package v1
 import (
 	"github.com/dana-team/platform-backend/src/controllers"
 	"github.com/dana-team/platform-backend/src/types"
+	"github.com/dana-team/platform-backend/src/utils/pagination"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -91,8 +92,14 @@ func GetUsers() gin.HandlerFunc {
 			return
 		}
 
+		limit, page, err := pagination.ExtractPaginationParamsFromCtx(c)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			return
+		}
+
 		usersHandler(func(controller controllers.UserController, c *gin.Context) (interface{}, error) {
-			return controller.GetUsers(namespace.NamespaceName)
+			return controller.GetUsers(namespace.NamespaceName, limit, page)
 		})(c)
 	}
 }
