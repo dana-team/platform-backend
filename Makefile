@@ -71,13 +71,27 @@ undeploy: install-helm ## Deploy to the K8s cluster specified in ~/.kube/config.
 env:
 	bash hack/create-env.sh ${CLUSTER_NAME} ${CLUSTER_DOMAIN} .env
 
+.PHONY: install-prereq
+install-prereq: deploy-capp configure-provider-dns
+
+.PHONY: uninstall-prereq
+uninstall-prereq: unconfigure-provider-dns undeploy-capp
+
 .PHONY: deploy-capp
 deploy-capp: ## Run the deploy-capp script
-	$(shell pwd)/hack/deploy-capp.sh $(CAPP_RELEASE)
+	$(shell pwd)/hack/deploy-capp.sh ${CAPP_RELEASE}
 
 .PHONY: undeploy-capp
 undeploy-capp: ## Run the uninstall-prereq script
-	$(shell pwd)/hack/undeploy-capp.sh $(CAPP_RELEASE)
+	$(shell pwd)/hack/undeploy-capp.sh ${CAPP_RELEASE}
+
+.PHONY: configure-provider-dns
+configure-provider-dns:
+	$(shell pwd)/hack/configure-provider-dns.sh ${DOMAIN_CONTROLLER_IP} ${DOMAIN_CONTROLLER_PASSWORD} ${DOMAIN_CONTROLLER_SERVER} ${DOMAIN_CONTROLLER_REALM} ${DOMAIN_CONTROLLER_USER}
+
+.PHONY: unconfigure-provider-dns
+unconfigure-provider-dns:
+	$(shell pwd)/hack/unconfigure-provider-dns.sh
 
 ##@ Dependencies
 
