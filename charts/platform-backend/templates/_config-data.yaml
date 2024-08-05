@@ -1,0 +1,10 @@
+{{- define "platform-backend.configData" }}
+  INSECURE_SKIP_VERIFY: "{{ .Values.config.insecureSkipVerify }}"
+  KUBE_CLIENT_ID: "{{ .Values.config.kubeClientID }}"
+  KUBE_AUTH_URL: "https://oauth-openshift.apps.{{ .Values.config.cluster.name }}.{{ .Values.config.cluster.domain }}/oauth/authorize"
+  KUBE_TOKEN_URL: "https://oauth-openshift.apps.{{ .Values.config.cluster.name }}.{{ .Values.config.cluster.domain }}/oauth/token"
+  KUBE_USERINFO_URL: "https://api.{{ .Values.config.cluster.name }}.{{ .Values.config.cluster.domain }}:{{ .Values.config.cluster.apiPort }}/apis/user.openshift.io/v1/users/~"
+  KUBE_API_SERVER: "https://api.{{ .Values.config.cluster.name }}.{{ .Values.config.cluster.domain }}:{{ .Values.config.cluster.apiPort }}"
+  ALLOWED_ORIGIN_REGEX: "{{ .Values.config.allowedOriginRegex }}"
+  DEFAULT_PAGINATION_LIMIT: "{{ .Values.config.defaultPaginationLimit }}"
+{{- end }}

@@ -61,11 +61,23 @@ jobs:
           method: kubeconfig
           kubeconfig: ${{ secrets.BACKEND_CI_CLUSTER_KUBECONFIG }}
 
-      - name: Deploy Capp
-        run: make deploy-capp
+      - name: Install prereq
+        run: | 
+          make install-prereq \
+          PROVIDER_DNS_REALM=${{ secrets.PROVIDER_DNS_REALM }} \
+          PROVIDER_DNS_KDC=${{ secrets.PROVIDER_DNS_KDC }} \
+          PROVIDER_DNS_POLICY=${{ secrets.PROVIDER_DNS_POLICY }} \
+          PROVIDER_DNS_NAMESERVER=${{ secrets.PROVIDER_DNS_NAMESERVER }} \
+          PROVIDER_DNS_USERNAME=${{ secrets.PROVIDER_DNS_USERNAME }} \
+          PROVIDER_DNS_PASSWORD=${{ secrets.PROVIDER_DNS_PASSWORD }}
 
       - name: Deploy backend
-        run: make deploy IMG=${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}:${IMAGE_TAG} CLUSTER_NAME=${{ secrets.BACKEND_CI_CLUSTER_NAME }} CLUSTER_DOMAIN=${{ secrets.BACKEND_CI_CLUSTER_DOMAIN }}
+        run: | 
+          make deploy \
+          IMG_REPO=${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }} \
+          IMG_TAG=${IMAGE_TAG} \
+          CLUSTER_NAME=${{ secrets.BACKEND_CI_CLUSTER_NAME }} \
+          CLUSTER_DOMAIN=${{ secrets.BACKEND_CI_CLUSTER_DOMAIN }}
 
       - name: Await backend to be ready
         run: until kubectl get capp platform-backend -n platform-backend-system -o jsonpath='{.status.knativeObjectStatus.conditions[?(@.type=="Ready")].status}' | grep -q "True"; do echo "Waiting for Capp to be ready..."; sleep 5; done; echo "Capp is ready"
@@ -77,6 +89,6 @@ jobs:
         run: make undeploy
         if: always()
 
-      - name: Undeploy Capp
-        run: make undeploy-capp
+      - name: Uninstall prereq
+        run: make uninstall-prereq
         if: always()

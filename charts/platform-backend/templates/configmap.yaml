@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "platform-backend.fullname" . }}-{{ .Values.config.name }}
+  labels:
+    {{- include "platform-backend.labels" . | nindent 4 }}
+data:
+  {{- include "platform-backend.configData" . }}

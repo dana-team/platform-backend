@@ -1,0 +1,52 @@
+# Default values for platform-backend.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image:
+    # -- The repository of the manager container image.
+    repository: ghcr.io/dana-team/platform-backend
+    # -- The tag of the manager container image.
+    tag: ""
+    # -- The pull policy for the image.
+    pullPolicy: Always
+
+# -- Name of the scale metric to use for Capp
+scaleMetric: concurrency
+
+# Override the name of the deployment
+nameOverride: ""
+
+# Override the full name of the deployment
+fullnameOverride: ""
+
+config:
+  # -- Name of the ConfigMap where authentication endpoints are stored
+  name: config
+  # -- Flag to indicate whether to skip HTTPS verification
+  insecureSkipVerify: true
+  # -- The kube client ID to use
+  kubeClientID: openshift-challenging-client
+  # -- Default pagination limit
+  defaultPaginationLimit: 100
+  # -- Default allowed origin regex
+  allowedOriginRegex: "http:localhost:8080|https:example.com.*"
+  # -- Configuration relating to the cluster where the backend is deployed
+  cluster:
+    # -- Cluster name where the code is deployed
+    name: cluster-test
+    # -- Domain of the cluster where the code is deployed
+    domain: domain-test.com
+    # -- Port of the API Server of the cluster
+    apiPort: 6443
+
+# -- Readiness and Liveness Probes Configuration
+readinessProbe:
+  port: 8080
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+livenessProbe:
+  path: /healthz
+  port: 8080
+  initialDelaySeconds: 5
+  periodSeconds: 10
