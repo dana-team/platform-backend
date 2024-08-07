@@ -81,6 +81,20 @@ func createCapp(k8sClient client.Client, capp *cappv1alpha1.Capp) *cappv1alpha1.
 	return newCapp
 }
 
+// createDisabledCapp disabledCapp a new Capp instance with a unique name and returns it.
+func createDisabledCapp(k8sClient client.Client, capp *cappv1alpha1.Capp) *cappv1alpha1.Capp {
+	if capp.Spec.State != testutils.DisabledState {
+		panic("Capp must be disabled")
+	}
+
+	newCapp := capp.DeepCopy()
+	Expect(k8sClient.Create(context.Background(), newCapp)).To(Succeed())
+	Eventually(func() string {
+		return getCapp(k8sClient, newCapp.Name, newCapp.Namespace).Status.StateStatus.State
+	}, testutils.Timeout, testutils.Interval).Should(Equal(testutils.DisabledState))
+	return newCapp
+}
+
 // getCapp fetches and returns an existing instance of a Capp.
 func getCapp(k8sClient client.Client, name string, namespace string) *cappv1alpha1.Capp {
 	capp := &cappv1alpha1.Capp{}
@@ -153,6 +167,18 @@ func createTestNamespace(k8sClient client.Client, name string) {
 // createTestCapp creates a test Capp object.
 func createTestCapp(k8sClient client.Client, name, namespace string, labels, annotations map[string]string) {
 	capp := mocks.PrepareCapp(name, namespace, clusterDomain, labels, annotations)
+	createCapp(k8sClient, &capp)
+}
+
+// createTestCapp creates a test Capp object.
+func createTestDisabledCapp(k8sClient client.Client, name, namespace string, labels, annotations map[string]string) {
+	capp := mocks.PrepareCappWithState(name, namespace, testutils.DisabledState, labels, annotations)
+	createDisabledCapp(k8sClient, &capp)
+}
+
+// createTestCapp creates a test Capp object with hostname.
+func createTestCappWithHostname(k8sClient client.Client, name, namespace, hostname, domain string, labels, annotations map[string]string) {
+	capp := mocks.PrepareCappWithHostname(name, namespace, hostname, domain, labels, annotations)
 	createCapp(k8sClient, &capp)
 }
 

@@ -46,7 +46,7 @@ func PrepareCappWithState(name, namespace, state string, labels, annotations map
 }
 
 // PrepareCappWithHostname returns a mock Capp object with Hostname set in the spec.
-func PrepareCappWithHostname(name, namespace string, labels, annotations map[string]string) cappv1alpha1.Capp {
+func PrepareCappWithHostname(name, namespace, hostname, domain string, labels, annotations map[string]string) cappv1alpha1.Capp {
 	return cappv1alpha1.Capp{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
@@ -54,8 +54,8 @@ func PrepareCappWithHostname(name, namespace string, labels, annotations map[str
 			Annotations: annotations,
 			Labels:      labels,
 		},
-		Spec:   PrepareCappSpecWithHostname(),
-		Status: PrepareCappStatusWithHostname(name, namespace),
+		Spec:   PrepareCappSpecWithHostname(hostname, domain),
+		Status: PrepareCappStatusWithHostname(name, namespace, hostname, domain),
 	}
 }
 
@@ -118,7 +118,7 @@ func PrepareCappSpecWithState(state string) cappv1alpha1.CappSpec {
 }
 
 // PrepareCappSpecWithHostname returns a mock Capp spec with Hostname set.
-func PrepareCappSpecWithHostname() cappv1alpha1.CappSpec {
+func PrepareCappSpecWithHostname(hostname, domain string) cappv1alpha1.CappSpec {
 	return cappv1alpha1.CappSpec{
 		ConfigurationSpec: knativev1.ConfigurationSpec{
 			Template: knativev1.RevisionTemplateSpec{
@@ -135,7 +135,7 @@ func PrepareCappSpecWithHostname() cappv1alpha1.CappSpec {
 			},
 		},
 		RouteSpec: cappv1alpha1.RouteSpec{
-			Hostname: testutils.Hostname + "." + testutils.Domain,
+			Hostname: hostname + "." + domain,
 		},
 	}
 }
@@ -151,7 +151,7 @@ func PrepareCappStatus(name, namespace, domain string) cappv1alpha1.CappStatus {
 }
 
 // PrepareCappStatusWithHostname returns a mock Capp status with Hostname set.
-func PrepareCappStatusWithHostname(name, namespace string) cappv1alpha1.CappStatus {
+func PrepareCappStatusWithHostname(name, namespace, hostname, domain string) cappv1alpha1.CappStatus {
 	return cappv1alpha1.CappStatus{
 		KnativeObjectStatus: knativev1.ServiceStatus{
 			RouteStatusFields: knativev1.RouteStatusFields{
@@ -160,7 +160,7 @@ func PrepareCappStatusWithHostname(name, namespace string) cappv1alpha1.CappStat
 		},
 		RouteStatus: cappv1alpha1.RouteStatus{
 			DomainMappingObjectStatus: knativev1beta1.DomainMappingStatus{
-				URL: knativeapis.HTTPS(fmt.Sprintf("%s.%s", testutils.Hostname, testutils.Domain)),
+				URL: knativeapis.HTTPS(fmt.Sprintf("%s.%s", hostname, domain)),
 			},
 		},
 	}

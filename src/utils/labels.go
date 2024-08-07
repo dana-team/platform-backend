@@ -11,8 +11,9 @@ var (
 	ManagedLabelValue    = "true"
 	ManagedLabelSelector = fmt.Sprintf("%s=%s", ManagedLabel, ManagedLabelValue)
 
-	parentCappLabel         = cappAPIGroup + "/parent-capp"
-	ParentCappLabelSelector = parentCappLabel + "=%s"
+	ParentCappLabel         = cappAPIGroup + "/parent-capp"
+	ParentCappNSLabel       = cappAPIGroup + "/parent-capp-ns"
+	ParentCappLabelSelector = ParentCappLabel + "=%s"
 )
 
 // AddManagedLabel adds the managed label to the given labels map.

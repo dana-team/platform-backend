@@ -1,18 +1,18 @@
 package v1
 
 import (
-	"github.com/dana-team/platform-backend/src/middleware"
-	"os"
-	"testing"
-
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
+	"github.com/dana-team/platform-backend/src/middleware"
+	dnsrecordv1alpha1 "github.com/dana-team/provider-dns/apis/record/v1alpha1"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
+	"os"
 	runtimeClient "sigs.k8s.io/controller-runtime/pkg/client"
 	runtimeFake "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"testing"
 )
 
 var (
@@ -69,6 +69,7 @@ func setupRouter(logger *zap.Logger) *gin.Engine {
 				cappGroup.PUT("/:cappName", UpdateCapp())
 				cappGroup.PUT("/:cappName/state", EditCappState())
 				cappGroup.GET("/:cappName/state", GetCappState())
+				cappGroup.GET("/:cappName/dns", GetCappDNS())
 				cappGroup.DELETE("/:cappName", DeleteCapp())
 
 			}
@@ -117,5 +118,6 @@ func setupRouter(logger *zap.Logger) *gin.Engine {
 func setupScheme() *runtime.Scheme {
 	schema := scheme.Scheme
 	_ = cappv1alpha1.AddToScheme(schema)
+	_ = dnsrecordv1alpha1.AddToScheme(schema)
 	return schema
 }

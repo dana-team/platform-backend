@@ -152,6 +152,20 @@ func GetCappState() gin.HandlerFunc {
 	}
 }
 
+func GetCappDNS() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var cappUri types.CappUri
+		if err := c.BindUri(&cappUri); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			return
+		}
+
+		cappHandler(func(controller controllers.CappController, c *gin.Context) (interface{}, error) {
+			return controller.GetCappDNS(cappUri.NamespaceName, cappUri.CappName)
+		})(c)
+	}
+}
+
 func DeleteCapp() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cappUri types.CappUri

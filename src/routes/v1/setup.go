@@ -57,6 +57,7 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider, scheme *r
 		cappGroup.PUT("/:cappName", UpdateCapp())
 		cappGroup.PUT("/:cappName/state", EditCappState())
 		cappGroup.GET("/:cappName/state", GetCappState())
+		cappGroup.GET("/:cappName/dns", GetCappDNS())
 		cappGroup.DELETE("/:cappName", DeleteCapp())
 	}
 

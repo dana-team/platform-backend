@@ -8,16 +8,24 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/types"
+
+	dnsrecordv1alpha1 "github.com/dana-team/provider-dns/apis/record/v1alpha1"
 	"go.uber.org/zap"
+	corev1 "k8s.io/api/core/v1"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
 	disabledState = "disabled"
 	noRevision    = "No revision available"
+	dnsLimit      = 10
 )
 
 type CappController interface {
@@ -41,6 +49,9 @@ type CappController interface {
 
 	// GetCappState gets the state of a specific Capp from the specified namespace.
 	GetCappState(namespace, name string) (types.GetCappStateResponse, error)
+
+	// GetCappDNS gets the dns records which are related to the Capp
+	GetCappDNS(namespace, name string) (types.GetDNSResponse, error)
 }
 
 type cappController struct {
@@ -176,6 +187,68 @@ func (c *cappController) GetCappState(namespace, name string) (types.GetCappStat
 	}
 
 	return cappState, nil
+}
+
+func (c *cappController) GetCappDNS(namespace, name string) (types.GetDNSResponse, error) {
+	c.logger.Debug(fmt.Sprintf("Trying to fetch dns related to capp %q in namespace %q", name, namespace))
+
+	dnsRecords := &dnsrecordv1alpha1.CNAMERecordList{}
+
+	listOptions := prepareDNSListOptions(namespace, name)
+
+	err := c.client.List(c.ctx, dnsRecords, listOptions)
+	if err != nil {
+		c.logger.Error(fmt.Sprintf("Could not fetch dns related to capp %q in namespace %q with error: %v", name, namespace, err.Error()))
+		return types.GetDNSResponse{}, err
+	}
+
+	if len(dnsRecords.Items) == 0 {
+		_, err := c.GetCapp(namespace, name)
+		if err != nil {
+			return types.GetDNSResponse{}, err
+		}
+		return types.GetDNSResponse{}, nil
+	}
+
+	return types.GetDNSResponse{Records: parseDNSList(dnsRecords)}, nil
+}
+
+// parseDNSList converts DNSRecords from their Kubernetes representation to a custom type representation.
+func parseDNSList(recordsK8S *dnsrecordv1alpha1.CNAMERecordList) []types.DNS {
+	var records []types.DNS
+
+	for _, record := range recordsK8S.Items {
+		syncedStatus := record.GetCondition(xpv1.TypeSynced).Status
+		readyStatus := record.GetCondition(xpv1.TypeReady).Status
+		dnsStatus := corev1.ConditionFalse
+
+		if syncedStatus == corev1.ConditionTrue && readyStatus == corev1.ConditionTrue {
+			dnsStatus = corev1.ConditionTrue
+		} else if syncedStatus == corev1.ConditionUnknown || readyStatus == corev1.ConditionUnknown {
+			dnsStatus = corev1.ConditionUnknown
+		}
+
+		records = append(records, types.DNS{Status: dnsStatus, Name: computeDNSNameFromID(*record.Status.AtProvider.ID)})
+	}
+	return records
+}
+
+// computes dns record ID ready for presentation, it removes the  '.' at the end of the string
+func computeDNSNameFromID(dnsID string) string {
+	return dnsID[:len(dnsID)-1]
+}
+
+// prepareDNSListOptions prepares a list options for querying.
+func prepareDNSListOptions(namespace, name string) *client.ListOptions {
+	labelSet := map[string]string{utils.ParentCappNSLabel: namespace, utils.ParentCappLabel: name}
+	labelSelector := labels.SelectorFromSet(labelSet)
+
+	listOptions := &client.ListOptions{
+		LabelSelector: labelSelector,
+		Limit:         dnsLimit,
+	}
+
+	return listOptions
 }
 
 func (c *cappController) UpdateCapp(namespace, name string, newCapp types.UpdateCapp) (types.Capp, error) {
