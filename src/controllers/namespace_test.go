@@ -1,10 +1,11 @@
 package controllers
 
 import (
-	"context"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/dana-team/platform-backend/src/utils"
+	"github.com/dana-team/platform-backend/src/utils/pagination"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
+	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -50,7 +51,7 @@ func TestCreateNamespace(t *testing.T) {
 		},
 	}
 	setup()
-	namespaceController := NewNamespaceController(fakeClient, context.TODO(), logger)
+	namespaceController := NewNamespaceController(fakeClient, mocks.GinContext(), logger)
 	createTestNamespace(existingNSName, map[string]string{})
 
 	for name, test := range cases {
@@ -104,7 +105,7 @@ func TestGetNamespace(t *testing.T) {
 		},
 	}
 	setup()
-	namespaceController := NewNamespaceController(fakeClient, context.TODO(), logger)
+	namespaceController := NewNamespaceController(fakeClient, mocks.GinContext(), logger)
 	createTestNamespace(nsName, map[string]string{})
 
 	for name, test := range cases {
@@ -129,25 +130,31 @@ func TestGetNamespaces(t *testing.T) {
 	type want struct {
 		response    types.NamespaceList
 		errorStatus metav1.StatusReason
+		limit       int
+		page        int
 	}
 	cases := map[string]struct {
 		want want
 	}{
 		"ShouldSucceedFetchingNamespaces": {
 			want: want{
-				response:    types.NamespaceList{Count: 2, Namespaces: []types.Namespace{{Name: firstNsName}, {Name: secondNsName}}},
+				response:    types.NamespaceList{ListMetadata: types.ListMetadata{Count: 2}, Namespaces: []types.Namespace{{Name: firstNsName}, {Name: secondNsName}}},
 				errorStatus: metav1.StatusSuccess,
 			},
 		},
 	}
 	setup()
-	namespaceController := NewNamespaceController(fakeClient, context.TODO(), logger)
 	createTestNamespace(firstNsName, map[string]string{utils.ManagedLabel: utils.ManagedLabelValue})
 	createTestNamespace(secondNsName, map[string]string{utils.ManagedLabel: utils.ManagedLabelValue})
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
-			response, err := namespaceController.GetNamespaces()
+			c := mocks.GinContext()
+			mocks.SetPaginationValues(c, test.want.limit, test.want.page)
+			namespaceController := NewNamespaceController(fakeClient, c, logger)
+
+			limit, page, _ := pagination.ExtractPaginationParamsFromCtx(c)
+			response, err := namespaceController.GetNamespaces(limit, page)
 			if test.want.errorStatus != metav1.StatusSuccess {
 				reason := err.(errors.APIStatus).Status().Reason
 
@@ -190,8 +197,9 @@ func TestDeleteNamespace(t *testing.T) {
 			},
 		},
 	}
+
 	setup()
-	namespaceController := NewNamespaceController(fakeClient, context.TODO(), logger)
+	namespaceController := NewNamespaceController(fakeClient, mocks.GinContext(), logger)
 	createTestNamespace(nsToDelete, map[string]string{})
 
 	for name, test := range cases {

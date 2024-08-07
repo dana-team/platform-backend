@@ -3,9 +3,9 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"github.com/dana-team/platform-backend/src/utils"
-
 	"github.com/dana-team/platform-backend/src/types"
+	"github.com/dana-team/platform-backend/src/utils"
+	"github.com/dana-team/platform-backend/src/utils/pagination"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,7 +13,7 @@ import (
 )
 
 type NamespaceController interface {
-	GetNamespaces() (types.NamespaceList, error)
+	GetNamespaces(limit, page int) (types.NamespaceList, error)
 	GetNamespace(name string) (types.Namespace, error)
 	CreateNamespace(name string) (types.Namespace, error)
 	DeleteNamespace(name string) error
@@ -25,6 +25,12 @@ type namespaceController struct {
 	logger *zap.Logger
 }
 
+// NamespacePaginator paginates through secrets in a specified namespace.
+type NamespacePaginator struct {
+	pagination.GenericPaginator
+	client kubernetes.Interface
+}
+
 func NewNamespaceController(client kubernetes.Interface, context context.Context, logger *zap.Logger) NamespaceController {
 	return &namespaceController{
 		logger: logger,
@@ -33,19 +39,22 @@ func NewNamespaceController(client kubernetes.Interface, context context.Context
 	}
 }
 
-func (n *namespaceController) GetNamespaces() (types.NamespaceList, error) {
+func (n *namespaceController) GetNamespaces(limit, page int) (types.NamespaceList, error) {
+	namespaceList := types.NamespaceList{}
 	n.logger.Debug("Trying to fetch all namespaces")
 
-	namespaceList := types.NamespaceList{}
-	namespaces, err := n.client.CoreV1().Namespaces().List(n.ctx, metav1.ListOptions{LabelSelector: utils.ManagedLabelSelector})
-	if err != nil {
-		n.logger.Error(fmt.Sprintf("Could not fetch namespaces with error: %s", err.Error()))
-		return namespaceList, err
+	namespacePaginator := &NamespacePaginator{
+		GenericPaginator: pagination.CreatePaginator(n.ctx, n.logger),
+		client:           n.client,
 	}
 
-	n.logger.Debug("Fetched namespaces successfully")
+	namespaces, err := pagination.FetchPage[corev1.Namespace](limit, page, namespacePaginator)
+	if err != nil {
+		n.logger.Error(fmt.Sprintf("Could not get secrets with error: %v", err))
+		return types.NamespaceList{}, err
+	}
 
-	for _, namespace := range namespaces.Items {
+	for _, namespace := range namespaces {
 		namespaceList.Namespaces = append(namespaceList.Namespaces, types.Namespace{Name: namespace.Name})
 	}
 	namespaceList.Count = len(namespaceList.Namespaces)
@@ -89,4 +98,16 @@ func (n *namespaceController) DeleteNamespace(name string) error {
 		return err
 	}
 	return nil
+}
+
+// FetchList retrieves a list of secrets from the specified namespace with given options.
+func (p *NamespacePaginator) FetchList(listOptions metav1.ListOptions) (*types.List[corev1.Namespace], error) {
+	namespaces, err := p.client.CoreV1().Namespaces().List(p.Ctx, listOptions)
+	if err != nil {
+		p.Logger.Error(fmt.Sprintf("Could not fetch namespaces with error: %s", err.Error()))
+		return nil, err
+	}
+
+	p.Logger.Debug("Fetched namespaces successfully")
+	return (*types.List[corev1.Namespace])(namespaces), nil
 }

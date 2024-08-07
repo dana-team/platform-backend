@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
+	"github.com/dana-team/platform-backend/src/middleware"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
@@ -28,9 +29,15 @@ func TestGetCappRevisions(t *testing.T) {
 		values []string
 	}
 
+	type pagination struct {
+		limit string
+		page  string
+	}
+
 	type requestURI struct {
-		namespace     string
-		labelSelector selector
+		namespace        string
+		labelSelector    selector
+		paginationParams pagination
 	}
 
 	type want struct {
@@ -45,6 +52,19 @@ func TestGetCappRevisions(t *testing.T) {
 		"ShouldSucceedGettingCappRevisions": {
 			requestURI: requestURI{
 				namespace: testNamespaceName,
+			},
+			want: want{
+				statusCode: http.StatusOK,
+				response: map[string]interface{}{
+					capprevisionsKey:   []string{cappRevisionName + "-1", cappRevisionName + "-2"},
+					testutils.CountKey: 2,
+				},
+			},
+		},
+		"ShouldSucceedGettingAllCappRevisionsWithLimitOf2": {
+			requestURI: requestURI{
+				namespace:        testNamespaceName,
+				paginationParams: pagination{limit: "2", page: "1"},
 			},
 			want: want{
 				statusCode: http.StatusOK,
@@ -115,6 +135,14 @@ func TestGetCappRevisions(t *testing.T) {
 
 			for i, key := range test.requestURI.labelSelector.keys {
 				params.Add(testutils.LabelSelectorKey, fmt.Sprintf("%s=%s", key, test.requestURI.labelSelector.values[i]))
+			}
+
+			if test.requestURI.paginationParams.limit != "" {
+				params.Add(middleware.LimitCtxKey, test.requestURI.paginationParams.limit)
+			}
+
+			if test.requestURI.paginationParams.page != "" {
+				params.Add(middleware.PageCtxKey, test.requestURI.paginationParams.page)
 			}
 
 			baseURI := fmt.Sprintf("/v1/namespaces/%s/capprevisions", test.requestURI.namespace)

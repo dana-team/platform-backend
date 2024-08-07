@@ -45,7 +45,7 @@ func setupRouter(logger *zap.Logger) *gin.Engine {
 	{
 		namespacesGroup := v1.Group("/namespaces")
 		{
-			namespacesGroup.GET("", GetNamespaces())
+			namespacesGroup.Use(middleware.PaginationMiddleware()).GET("", GetNamespaces())
 			namespacesGroup.GET("/:namespaceName", GetNamespace())
 			namespacesGroup.POST("", CreateNamespace())
 			namespacesGroup.DELETE("/:namespaceName", DeleteNamespace())
@@ -53,7 +53,7 @@ func setupRouter(logger *zap.Logger) *gin.Engine {
 			secretsGroup := namespacesGroup.Group("/:namespaceName/secrets")
 			{
 				secretsGroup.POST("", CreateSecret())
-				secretsGroup.GET("", GetSecrets())
+				secretsGroup.Use(middleware.PaginationMiddleware()).GET("", GetSecrets())
 				secretsGroup.GET("/:secretName", GetSecret())
 				secretsGroup.PUT("/:secretName", UpdateSecret())
 				secretsGroup.DELETE("/:secretName", DeleteSecret())
@@ -63,7 +63,7 @@ func setupRouter(logger *zap.Logger) *gin.Engine {
 			{
 
 				cappGroup.POST("", CreateCapp())
-				cappGroup.GET("", GetCapps())
+				cappGroup.Use(middleware.PaginationMiddleware()).GET("", GetCapps())
 				cappGroup.GET("/:cappName", GetCapp())
 				cappGroup.PUT("/:cappName", UpdateCapp())
 				cappGroup.PUT("/:cappName/state", EditCappState())
@@ -75,14 +75,14 @@ func setupRouter(logger *zap.Logger) *gin.Engine {
 			cappRevisionGroup := namespacesGroup.Group("/:namespaceName/capprevisions")
 			{
 
-				cappRevisionGroup.GET("", GetCappRevisions())
+				cappRevisionGroup.Use(middleware.PaginationMiddleware()).GET("", GetCappRevisions())
 				cappRevisionGroup.GET("/:cappRevisionName", GetCappRevision())
 			}
 
 			usersGroup := namespacesGroup.Group("/:namespaceName/users")
 			{
 				usersGroup.POST("", CreateUser())
-				usersGroup.GET("", GetUsers())
+				usersGroup.Use(middleware.PaginationMiddleware()).GET("", GetUsers())
 				usersGroup.GET("/:userName", GetUser())
 				usersGroup.PUT("/:userName", UpdateUser())
 				usersGroup.DELETE("/:userName", DeleteUser())
@@ -106,7 +106,7 @@ func setupRouter(logger *zap.Logger) *gin.Engine {
 
 			podsGroup := namespacesGroup.Group("/:namespaceName")
 			{
-				podsGroup.GET("/capps/:cappName/pods", GetPods())
+				podsGroup.Use(middleware.PaginationMiddleware()).GET("/capps/:cappName/pods", GetPods())
 			}
 		}
 	}

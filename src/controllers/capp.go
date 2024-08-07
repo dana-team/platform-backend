@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/dana-team/platform-backend/src/utils"
+	"github.com/dana-team/platform-backend/src/utils/pagination"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 
@@ -24,7 +25,7 @@ type CappController interface {
 	CreateCapp(namespace string, capp types.CreateCapp) (types.Capp, error)
 
 	// GetCapps gets all Capps from a specific namespace.
-	GetCapps(namespace string, cappQuery types.CappQuery) (types.CappList, error)
+	GetCapps(namespace string, limit, page int, cappQuery types.CappQuery) (types.CappList, error)
 
 	// GetCapp gets a specific Capp from the specified namespace.
 	GetCapp(namespace, name string) (types.Capp, error)
@@ -54,6 +55,14 @@ func NewCappController(client client.Client, context context.Context, logger *za
 		ctx:    context,
 		logger: logger,
 	}
+}
+
+// CappPaginator paginates through capps in a specified namespace.
+type CappPaginator struct {
+	pagination.GenericPaginator
+	namespace string
+	client    client.Client
+	cappQuery types.CappQuery
 }
 
 func (c *cappController) CreateCapp(namespace string, capp types.CreateCapp) (types.Capp, error) {
@@ -98,27 +107,24 @@ func createCappFromV1Capp(capp cappv1alpha1.Capp) types.Capp {
 	}
 }
 
-func (c *cappController) GetCapps(namespace string, cappQuery types.CappQuery) (types.CappList, error) {
+func (c *cappController) GetCapps(namespace string, limit, page int, cappQuery types.CappQuery) (types.CappList, error) {
 	c.logger.Debug(fmt.Sprintf("Trying to fetch all capps in namespace: %q", namespace))
 
-	cappList := &cappv1alpha1.CappList{}
-	selector, err := labels.Parse(cappQuery.LabelSelector)
-	if err != nil {
-		c.logger.Error(fmt.Sprintf("Could not parse labelSelector with error: %v", err.Error()))
-		return types.CappList{}, k8serrors.NewBadRequest(err.Error())
+	cappPaginator := &CappPaginator{
+		GenericPaginator: pagination.CreatePaginator(c.ctx, c.logger),
+		namespace:        namespace,
+		client:           c.client,
+		cappQuery:        cappQuery,
 	}
 
-	err = c.client.List(c.ctx, cappList, &client.ListOptions{
-		Namespace:     namespace,
-		LabelSelector: selector,
-	})
+	cappList, err := pagination.FetchPage[cappv1alpha1.Capp](limit, page, cappPaginator)
 	if err != nil {
-		c.logger.Error(fmt.Sprintf("Could not fetch capps in namespace %q with error: %v", namespace, err.Error()))
+		c.logger.Error(fmt.Sprintf("Could not get capps with error: %v", err))
 		return types.CappList{}, err
 	}
 
 	result := types.CappList{}
-	for _, item := range cappList.Items {
+	for _, item := range cappList {
 		summary := types.CappSummary{
 			Name:   item.Name,
 			URL:    getCappURL(item),
@@ -126,7 +132,7 @@ func (c *cappController) GetCapps(namespace string, cappQuery types.CappQuery) (
 		}
 		result.Capps = append(result.Capps, summary)
 	}
-	result.Count = len(cappList.Items)
+	result.Count = len(cappList)
 
 	return result, nil
 }
@@ -230,6 +236,29 @@ func (c *cappController) DeleteCapp(namespace, name string) (types.CappError, er
 	return types.CappError{
 		Message: fmt.Sprintf("Deleted capp %q in namespace %q successfully", name, namespace),
 	}, nil
+}
+
+// FetchList retrieves a list of capps from the specified namespace with given options.
+func (p *CappPaginator) FetchList(listOptions metav1.ListOptions) (*types.List[cappv1alpha1.Capp], error) {
+	cappList := &cappv1alpha1.CappList{}
+	selector, err := labels.Parse(p.cappQuery.LabelSelector)
+	if err != nil {
+		p.Logger.Error(fmt.Sprintf("Could not parse labelSelector with error: %v", err.Error()))
+		return nil, k8serrors.NewBadRequest(err.Error())
+	}
+
+	err = p.client.List(p.Ctx, cappList, &client.ListOptions{
+		Limit:         listOptions.Limit,
+		Continue:      listOptions.Continue,
+		Namespace:     p.namespace,
+		LabelSelector: selector,
+	})
+	if err != nil {
+		p.Logger.Error(fmt.Sprintf("Could not fetch capps in namespace %q with error: %v", p.namespace, err.Error()))
+		return nil, err
+	}
+
+	return (*types.List[cappv1alpha1.Capp])(cappList), nil
 }
 
 func createCappFromType(namespace string, capp types.CreateCapp) cappv1alpha1.Capp {

@@ -11,9 +11,8 @@ This document outlines the CRUD (Create, Read, Update, Delete) on Capp.
   - **Path Parameter**:
     - `namespace` - The namespace of the capp.
   - **Query Params**:
-    - `limit`: (optional) Specifies the maximum number of namespaces to return per page. Defaults to 9.
-    - `continue`: (optional) Used for fetching the next set of results.
-    - `labelSelector`: (optional) Used for filtering by labels.
+    - `limit`: (optional) Specifies the maximum number of namespaces to return per page.
+    - `page`: (optional) Used for setting the current pge.
   - **Response**: Capp names or an error message.
     ```json
     {

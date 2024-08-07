@@ -6,6 +6,7 @@ import (
 	"go.uber.org/zap"
 	"io"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/dana-team/platform-backend/src/utils"
 	"k8s.io/client-go/kubernetes"
@@ -26,7 +27,7 @@ func FetchPodLogs(ctx context.Context, client kubernetes.Interface, namespace, p
 // FetchCappLogs retrieves the logs of a Capp's Knative service.
 // It fetches the pods associated with the service, selects the first pod, and retrieves its logs.
 func FetchCappLogs(ctx context.Context, client kubernetes.Interface, namespace, cappName, containerName, podName string, logger *zap.Logger) (io.ReadCloser, error) {
-	pods, err := utils.GetPodsByLabel(ctx, client, namespace, fmt.Sprintf(utils.ParentCappLabelSelector, cappName))
+	pods, err := utils.GetPodsByLabel(ctx, client, namespace, fmt.Sprintf(utils.ParentCappLabelSelector, cappName), metav1.ListOptions{})
 	if err != nil {
 		logger.Error(fmt.Sprintf("error fetching Capp pods: %s", err.Error()))
 		return nil, fmt.Errorf("error fetching Capp pods: %w", err)

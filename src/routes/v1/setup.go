@@ -32,7 +32,7 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider, scheme *r
 	namespacesGroup := v1.Group("/namespaces")
 	namespacesGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
 	{
-		namespacesGroup.GET("", GetNamespaces())
+		namespacesGroup.Use(middleware.PaginationMiddleware()).GET("", GetNamespaces())
 		namespacesGroup.GET("/:namespaceName", GetNamespace())
 		namespacesGroup.POST("", CreateNamespace())
 		namespacesGroup.DELETE("/:namespaceName", DeleteNamespace())
@@ -42,7 +42,7 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider, scheme *r
 	secretsGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
 	{
 		secretsGroup.POST("", CreateSecret())
-		secretsGroup.GET("", GetSecrets())
+		secretsGroup.Use(middleware.PaginationMiddleware()).GET("", GetSecrets())
 		secretsGroup.GET("/:secretName", GetSecret())
 		secretsGroup.PUT("/:secretName", UpdateSecret())
 		secretsGroup.DELETE("/:secretName", DeleteSecret())
@@ -52,7 +52,7 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider, scheme *r
 	cappGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
 	{
 		cappGroup.POST("", CreateCapp())
-		cappGroup.GET("", GetCapps())
+		cappGroup.Use(middleware.PaginationMiddleware()).GET("", GetCapps())
 		cappGroup.GET("/:cappName", GetCapp())
 		cappGroup.PUT("/:cappName", UpdateCapp())
 		cappGroup.PUT("/:cappName/state", EditCappState())
@@ -63,7 +63,7 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider, scheme *r
 	cappRevisionGroup := namespacesGroup.Group("/:namespaceName/capprevisions")
 	cappRevisionGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
 	{
-		cappRevisionGroup.GET("", GetCappRevisions())
+		cappRevisionGroup.Use(middleware.PaginationMiddleware()).GET("", GetCappRevisions())
 		cappRevisionGroup.GET("/:cappRevisionName", GetCappRevision())
 	}
 
@@ -71,7 +71,7 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider, scheme *r
 	usersGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
 	{
 		usersGroup.POST("", CreateUser())
-		usersGroup.GET("", GetUsers())
+		usersGroup.Use(middleware.PaginationMiddleware()).GET("", GetUsers())
 		usersGroup.GET("/:userName", GetUser())
 		usersGroup.PUT("/:userName", UpdateUser())
 		usersGroup.DELETE("/:userName", DeleteUser())
@@ -92,6 +92,6 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider, scheme *r
 	podsGroup := namespacesGroup.Group("/:namespaceName")
 	podsGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
 	{
-		podsGroup.GET("/capps/:cappName/pods", GetPods())
+		podsGroup.Use(middleware.PaginationMiddleware()).GET("/capps/:cappName/pods", GetPods())
 	}
 }

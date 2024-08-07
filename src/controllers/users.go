@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/dana-team/platform-backend/src/utils"
+	"github.com/dana-team/platform-backend/src/utils/pagination"
 	"go.uber.org/zap"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,7 +24,7 @@ const (
 
 type UserController interface {
 	// GetUsers get users from specified namespace and returns them as users.
-	GetUsers(namespace string) (types.UsersOutput, error)
+	GetUsers(namespace string, limit, page int) (types.UsersOutput, error)
 
 	// GetUser gets a specific user from specified namespace and returns it as user.
 	GetUser(userIdentifier types.UserIdentifier) (types.User, error)
@@ -44,6 +45,13 @@ type userController struct {
 	logger *zap.Logger
 }
 
+// UserPaginator paginates through secrets in a specified namespace.
+type UserPaginator struct {
+	pagination.GenericPaginator
+	client    kubernetes.Interface
+	namespace string
+}
+
 func NewUserController(client kubernetes.Interface, context context.Context, logger *zap.Logger) UserController {
 	return &userController{
 		logger: logger,
@@ -52,21 +60,25 @@ func NewUserController(client kubernetes.Interface, context context.Context, log
 	}
 }
 
-func (u *userController) GetUsers(namespace string) (types.UsersOutput, error) {
+func (u *userController) GetUsers(namespace string, limit, page int) (types.UsersOutput, error) {
+	userOutputs := types.UsersOutput{}
 	u.logger.Debug(fmt.Sprintf("Trying to get all rolebindings in %q namespace", namespace))
 
-	roleBindings, err := u.client.RbacV1().RoleBindings(namespace).List(u.ctx, metav1.ListOptions{LabelSelector: utils.ManagedLabelSelector})
-	userOutputs := types.UsersOutput{}
-	if err != nil {
-		u.logger.Error(fmt.Sprintf("Could not get rolebindings with error: %v", err.Error()))
-		return userOutputs, err
+	userPaginator := &UserPaginator{
+		GenericPaginator: pagination.CreatePaginator(u.ctx, u.logger),
+		namespace:        namespace,
+		client:           u.client,
 	}
-	u.logger.Debug("Fetched all rolebindings successfully")
 
-	for _, roleBinding := range roleBindings.Items {
+	roleBindings, err := pagination.FetchPage[rbacv1.RoleBinding](limit, page, userPaginator)
+	if err != nil {
+		u.logger.Error(fmt.Sprintf("Could not get secrets with error: %v", err))
+		return types.UsersOutput{}, err
+	}
+	for _, roleBinding := range roleBindings {
 		userOutputs.Users = append(userOutputs.Users, types.User{Name: roleBinding.Name, Role: convertToPlatformRole(roleBinding.RoleRef.Name)})
 	}
-	userOutputs.Count = len(roleBindings.Items)
+	userOutputs.Count = len(roleBindings)
 
 	return userOutputs, nil
 }
@@ -149,6 +161,18 @@ func (u *userController) DeleteUser(userIdentifier types.UserIdentifier) (types.
 
 	u.logger.Debug(fmt.Sprintf("Deleted roleBinding %q in namespace %q successfully", userIdentifier.UserName, userIdentifier.NamespaceName))
 	return types.DeleteUserResponse{Message: fmt.Sprintf("Deleted roleBinding %q in namespace %q successfully", userIdentifier.UserName, userIdentifier.NamespaceName)}, nil
+}
+
+// FetchList retrieves a list of secrets from the specified namespace with given options.
+func (p *UserPaginator) FetchList(listOptions metav1.ListOptions) (*types.List[rbacv1.RoleBinding], error) {
+	roleBindings, err := p.client.RbacV1().RoleBindings(p.namespace).List(p.Ctx, listOptions)
+	if err != nil {
+		p.Logger.Error(fmt.Sprintf("Could not get rolebindings with error: %v", err.Error()))
+		return nil, err
+	}
+
+	p.Logger.Debug("Fetched all rolebindings successfully")
+	return (*types.List[rbacv1.RoleBinding])(roleBindings), nil
 }
 
 func prepareRoleBinding(roleBindingName string, role string) *rbacv1.RoleBinding {

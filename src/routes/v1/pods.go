@@ -4,6 +4,7 @@ import (
 	"github.com/dana-team/platform-backend/src/controllers"
 	"github.com/dana-team/platform-backend/src/middleware"
 	"github.com/dana-team/platform-backend/src/types"
+	"github.com/dana-team/platform-backend/src/utils/pagination"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -50,8 +51,14 @@ func GetPods() gin.HandlerFunc {
 			return
 		}
 
+		limit, page, err := pagination.ExtractPaginationParamsFromCtx(c)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			return
+		}
+
 		podHandler(func(controller controllers.PodController, c *gin.Context) (interface{}, error) {
-			return controller.GetPods(request.NamespaceName, request.CappName)
+			return controller.GetPods(request.NamespaceName, request.CappName, limit, page)
 		})(c)
 	}
 }

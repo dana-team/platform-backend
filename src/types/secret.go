@@ -24,8 +24,8 @@ type SecretNamespaceUriRequest struct {
 }
 
 type GetSecretsResponse struct {
-	Count   int      `json:"count"`
 	Secrets []Secret `json:"secrets"`
+	ListMetadata
 }
 
 type GetSecretResponse struct {

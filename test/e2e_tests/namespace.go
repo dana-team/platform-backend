@@ -14,11 +14,14 @@ import (
 var _ = Describe("Validate Namespace routes and functionality", func() {
 	var oneNamespaceName, secondNamespaceName string
 
+	firstNamespaceSubstring := "a-"
+	secondNamespaceSubstring := "b-"
+
 	BeforeEach(func() {
-		oneNamespaceName = generateName("a-" + e2eNamespace)
+		oneNamespaceName = generateName(firstNamespaceSubstring + e2eNamespace)
 		createTestNamespace(k8sClient, oneNamespaceName)
 
-		secondNamespaceName = generateName("b-" + e2eNamespace)
+		secondNamespaceName = generateName(secondNamespaceSubstring + e2eNamespace)
 		createTestNamespace(k8sClient, secondNamespaceName)
 	})
 
@@ -44,6 +47,83 @@ var _ = Describe("Validate Namespace routes and functionality", func() {
 			for _, ns := range expectedResponse[testutils.NamespaceKey].([]map[string]interface{}) {
 				Expect(ns).To(BeElementOf(response[testutils.NamespaceKey]))
 			}
+		})
+
+		It("Should get all namespaces in a namespace with limit of 50", func() {
+			limit := "50"
+			page := "1"
+
+			uri := fmt.Sprintf("%s/v1/%s?limit=%s&page=%s", platformURL, testutils.NamespaceKey, limit, page)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+
+			expectedResponse := map[string]interface{}{
+				testutils.CountKey: 2,
+				testutils.NamespaceKey: []map[string]interface{}{
+					{
+						testutils.NameKey: oneNamespaceName,
+					},
+					{
+						testutils.NameKey: secondNamespaceName,
+					},
+				},
+			}
+
+			Expect(status).Should(Equal(http.StatusOK))
+			Expect(expectedResponse[testutils.CountKey]).To(BeNumerically("<=", response[testutils.CountKey]))
+			for _, ns := range expectedResponse[testutils.NamespaceKey].([]map[string]interface{}) {
+				Expect(ns).To(BeElementOf(response[testutils.NamespaceKey]))
+			}
+		})
+
+		It("Should get one namespace in a namespace with limit of 1 and page 1", func() {
+			limit := "1"
+			page := "1"
+
+			uri := fmt.Sprintf("%s/v1/%s?limit=%s&page=%s", platformURL, testutils.NamespaceKey, limit, page)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+
+			expectedResponse := map[string]interface{}{
+				testutils.CountKey: 1,
+				testutils.NamespaceKey: []map[string]interface{}{
+					{
+						testutils.NameKey: oneNamespaceName,
+					},
+				},
+			}
+
+			Expect(status).Should(Equal(http.StatusOK))
+			Expect(expectedResponse[testutils.CountKey]).To(BeNumerically("==", response[testutils.CountKey]))
+		})
+
+		It("Should get one namespaces in a namespace with limit of 1 and page 2", func() {
+			limit := "1"
+			page := "2"
+
+			uri := fmt.Sprintf("%s/v1/%s?limit=%s&page=%s", platformURL, testutils.NamespaceKey, limit, page)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+
+			expectedResponse := map[string]interface{}{
+				testutils.CountKey: 1,
+				testutils.NamespaceKey: []map[string]interface{}{
+					{
+						testutils.NameKey: secondNamespaceName,
+					},
+				},
+			}
+
+			Expect(status).Should(Equal(http.StatusOK))
+			Expect(expectedResponse[testutils.CountKey]).To(BeNumerically("<=", response[testutils.CountKey]))
+		})
+
+		It("Should not get namespaces with limit of 1 and page 3", func() {
+			limit := "1"
+			page := "3"
+
+			uri := fmt.Sprintf("%s/v1/%s?limit=%s&page=%s", platformURL, testutils.NamespaceKey, limit, page)
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+
+			Expect(status).Should(Equal(http.StatusOK))
+			Expect(testutils.KubeSystem).ToNot(BeElementOf(response[testutils.NamespaceKey]))
 		})
 
 		It("Should not get namespaces without a Managed label", func() {

@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/dana-team/platform-backend/src/middleware"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 )
 
@@ -20,8 +22,14 @@ const (
 
 func TestGetUsers(t *testing.T) {
 	testNamespaceName := userNamespace + "-get"
+	type pagination struct {
+		limit string
+		page  string
+	}
+
 	type requestURI struct {
-		namespace string
+		namespace        string
+		paginationParams pagination
 	}
 
 	type want struct {
@@ -48,6 +56,22 @@ func TestGetUsers(t *testing.T) {
 				},
 			},
 		},
+		"ShouldSucceedGettingAllUsersWithLimitOf2": {
+			requestURI: requestURI{
+				namespace:        testNamespaceName,
+				paginationParams: pagination{limit: "2", page: "1"},
+			},
+			want: want{
+				statusCode: http.StatusOK,
+				response: map[string]interface{}{
+					testutils.CountKey: 2,
+					testutils.UsersKey: []types.User{
+						{Name: userName + "-1", Role: testutils.AdminKey},
+						{Name: userName + "-2", Role: testutils.AdminKey},
+					},
+				},
+			},
+		},
 	}
 
 	setup()
@@ -57,8 +81,17 @@ func TestGetUsers(t *testing.T) {
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
+			params := url.Values{}
+			if test.requestURI.paginationParams.limit != "" {
+				params.Add(middleware.LimitCtxKey, test.requestURI.paginationParams.limit)
+			}
+
+			if test.requestURI.paginationParams.page != "" {
+				params.Add(middleware.PageCtxKey, test.requestURI.paginationParams.page)
+			}
+
 			baseURI := fmt.Sprintf("/v1/namespaces/%s/users", test.requestURI.namespace)
-			request, err := http.NewRequest(http.MethodGet, baseURI, nil)
+			request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s?%s", baseURI, params.Encode()), nil)
 			assert.NoError(t, err)
 
 			writer := httptest.NewRecorder()

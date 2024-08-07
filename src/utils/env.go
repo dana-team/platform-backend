@@ -21,3 +21,19 @@ func GetEnvBool(key string, defaultValue bool) (bool, error) {
 
 	return valBool, nil
 }
+
+// GetEnvNumber retrieves the value of the environment variable named by the key.
+// If the variable is empty or not set, it returns the default value.
+func GetEnvNumber(key string, defaultValue int) (int, error) {
+	valStr := os.Getenv(key)
+	if valStr == "" {
+		return defaultValue, nil
+	}
+
+	valInt, err := strconv.Atoi(valStr)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse %q as integer", valStr)
+	}
+
+	return valInt, nil
+}

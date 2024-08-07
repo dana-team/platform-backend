@@ -10,3 +10,7 @@ type Metadata struct {
 	Namespace         string `json:"namespace"`
 	CreationTimestamp string `json:"creationTimestamp"`
 }
+
+type ListMetadata struct {
+	Count int `json:"count"`
+}

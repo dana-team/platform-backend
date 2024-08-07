@@ -21,7 +21,7 @@ type UpdateUserData struct {
 
 type UsersOutput struct {
 	Users []User `json:"users"`
-	Count int    `json:"count"`
+	ListMetadata
 }
 
 type DeleteUserResponse struct {

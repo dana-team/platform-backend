@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/dana-team/platform-backend/src/utils"
+	"github.com/dana-team/platform-backend/src/utils/pagination"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
@@ -15,7 +17,7 @@ import (
 
 type CappRevisionController interface {
 	// GetCappRevisions gets all CappRevision names and count from a specific namespace.
-	GetCappRevisions(namespace string, cappRevisionQuery types.CappRevisionQuery) (types.CappRevisionList, error)
+	GetCappRevisions(namespace string, limit, page int, cappRevisionQuery types.CappRevisionQuery) (types.CappRevisionList, error)
 
 	// GetCappRevision gets a specific CappRevision from the specified namespace.
 	GetCappRevision(namespace, name string) (types.CappRevision, error)
@@ -25,6 +27,14 @@ type cappRevisionController struct {
 	client client.Client
 	ctx    context.Context
 	logger *zap.Logger
+}
+
+// CappRevisionPaginator paginates through capprevisions in a specified namespace.
+type CappRevisionPaginator struct {
+	pagination.GenericPaginator
+	namespace string
+	client    client.Client
+	cappQuery types.CappRevisionQuery
 }
 
 func NewCappRevisionController(client client.Client, context context.Context, logger *zap.Logger) CappRevisionController {
@@ -47,32 +57,52 @@ func (c *cappRevisionController) GetCappRevision(namespace string, name string) 
 	return convertCappRevisionToType(cappRevision), nil
 }
 
-func (c *cappRevisionController) GetCappRevisions(namespace string, cappQuery types.CappRevisionQuery) (types.CappRevisionList, error) {
+func (c *cappRevisionController) GetCappRevisions(namespace string, limit, page int, cappQuery types.CappRevisionQuery) (types.CappRevisionList, error) {
 	c.logger.Debug(fmt.Sprintf("Trying to fetch all capp revisions in namespace: %q", namespace))
 
-	cappRevisionList := &cappv1alpha1.CappRevisionList{}
-	selector, err := labels.Parse(cappQuery.LabelSelector)
-	if err != nil {
-		c.logger.Error(fmt.Sprintf("Could not parse labelSelector with error: %v", err.Error()))
-		return types.CappRevisionList{}, k8serrors.NewBadRequest(err.Error())
+	cappRevisionPaginator := &CappRevisionPaginator{
+		GenericPaginator: pagination.CreatePaginator(c.ctx, c.logger),
+		namespace:        namespace,
+		client:           c.client,
+		cappQuery:        cappQuery,
 	}
 
-	err = c.client.List(c.ctx, cappRevisionList, &client.ListOptions{
-		Namespace:     namespace,
-		LabelSelector: selector,
-	})
+	cappRevisionList, err := pagination.FetchPage[cappv1alpha1.CappRevision](limit, page, cappRevisionPaginator)
 	if err != nil {
-		c.logger.Error(fmt.Sprintf("Could not fetch capp revisions in namespace %q with error: %v", namespace, err.Error()))
+		c.logger.Error(fmt.Sprintf("Could not get capps with error: %v", err))
 		return types.CappRevisionList{}, err
 	}
 
 	result := types.CappRevisionList{}
-	for _, revision := range cappRevisionList.Items {
+	for _, revision := range cappRevisionList {
 		result.CappRevisions = append(result.CappRevisions, revision.Name)
 	}
-	result.Count = len(cappRevisionList.Items)
+	result.Count = len(cappRevisionList)
 
 	return result, nil
+}
+
+// FetchList retrieves a list of capps from the specified namespace with given options.
+func (p *CappRevisionPaginator) FetchList(listOptions metav1.ListOptions) (*types.List[cappv1alpha1.CappRevision], error) {
+	cappRevisionList := &cappv1alpha1.CappRevisionList{}
+	selector, err := labels.Parse(p.cappQuery.LabelSelector)
+	if err != nil {
+		p.Logger.Error(fmt.Sprintf("Could not parse labelSelector with error: %v", err.Error()))
+		return nil, k8serrors.NewBadRequest(err.Error())
+	}
+
+	err = p.client.List(p.Ctx, cappRevisionList, &client.ListOptions{
+		Limit:         listOptions.Limit,
+		Continue:      listOptions.Continue,
+		Namespace:     p.namespace,
+		LabelSelector: selector,
+	})
+	if err != nil {
+		p.Logger.Error(fmt.Sprintf("Could not fetch capp revisions in namespace %q with error: %v", p.namespace, err.Error()))
+		return nil, err
+	}
+
+	return (*types.List[cappv1alpha1.CappRevision])(cappRevisionList), nil
 }
 
 // convertCappRevisionToType converts an API CappRevision to a Type CappRevision.

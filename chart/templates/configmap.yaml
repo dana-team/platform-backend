@@ -11,3 +11,4 @@ data:
   KUBE_USERINFO_URL: "https://api.{{ .Values.clusterName }}.{{ .Values.clusterDomain }}:{{ .Values.apiPort }}/apis/user.openshift.io/v1/users/~"
   KUBE_API_SERVER: "https://api.{{ .Values.clusterName }}.{{ .Values.clusterDomain }}:{{ .Values.apiPort }}"
   ALLOWED_ORIGIN_REGEX: "{{ .Values.allowedOriginRegex }}"
+  DEFAULT_PAGINATION_LIMIT: "{{ .Values.defaultPaginationLimit }}"
