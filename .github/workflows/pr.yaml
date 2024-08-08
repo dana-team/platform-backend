@@ -61,8 +61,8 @@ jobs:
           method: kubeconfig
           kubeconfig: ${{ secrets.BACKEND_CI_CLUSTER_KUBECONFIG }}
 
-      - name: Deploy Capp
-        run: make deploy-capp
+      - name: Install prereq
+        run: make install-prereq DOMAIN_CONTROLLER_IP=${{ secrets.WDC_CI_IP }} DOMAIN_CONTROLLER_SERVER=${{ secrets.WDC_CI_SERVER }} DOMAIN_CONTROLLER_REALM=${{ secrets.WDC_CI_REALM }} DOMAIN_CONTROLLER_USER=${{ secrets.WDC_CI_USER }} DOMAIN_CONTROLLER_PASSWORD="${{ secrets.WDC_CI_PASSWORD }}"
 
       - name: Deploy backend
         run: make deploy IMG=${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}:${IMAGE_TAG} CLUSTER_NAME=${{ secrets.BACKEND_CI_CLUSTER_NAME }} CLUSTER_DOMAIN=${{ secrets.BACKEND_CI_CLUSTER_DOMAIN }}
@@ -77,6 +77,6 @@ jobs:
         run: make undeploy
         if: always()
 
-      - name: Undeploy Capp
-        run: make undeploy-capp
+      - name: Uninstall prereq
+        run: make uninstall-prereq
         if: always()
