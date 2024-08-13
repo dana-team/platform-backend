@@ -7,6 +7,7 @@ import (
 	websocketpkg "github.com/dana-team/platform-backend/src/websocket"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	multicluster "github.com/oam-dev/cluster-gateway/pkg/apis/cluster/transport"
 	"go.uber.org/zap"
 	"io"
 	"k8s.io/client-go/kubernetes"
@@ -17,7 +18,7 @@ const (
 	namespaceParam      = "namespace"
 	cappNameParam       = "cappName"
 	containerQueryParam = "container"
-	podNameQueryParam   = "cappName"
+	podNameQueryParam   = "podName"
 )
 
 // GetPodLogs returns a handler function that fetches logs for a specified pod and container.
@@ -79,7 +80,10 @@ func streamPodLogs(c *gin.Context, logger *zap.Logger) (io.ReadCloser, error) {
 	podName := c.Param(podNameQueryParam)
 	containerName := c.Query(containerQueryParam)
 
-	return controllers.FetchPodLogs(c.Request.Context(), client, namespace, podName, containerName, logger)
+	clusterName := c.Param(clusterNameParam)
+	context := multicluster.WithMultiClusterContext(c.Request.Context(), clusterName)
+
+	return controllers.FetchPodLogs(context, client, namespace, podName, containerName, logger)
 }
 
 // streamCappLogs streams logs for a specific Capp.
@@ -94,7 +98,10 @@ func streamCappLogs(c *gin.Context, logger *zap.Logger) (io.ReadCloser, error) {
 	containerName := c.DefaultQuery(containerQueryParam, cappName)
 	podName := c.Query(podNameQueryParam)
 
-	return controllers.FetchCappLogs(c.Request.Context(), client, namespace, cappName, containerName, podName, logger)
+	clusterName := c.Param(clusterNameParam)
+	context := multicluster.WithMultiClusterContext(c.Request.Context(), clusterName)
+
+	return controllers.FetchCappLogs(context, client, namespace, cappName, containerName, podName, logger)
 }
 
 // getKubeClient retrieves the Kubernetes client from the gin.Context.

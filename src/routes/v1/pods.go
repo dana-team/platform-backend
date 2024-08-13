@@ -6,6 +6,7 @@ import (
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/dana-team/platform-backend/src/utils/pagination"
 	"github.com/gin-gonic/gin"
+	multicluster "github.com/oam-dev/cluster-gateway/pkg/apis/cluster/transport"
 	"go.uber.org/zap"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes"
@@ -29,7 +30,8 @@ func podHandler(handler func(controller controllers.PodController, c *gin.Contex
 
 		logger := ctxLogger.(*zap.Logger)
 		kubeClient := client.(kubernetes.Interface)
-		context := c.Request.Context()
+		clusterName := c.Param(clusterNameParam)
+		context := multicluster.WithMultiClusterContext(c.Request.Context(), clusterName)
 
 		podController := controllers.NewPodController(kubeClient, context, logger)
 		result, err := handler(podController, c)

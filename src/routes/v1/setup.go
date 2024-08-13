@@ -21,10 +21,11 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider, scheme *r
 		authGroup.POST("", Login(tokenProvider))
 	}
 
+	// TODO: perhaps modify route
 	logsGroup := v1.Group("/logs")
 	logsGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
 	{
-		logsGroup.GET("/pod/:namespace/:cappName", GetPodLogs())
+		logsGroup.GET("/pod/:namespace/:podName", GetPodLogs())
 		logsGroup.GET("/capp/:namespace/:cappName", GetCappLogs())
 
 	}
@@ -81,6 +82,41 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider, scheme *r
 	configMapGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
 	{
 		configMapGroup.GET("/:configMapName", GetConfigMap())
+	}
+
+	containersGroup := namespacesGroup.Group("/:namespaceName")
+	containersGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
+	{
+		containersGroup.GET("/pods/:podName/containers", GetContainers())
+	}
+
+	// TODO: delete
+	containersClusterGroup := v1.Group("/clusters/:clusterName/namespaces/:namespaceName")
+	containersClusterGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
+	{
+		containersClusterGroup.GET("/pods/:podName/containers", GetContainers())
+	}
+
+	podsGroup := namespacesGroup.Group("/:namespaceName")
+	podsGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
+	{
+		podsGroup.Use(middleware.PaginationMiddleware()).GET("/capps/:cappName/pods", GetPods())
+	}
+
+	setupClustersRoutes(v1, tokenProvider, scheme)
+}
+
+func setupClustersRoutes(v1 *gin.RouterGroup, tokenProvider auth.TokenProvider, scheme *runtime.Scheme) {
+	clustersGroup := v1.Group("/clusters/:clusterName")
+	clustersGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
+
+	namespacesGroup := clustersGroup.Group("/namespaces/:namespaceName")
+	namespacesGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
+
+	logsGroup := namespacesGroup
+	{
+		logsGroup.GET("/pod/:podName/logs", GetPodLogs())
+		logsGroup.GET("/capp/:cappName/logs", GetCappLogs())
 	}
 
 	containersGroup := namespacesGroup.Group("/:namespaceName")

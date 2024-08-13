@@ -61,7 +61,7 @@ func Test_GetCappLogs(t *testing.T) {
 		"ShouldStreamLogsWithQueryParams": {
 			args: args{
 				token: "valid_token",
-				wsUrl: "/v1/logs/capp/" + testNamespaceGetCappLogs + "/" + testutils.CappName + "?cappName=test-pod-2",
+				wsUrl: "/v1/logs/capp/" + testNamespaceGetCappLogs + "/" + testutils.CappName + "?podName=test-pod-2",
 			},
 			want: want{
 				statusCode:    http.StatusSwitchingProtocols,
@@ -71,7 +71,7 @@ func Test_GetCappLogs(t *testing.T) {
 		"ShouldNotStreamLogsWithNonExistingPodName": {
 			args: args{
 				token: "valid_token",
-				wsUrl: "/v1/logs/capp/" + testNamespaceGetCappLogs + "/" + testutils.CappName + "?cappName=pod" + testutils.NonExistentSuffix,
+				wsUrl: "/v1/logs/capp/" + testNamespaceGetCappLogs + "/" + testutils.CappName + "?podName=pod" + testutils.NonExistentSuffix,
 			},
 			want: want{
 				statusCode:    http.StatusSwitchingProtocols,

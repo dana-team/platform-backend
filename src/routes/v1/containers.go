@@ -5,10 +5,15 @@ import (
 	"github.com/dana-team/platform-backend/src/middleware"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/gin-gonic/gin"
+	multicluster "github.com/oam-dev/cluster-gateway/pkg/apis/cluster/transport"
 	"go.uber.org/zap"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes"
 	"net/http"
+)
+
+const (
+	clusterNameParam = "clusterName"
 )
 
 // containerHandler wraps a handler function with context setup for ContainerController.
@@ -28,7 +33,9 @@ func containerHandler(handler func(controller controllers.ContainerController, c
 
 		logger := ctxLogger.(*zap.Logger)
 		kubeClient := client.(kubernetes.Interface)
-		context := c.Request.Context()
+
+		clusterName := c.Param(clusterNameParam)
+		context := multicluster.WithMultiClusterContext(c.Request.Context(), clusterName)
 
 		containerController := controllers.NewContainerController(kubeClient, context, logger)
 		result, err := handler(containerController, c)

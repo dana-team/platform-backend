@@ -90,7 +90,7 @@ func setupRouter(logger *zap.Logger) *gin.Engine {
 
 			logsGroup := v1.Group("/logs")
 			{
-				logsGroup.GET("/pod/:namespace/:cappName", GetPodLogs())
+				logsGroup.GET("/pod/:namespace/:podName", GetPodLogs())
 				logsGroup.GET("/capp/:namespace/:cappName", GetCappLogs())
 			}
 
