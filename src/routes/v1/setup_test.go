@@ -2,6 +2,7 @@ package v1
 
 import (
 	"github.com/dana-team/platform-backend/src/middleware"
+	"os"
 	"testing"
 
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
@@ -22,7 +23,7 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	m.Run()
+	os.Exit(m.Run())
 }
 
 func setup() {

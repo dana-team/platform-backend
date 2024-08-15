@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
@@ -23,7 +24,7 @@ var (
 
 func TestMain(m *testing.M) {
 	setup()
-	m.Run()
+	os.Exit(m.Run())
 }
 
 func setup() {
