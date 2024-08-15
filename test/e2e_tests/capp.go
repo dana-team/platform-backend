@@ -10,6 +10,7 @@ import (
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
 	"net/http"
 	"net/url"
 )
@@ -469,7 +470,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 
 		It("Should get state of an existing disabled Capp", func() {
 			disabledCappName := generateName("disabled-" + testCappName)
-			createTestCapp(k8sClient, disabledCappName, namespaceName, map[string]string{}, nil)
+			createTestDisabledCapp(k8sClient, disabledCappName, namespaceName, map[string]string{}, nil)
 
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s/state", platformURL, namespaceName, testutils.CappsKey, disabledCappName)
 
@@ -488,7 +489,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 
 			Eventually(func() bool {
 				capp := getCapp(k8sClient, disabledCappName, namespaceName)
-				return capp.Status.StateStatus.State == testutils.EnabledState
+				return capp.Status.StateStatus.State == testutils.DisabledState
 			}, testutils.Timeout, testutils.Interval).Should(BeTrue())
 		})
 
@@ -515,6 +516,56 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 			Expect(err).Should(Not(HaveOccurred()))
 
 			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPut, uri, "", "", userToken)
+			expectedResponse := map[string]interface{}{
+				testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, oneCappName),
+				testutils.ErrorKey:   testutils.OperationFailed,
+			}
+
+			capp := mocks.PrepareCapp(oneCappName, namespaceName+testutils.NonExistentSuffix, clusterDomain, nil, nil)
+			Expect(doesResourceExist(k8sClient, &capp)).To(BeFalse())
+			Expect(status).Should(Equal(http.StatusNotFound))
+			compareResponses(response, expectedResponse)
+		})
+	})
+
+	Context("Validate get dns of a certain Capp route", func() {
+		It("Should get records of an existing Capp", func() {
+			hostname := "dns-capp"
+			domain := "dana-dev.com"
+			cappName := generateName(hostname)
+			createTestCappWithHostname(k8sClient, cappName, namespaceName, cappName, domain, nil, nil)
+			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s/dns", platformURL, namespaceName, testutils.CappsKey, oneCappName)
+
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+
+			expectedResponse := map[string]interface{}{
+				testutils.RecordsKey: []types.DNS{
+					{Status: corev1.ConditionTrue, Name: fmt.Sprintf("%s.%s", hostname, domain)}},
+			}
+			Expect(status).Should(Equal(http.StatusOK))
+			Expect(response[testutils.RecordsKey], expectedResponse[testutils.RecordsKey])
+		})
+
+		It("Should handle get dns of a non existing Capp", func() {
+			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s/dns", platformURL, namespaceName, testutils.CappsKey, oneCappName+testutils.NonExistentSuffix)
+
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+			expectedResponse := map[string]interface{}{
+				testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, oneCappName+testutils.NonExistentSuffix),
+				testutils.ErrorKey:   testutils.OperationFailed,
+			}
+
+			capp := mocks.PrepareCapp(oneCappName+testutils.NonExistentSuffix, namespaceName, clusterDomain, nil, nil)
+			Expect(doesResourceExist(k8sClient, &capp)).To(BeFalse())
+			Expect(status).Should(Equal(http.StatusNotFound))
+			compareResponses(response, expectedResponse)
+		})
+
+		It("Should handle a get dns request for a non existing Capp", func() {
+			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s/dns", platformURL, namespaceName+testutils.NonExistentSuffix, testutils.CappsKey, oneCappName)
+
+			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
+
 			expectedResponse := map[string]interface{}{
 				testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, oneCappName),
 				testutils.ErrorKey:   testutils.OperationFailed,

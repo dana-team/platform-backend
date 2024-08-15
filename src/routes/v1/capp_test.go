@@ -8,9 +8,11 @@ import (
 	"github.com/dana-team/platform-backend/src/middleware"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
+	corev1 "k8s.io/api/core/v1"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strconv"
 	"testing"
 
 	"github.com/dana-team/platform-backend/src/types"
@@ -134,10 +136,14 @@ func TestGetCapps(t *testing.T) {
 
 	setup()
 	mocks.CreateTestNamespace(fakeClient, testNamespaceName)
-	mocks.CreateTestCapp(dynClient, testutils.CappName+"-1", testNamespaceName, testutils.Domain, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, nil)
-	mocks.CreateTestCapp(dynClient, testutils.CappName+"-2", testNamespaceName, testutils.Domain, map[string]string{testutils.LabelKey + "-2": testutils.LabelValue + "-2"}, nil)
-	mocks.CreateTestCappWithHostname(dynClient, testutils.CappName+"-3", testNamespaceName, map[string]string{testutils.LabelKey + "-3": testutils.LabelValue + "-3"}, nil)
-	mocks.CreateTestCappWithHostname(dynClient, testutils.CappName+"-4", testNamespaceName, map[string]string{testutils.LabelKey + "-4": testutils.LabelValue + "-4"}, nil)
+	mocks.CreateTestCapp(dynClient, testutils.CappName+"-1", testNamespaceName, testutils.Domain,
+		map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, nil)
+	mocks.CreateTestCapp(dynClient, testutils.CappName+"-2", testNamespaceName, testutils.Domain,
+		map[string]string{testutils.LabelKey + "-2": testutils.LabelValue + "-2"}, nil)
+	mocks.CreateTestCappWithHostname(dynClient, testutils.CappName+"-3", testNamespaceName, testutils.Hostname, testutils.Domain,
+		map[string]string{testutils.LabelKey + "-3": testutils.LabelValue + "-3"}, nil)
+	mocks.CreateTestCappWithHostname(dynClient, testutils.CappName+"-4", testNamespaceName, testutils.Hostname, testutils.Domain,
+		map[string]string{testutils.LabelKey + "-4": testutils.LabelValue + "-4"}, nil)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -338,7 +344,6 @@ func TestGetCappState(t *testing.T) {
 			},
 		},
 	}
-
 	setup()
 	mocks.CreateTestNamespace(fakeClient, testNamespaceName)
 	mocks.CreateTestCappWithState(dynClient, fmt.Sprintf("%s-%s", testutils.CappName, testutils.EnabledState),
@@ -349,6 +354,182 @@ func TestGetCappState(t *testing.T) {
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
 			baseURI := fmt.Sprintf("/v1/namespaces/%s/capps/%s/state", test.requestURI.namespace, test.requestURI.name)
+			request, err := http.NewRequest(http.MethodGet, baseURI, nil)
+			assert.NoError(t, err)
+
+			writer := httptest.NewRecorder()
+			router.ServeHTTP(writer, request)
+
+			assert.Equal(t, test.want.statusCode, writer.Code)
+
+			var response map[string]interface{}
+			err = json.Unmarshal(writer.Body.Bytes(), &response)
+			assert.NoError(t, err)
+
+			wantResponseJSON, err := json.Marshal(test.want.response)
+			assert.NoError(t, err)
+			var wantResponseNormalized map[string]interface{}
+			err = json.Unmarshal(wantResponseJSON, &wantResponseNormalized)
+			assert.NoError(t, err)
+			assert.Equal(t, wantResponseNormalized, response)
+		})
+	}
+}
+
+func TestGetCappDNS(t *testing.T) {
+	testNamespaceName := testutils.CappNamespace + "-get-dns"
+
+	type requestURI struct {
+		name      string
+		namespace string
+	}
+
+	type dnsParams struct {
+		readyStatus   corev1.ConditionStatus
+		syncedStatus  corev1.ConditionStatus
+		isConditioned bool
+		hostname      string
+	}
+
+	type want struct {
+		statusCode int
+		response   map[string]interface{}
+	}
+
+	cases := map[string]struct {
+		requestURI requestURI
+		want       want
+		records    []dnsParams
+		cappName   string
+	}{
+		"ShouldSucceedGettingRecords": {
+			requestURI: requestURI{
+				namespace: testNamespaceName,
+				name:      fmt.Sprintf("%s-%s", testutils.CappName, testutils.Available),
+			},
+			want: want{
+				statusCode: http.StatusOK,
+				response: map[string]interface{}{
+					testutils.RecordsKey: []types.DNS{
+						{Status: corev1.ConditionFalse, Name: fmt.Sprintf("%s.%s", testutils.Hostname+"-1", testutils.DefaultZone)},
+						{Status: corev1.ConditionTrue, Name: fmt.Sprintf("%s.%s", testutils.Hostname+"-2", testutils.DefaultZone)},
+						{Status: corev1.ConditionUnknown, Name: fmt.Sprintf("%s.%s", testutils.Hostname+"-3", testutils.DefaultZone)}},
+				},
+			},
+			records: []dnsParams{
+				{readyStatus: corev1.ConditionFalse, syncedStatus: corev1.ConditionTrue, isConditioned: true,
+					hostname: fmt.Sprintf("%s.%s", testutils.Hostname+"-1", testutils.DefaultZone)},
+				{readyStatus: corev1.ConditionTrue, syncedStatus: corev1.ConditionTrue, isConditioned: true,
+					hostname: fmt.Sprintf("%s.%s", testutils.Hostname+"-2", testutils.DefaultZone)},
+				{readyStatus: corev1.ConditionUnknown, syncedStatus: corev1.ConditionTrue, isConditioned: true,
+					hostname: fmt.Sprintf("%s.%s", testutils.Hostname+"-3", testutils.DefaultZone)},
+			},
+			cappName: fmt.Sprintf("%s-%s", testutils.CappName, testutils.Available),
+		},
+		"ShouldSucceedGettingUnknownDNS": {
+			requestURI: requestURI{
+				namespace: testNamespaceName,
+				name:      fmt.Sprintf("%s-%s", testutils.CappName, testutils.Unknown),
+			},
+			want: want{
+				statusCode: http.StatusOK,
+				response: map[string]interface{}{
+					testutils.RecordsKey: []types.DNS{
+						{Status: corev1.ConditionUnknown, Name: fmt.Sprintf("%s.%s", testutils.Hostname+"-1", testutils.DefaultZone)}},
+				},
+			},
+			records: []dnsParams{
+				{readyStatus: corev1.ConditionUnknown, syncedStatus: corev1.ConditionFalse, isConditioned: true,
+					hostname: fmt.Sprintf("%s.%s", testutils.Hostname+"-1", testutils.DefaultZone)},
+			},
+
+			cappName: fmt.Sprintf("%s-%s", testutils.CappName, testutils.Unknown),
+		},
+		"ShouldSucceedUnavailableDNS": {
+			requestURI: requestURI{
+				namespace: testNamespaceName,
+				name:      fmt.Sprintf("%s-%s", testutils.CappName, testutils.UnAvailable),
+			},
+			want: want{
+				statusCode: http.StatusOK,
+				response: map[string]interface{}{
+					testutils.RecordsKey: []types.DNS{
+						{Status: corev1.ConditionFalse, Name: fmt.Sprintf("%s.%s", testutils.Hostname+"-1", testutils.DefaultZone)}},
+				},
+			},
+			records: []dnsParams{
+				{readyStatus: corev1.ConditionFalse, syncedStatus: corev1.ConditionFalse, isConditioned: true,
+					hostname: fmt.Sprintf("%s.%s", testutils.Hostname+"-1", testutils.DefaultZone)},
+			},
+
+			cappName: fmt.Sprintf("%s-%s", testutils.CappName, testutils.UnAvailable),
+		},
+		"ShouldSucceedAvailableDNS": {
+			requestURI: requestURI{
+				namespace: testNamespaceName,
+				name:      fmt.Sprintf("%s-%s", testutils.CappName, testutils.Available+"1"),
+			},
+			want: want{
+				statusCode: http.StatusOK,
+				response: map[string]interface{}{
+					testutils.RecordsKey: []types.DNS{
+						{Status: corev1.ConditionTrue, Name: fmt.Sprintf("%s.%s", testutils.Hostname+"-1", testutils.DefaultZone)}},
+				},
+			},
+			records: []dnsParams{
+				{readyStatus: corev1.ConditionTrue, syncedStatus: corev1.ConditionTrue, isConditioned: true, hostname: fmt.Sprintf("%s.%s", testutils.Hostname+"-1", testutils.DefaultZone)},
+			},
+
+			cappName: fmt.Sprintf("%s-%s", testutils.CappName, testutils.Available+"1"),
+		},
+		"ShouldHandleNotFoundCapp": {
+			requestURI: requestURI{
+				namespace: testNamespaceName,
+				name:      testutils.CappName + testutils.NonExistentSuffix,
+			},
+			want: want{
+				statusCode: http.StatusNotFound,
+				response: map[string]interface{}{
+					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName+testutils.NonExistentSuffix),
+					testutils.ErrorKey:   testutils.OperationFailed,
+				},
+			},
+		},
+		"ShouldHandleNotFoundNamespace": {
+			requestURI: requestURI{
+				namespace: testNamespaceName + testutils.NonExistentSuffix,
+				name:      testutils.CappName,
+			},
+			want: want{
+				statusCode: http.StatusNotFound,
+				response: map[string]interface{}{
+					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName),
+					testutils.ErrorKey:   testutils.OperationFailed,
+				},
+			},
+		},
+	}
+
+	setup()
+	mocks.CreateTestNamespace(fakeClient, testNamespaceName)
+
+	for name, test := range cases {
+		t.Run(name, func(t *testing.T) {
+
+			if test.cappName != "" {
+				mocks.CreateTestCapp(dynClient, test.cappName, testNamespaceName, testutils.Domain, map[string]string{}, map[string]string{})
+			}
+
+			for i, dns := range test.records {
+
+				if !dns.isConditioned {
+					mocks.CreateTestCNAMERecordWithoutConditions(dynClient, test.cappName+strconv.Itoa(i), test.cappName, testNamespaceName, dns.hostname)
+				} else {
+					mocks.CreateTestCNAMERecord(dynClient, test.cappName+strconv.Itoa(i), test.cappName, testNamespaceName, dns.hostname, dns.readyStatus, dns.syncedStatus)
+				}
+			}
+
+			baseURI := fmt.Sprintf("/v1/namespaces/%s/capps/%s/dns", test.requestURI.namespace, test.requestURI.name)
 			request, err := http.NewRequest(http.MethodGet, baseURI, nil)
 			assert.NoError(t, err)
 

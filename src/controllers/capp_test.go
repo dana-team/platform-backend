@@ -8,8 +8,10 @@ import (
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strconv"
 	"testing"
 )
 
@@ -173,6 +175,163 @@ func TestGetCappState(t *testing.T) {
 				assert.NoError(t, err)
 			}
 			assert.Equal(t, test.want.cappState, response)
+		})
+
+	}
+
+}
+
+func TestGetCappDNS(t *testing.T) {
+	namespaceName := testutils.CappNamespace + "-getDNS"
+
+	type requestParams struct {
+		name      string
+		namespace string
+	}
+
+	type dnsParams struct {
+		readyStatus   corev1.ConditionStatus
+		syncedStatus  corev1.ConditionStatus
+		isConditioned bool
+		hostname      string
+	}
+
+	type want struct {
+		cappDNS     types.GetDNSResponse
+		errorStatus metav1.StatusReason
+	}
+
+	cases := map[string]struct {
+		requestParams requestParams
+		want          want
+		records       []dnsParams
+		cappName      string
+	}{
+		"ShouldSucceedGettingAvailableDNS": {
+			requestParams: requestParams{
+				namespace: namespaceName,
+				name:      fmt.Sprintf("%s-%s", testutils.CappName, testutils.Available),
+			},
+			want: want{
+				errorStatus: metav1.StatusSuccess,
+				cappDNS: types.GetDNSResponse{Records: []types.DNS{
+					{Status: corev1.ConditionFalse, Name: fmt.Sprintf("%s.%s", testutils.Hostname+"-1", testutils.DefaultZone)},
+					{Status: corev1.ConditionTrue, Name: fmt.Sprintf("%s.%s", testutils.Hostname+"-2", testutils.DefaultZone)},
+				},
+				},
+			},
+			records: []dnsParams{
+				{readyStatus: corev1.ConditionFalse, syncedStatus: corev1.ConditionTrue, isConditioned: true, hostname: fmt.Sprintf("%s.%s", testutils.Hostname+"-1", testutils.DefaultZone)},
+				{readyStatus: corev1.ConditionTrue, syncedStatus: corev1.ConditionTrue, isConditioned: true, hostname: fmt.Sprintf("%s.%s", testutils.Hostname+"-2", testutils.DefaultZone)},
+			},
+			cappName: fmt.Sprintf("%s-%s", testutils.CappName, testutils.Available),
+		},
+
+		"ShouldSucceedGettingMixedRecords": {
+			requestParams: requestParams{
+				namespace: namespaceName,
+				name:      fmt.Sprintf("%s-%s", testutils.CappName, "mixed"),
+			},
+			want: want{
+				errorStatus: metav1.StatusSuccess,
+				cappDNS: types.GetDNSResponse{Records: []types.DNS{
+					{Status: corev1.ConditionFalse, Name: fmt.Sprintf("%s.%s", testutils.Hostname+"-1", testutils.DefaultZone)},
+					{Status: corev1.ConditionTrue, Name: fmt.Sprintf("%s.%s", testutils.Hostname+"-2", testutils.DefaultZone)},
+				},
+				},
+			},
+			records: []dnsParams{
+				{readyStatus: corev1.ConditionTrue, syncedStatus: corev1.ConditionFalse, isConditioned: true, hostname: fmt.Sprintf("%s.%s", testutils.Hostname+"-1", testutils.DefaultZone)},
+				{readyStatus: corev1.ConditionTrue, syncedStatus: corev1.ConditionTrue, isConditioned: true, hostname: fmt.Sprintf("%s.%s", testutils.Hostname+"-2", testutils.DefaultZone)},
+			},
+			cappName: fmt.Sprintf("%s-%s", testutils.CappName, "mixed"),
+		},
+		"ShouldSucceedGettingNotReadyUnknownDNS": {
+			requestParams: requestParams{
+				namespace: namespaceName,
+				name:      fmt.Sprintf("%s-%s", testutils.CappName, "ready-unknown"),
+			},
+			want: want{
+				errorStatus: metav1.StatusSuccess,
+				cappDNS: types.GetDNSResponse{Records: []types.DNS{
+					{Status: corev1.ConditionUnknown, Name: fmt.Sprintf("%s.%s", testutils.Hostname+"-1", testutils.DefaultZone)},
+				},
+				},
+			},
+			records: []dnsParams{
+				{readyStatus: corev1.ConditionUnknown, syncedStatus: corev1.ConditionFalse, isConditioned: true, hostname: fmt.Sprintf("%s.%s", testutils.Hostname+"-1", testutils.DefaultZone)},
+			},
+			cappName: fmt.Sprintf("%s-%s", testutils.CappName, "ready-unknown"),
+		},
+
+		"ShouldSucceedGettingSyncedUnknownDNS": {
+			requestParams: requestParams{
+				namespace: namespaceName,
+				name:      fmt.Sprintf("%s-%s", testutils.CappName, "synced-unknown"),
+			},
+			want: want{
+				errorStatus: metav1.StatusSuccess,
+				cappDNS: types.GetDNSResponse{Records: []types.DNS{
+					{Status: corev1.ConditionUnknown, Name: fmt.Sprintf("%s.%s", testutils.Hostname+"-1", testutils.DefaultZone)},
+				},
+				},
+			},
+			records: []dnsParams{
+				{readyStatus: corev1.ConditionUnknown, syncedStatus: corev1.ConditionTrue, isConditioned: true, hostname: fmt.Sprintf("%s.%s", testutils.Hostname+"-1", testutils.DefaultZone)},
+			},
+			cappName: fmt.Sprintf("%s-%s", testutils.CappName, "synced-unknown"),
+		},
+
+		"ShouldFailGettingNonExistingCapp": {
+			requestParams: requestParams{
+				namespace: namespaceName,
+				name:      testutils.CappName + testutils.NonExistentSuffix,
+			},
+			want: want{
+				cappDNS:     types.GetDNSResponse{},
+				errorStatus: metav1.StatusReasonNotFound,
+			},
+		},
+		"ShouldFailGettingCappInNonExistingNamespace": {
+			requestParams: requestParams{
+				namespace: namespaceName + testutils.NonExistentSuffix,
+				name:      testutils.CappName,
+			},
+			want: want{
+				cappDNS:     types.GetDNSResponse{},
+				errorStatus: metav1.StatusReasonNotFound,
+			},
+		},
+	}
+	setup()
+	cappController := NewCappController(dynClient, mocks.GinContext(), logger)
+
+	createTestNamespace(namespaceName, map[string]string{})
+
+	for name, test := range cases {
+		t.Run(name, func(t *testing.T) {
+
+			if test.cappName != "" {
+				mocks.CreateTestCapp(dynClient, test.cappName, namespaceName, testutils.Domain, map[string]string{}, map[string]string{})
+			}
+
+			for i, dns := range test.records {
+				if !dns.isConditioned {
+					mocks.CreateTestCNAMERecordWithoutConditions(dynClient, test.cappName+strconv.Itoa(i), test.cappName, namespaceName, dns.hostname)
+				} else {
+					mocks.CreateTestCNAMERecord(dynClient, test.cappName+strconv.Itoa(i), test.cappName, namespaceName, dns.hostname, dns.readyStatus, dns.syncedStatus)
+				}
+			}
+
+			response, err := cappController.GetCappDNS(test.requestParams.namespace, test.requestParams.name)
+			if test.want.errorStatus != metav1.StatusSuccess {
+				reason := err.(errors.APIStatus).Status().Reason
+
+				assert.Equal(t, test.want.errorStatus, reason)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, test.want.cappDNS, response)
 		})
 
 	}

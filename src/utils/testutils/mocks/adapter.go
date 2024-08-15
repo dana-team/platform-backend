@@ -3,6 +3,7 @@ package mocks
 import (
 	"context"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 	runtimeClient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -45,9 +46,9 @@ func CreateTestCappWithState(dynClient runtimeClient.WithWatch, name, namespace,
 	}
 }
 
-// CreateTestCappWithHostname creates a test Capp object with a hostname.
-func CreateTestCappWithHostname(dynClient runtimeClient.WithWatch, name, namespace string, labels, annotations map[string]string) {
-	capp := PrepareCappWithHostname(name, namespace, labels, annotations)
+// CreateTestCappWithHostname creates a test Capp object with hostname.
+func CreateTestCappWithHostname(dynClient runtimeClient.WithWatch, name, namespace, hostname, domain string, labels, annotations map[string]string) {
+	capp := PrepareCappWithHostname(name, namespace, hostname, domain, labels, annotations)
 	err := dynClient.Create(context.TODO(), &capp)
 	if err != nil {
 		panic(err)
@@ -86,6 +87,24 @@ func CreateTestConfigMap(fakeClient *fake.Clientset, name, namespace string) {
 func CreateTestPod(fakeClient *fake.Clientset, namespace, name, cappName string, isMultipleContainers bool) {
 	pod := PreparePod(namespace, name, cappName, isMultipleContainers)
 	_, err := fakeClient.CoreV1().Pods(namespace).Create(context.TODO(), pod, metav1.CreateOptions{})
+	if err != nil {
+		panic(err)
+	}
+}
+
+// CreateTestCNAMERecord creates a test CNAME record
+func CreateTestCNAMERecord(dynClient runtimeClient.WithWatch, name, cappName, cappNSName, hostname string, readyStatus, syncedStatus corev1.ConditionStatus) {
+	record := prepareCNAMERecord(name, cappName, cappNSName, hostname, readyStatus, syncedStatus)
+	err := dynClient.Create(context.TODO(), &record)
+	if err != nil {
+		panic(err)
+	}
+}
+
+// CreateTestCNAMERecordWithoutConditions creates a test CNAME record without conditions
+func CreateTestCNAMERecordWithoutConditions(dynClient runtimeClient.WithWatch, name, cappName, cappNSName, hostname string) {
+	record := prepareBaseCNAMERecord(name, cappName, cappNSName, hostname)
+	err := dynClient.Create(context.TODO(), &record)
 	if err != nil {
 		panic(err)
 	}

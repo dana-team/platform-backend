@@ -5,7 +5,9 @@ import "time"
 const (
 	Domain       = "dana-team.io"
 	Hostname     = "custom-capp"
+	DefaultZone  = "dana-dev.com"
 	ManagedLabel = "rcs.dana.io/managed"
+	cappAPIGroup = "rcs.dana.io"
 )
 
 const (
@@ -54,6 +56,8 @@ const (
 	LabelValue           = "value"
 	InvalidLabelSelector = ":--"
 	LabelCappName        = "rcs.dana.io/cappName"
+	ParentCappLabel      = cappAPIGroup + "/parent-capp"
+	ParentCappNSLabel    = cappAPIGroup + "/parent-capp-ns"
 )
 
 const (
@@ -88,6 +92,7 @@ const (
 const (
 	CappName            = TestName + "-capp"
 	CappsKey            = "capps"
+	RecordsKey          = "records"
 	CappNamespace       = TestNamespace + "-" + CappsKey
 	CappImage           = "ghcr.io/dana-team/capp-gin-app:v0.2.0"
 	ContainerName       = "capp-container"
@@ -97,6 +102,9 @@ const (
 	LastCreatedRevision = "lastCreatedRevision"
 	LastReadyRevision   = "lastReadyRevision"
 	NoRevision          = "No revision available"
+	Available           = "available"
+	Unknown             = "unknown"
+	UnAvailable         = "unavailable"
 )
 
 const (

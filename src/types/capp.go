@@ -2,6 +2,7 @@ package types
 
 import (
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 type Capp struct {
@@ -69,4 +70,13 @@ type GetCappStateResponse struct {
 	LastCreatedRevision string `json:"lastCreatedRevision"`
 	LastReadyRevision   string `json:"lastReadyRevision"`
 	State               string `json:"state" binding:"required,oneof=enabled disabled"`
+}
+
+type GetDNSResponse struct {
+	Records []DNS `json:"records"`
+}
+
+type DNS struct {
+	Status corev1.ConditionStatus `json:"status"`
+	Name   string                 `json:"name"`
 }

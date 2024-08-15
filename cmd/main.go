@@ -5,6 +5,7 @@ import (
 	"github.com/dana-team/platform-backend/src/auth"
 	"github.com/dana-team/platform-backend/src/middleware"
 	"github.com/dana-team/platform-backend/src/routes/v1"
+	dnsrecordv1alpha1 "github.com/dana-team/provider-dns/apis/record/v1alpha1"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
@@ -59,6 +60,7 @@ func newScheme() *runtime.Scheme {
 	scheme := runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(cappv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(dnsrecordv1alpha1.AddToScheme(scheme))
 
 	return scheme
 }
