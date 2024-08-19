@@ -1,0 +1,44 @@
+repositories:
+  - name: jetstack
+    url: https://charts.jetstack.io
+
+releases:
+  - name: cert-manager
+    namespace: cert-manager
+    createNamespace: true
+    chart: jetstack/cert-manager
+    wait: true
+    set:
+      - name: crds.enabled
+        value: true
+
+  - name: rcs-deployer
+    namespace: rcs-ocm-deployer
+    createNamespace: true
+    chart: oci://ghcr.io/dana-team/helm-charts/rcs-ocm-deployer
+    version: v0.3.1
+    disableValidationOnInstall: true
+    set:
+      - name: config.placementNamespace
+        value: ci-test-ns
+      - name: config.placements[0]
+        value: ci-test-placement
+    needs:
+      - cert-manager/cert-manager
+
+  - name: rcs-ocm-addons
+    namespace: open-cluster-management
+    createNamespace: true
+    chart: oci://ghcr.io/dana-team/helm-charts/rcs-ocm-addons
+    version: v0.2.1
+    needs:
+      - rcs-ocm-deployer/rcs-deployer
+    set:
+      - name: installStrategy.status.placements[0].name
+        value: ci-test-placement
+      - name: installStrategy.status.placements[0].namespace
+        value: ci-test-ns
+      - name: installStrategy.score.placements[0].name
+        value: ci-test-placement
+      - name: installStrategy.score.placements[0].namespace
+        value: ci-test-ns

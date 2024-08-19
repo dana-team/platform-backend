@@ -71,12 +71,28 @@ jobs:
           PROVIDER_DNS_USERNAME=${{ secrets.PROVIDER_DNS_USERNAME }} \
           PROVIDER_DNS_PASSWORD=${{ secrets.PROVIDER_DNS_PASSWORD }}
 
+      - name: Set Kubernetes context
+        uses: Azure/k8s-set-context@v4
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.BACKEND_CI_HUB_CLUSTER_KUBECONFIG }}
+
+      - name: Setup hub cluster
+        run: make setup-ci-hub
+
+      - name: Await rcs controller to be ready
+        uses: jupyterhub/action-k8s-await-workloads@v3
+        with:
+          workloads: ""
+          namespace: "rcs-deployer-system"
+          max-restarts: 0
+
       - name: Deploy backend
         run: | 
           make deploy \
           IMG_REPO=${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }} \
           IMG_TAG=${IMAGE_TAG} \
-          CLUSTER_NAME=${{ secrets.BACKEND_CI_CLUSTER_NAME }} \
+          CLUSTER_NAME=${{ secrets.BBACKEND_CI_HUB_CLUSTER_NAME }} \
           CLUSTER_DOMAIN=${{ secrets.BACKEND_CI_CLUSTER_DOMAIN }}
 
       - name: Await backend to be ready
@@ -87,6 +103,17 @@ jobs:
 
       - name: Undeploy backend
         run: make undeploy
+        if: always()
+
+      - name: Cleanup hub
+        run: make cleanup-hub
+        if: always()
+
+      - name: Set Kubernetes context
+        uses: Azure/k8s-set-context@v4
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.BACKEND_CI_CLUSTER_KUBECONFIG }}
         if: always()
 
       - name: Uninstall prereq

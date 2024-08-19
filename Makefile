@@ -15,7 +15,11 @@ CONTAINER_TOOL ?= docker
 PLATFORM_URL ?=
 ENV_FILE ?= .env
 CAPP_REPO ?= https://github.com/dana-team/container-app-operator
-CAPP_RELEASE ?= main
+CAPP_RELEASE ?= v0.3.0
+RCS_RELEASE ?= v0.3.1
+ADDONS_RELEASE ?= v0.2.1
+CERT_MANAGER_RELEASE ?= v1.15.3
+PREREQ_HELMFILE ?= $(shell pwd)/charts/platform_prereq_helmfile.yaml
 
 ##@ Development
 
@@ -172,12 +176,16 @@ GOLANGCI_LINT = $(LOCALBIN)/golangci-lint-$(GOLANGCI_LINT_VERSION)
 GINKGO ?= $(LOCALBIN)/ginkgo
 YQ ?= $(LOCALBIN)/yq
 HELM_DOCS ?= $(LOCALBIN)/helm-docs-$(HELM_DOCS_VERSION)
+HELMFILE ?= $(LOCALBIN)/helmfile-$(HELMFILE_VERSION)
+
 HELM_URL ?= https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+HELMFILE_URL ?= https://github.com/helmfile/helmfile/releases/download/v${HELMFILE_VERSION}/helmfile_${HELMFILE_VERSION}_linux_amd64.tar.gz
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.3.0
 GOLANGCI_LINT_VERSION ?= v1.60.1
 HELM_DOCS_VERSION ?= v1.14.2
+HELMFILE_VERSION ?= 0.167.1
 
 .PHONY: kustomize
 kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
@@ -225,6 +233,31 @@ $(HELM_DOCS): $(LOCALBIN)
 yq: $(YQ) ## Download yq locally if necessary.
 $(YQ): $(LOCALBIN)
 	test -s $(LOCALBIN)/yq || GOBIN=$(LOCALBIN) go install github.com/mikefarah/yq/v4@latest
+
+.PHONY: setup-ci-hub
+setup-ci-hub: helmfile install-capp ## setup hub cluster with RCS
+	$(LOCALBIN)/helmfile-$(HELMFILE_VERSION) apply -f $(PREREQ_HELMFILE)
+	rm -rf container-app-operator/
+
+
+
+.PHONY: cleanup-hub
+cleanup-hub: helmfile  ## cleanup hub cluster.
+	$(LOCALBIN)/helmfile-$(HELMFILE_VERSION) -f $(PREREQ_HELMFILE) destroy
+
+.PHONY: helmfile
+helmfile: $(HELMFILE) ## Install helmfile on the local machine
+$(HELMFILE): $(LOCALBIN)
+	wget -O $(LOCALBIN)/helmfile.tar.gz $(HELMFILE_URL)
+	tar -xzvf $(LOCALBIN)/helmfile.tar.gz -C $(LOCALBIN)
+	rm $(LOCALBIN)/helmfile.tar.gz $(LOCALBIN)/*.md $(LOCALBIN)/LICENSE
+	mv $(LOCALBIN)/helmfile $(LOCALBIN)/helmfile-$(HELMFILE_VERSION)
+
+.PHONY: install-capp
+install-capp:
+	[ -d "container-app-operator" ] || git clone $(CAPP_REPO)
+	make -C container-app-operator install
+	rm -rf container-app-operator/
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
 # $1 - target path with name of binary (ideally with version)
