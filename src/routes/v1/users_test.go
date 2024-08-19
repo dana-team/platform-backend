@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/dana-team/platform-backend/src/controllers"
 	"github.com/dana-team/platform-backend/src/middleware"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -150,8 +152,11 @@ func TestGetUser(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, userName+testutils.NonExistentSuffix),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotGetRoleBinding, userName+testutils.NonExistentSuffix),
+						fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, userName+testutils.NonExistentSuffix),
+					),
+					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},
 		},
@@ -163,8 +168,10 @@ func TestGetUser(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, userName),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotGetRoleBinding, userName),
+						fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, userName)),
+					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},
 		},
@@ -235,8 +242,8 @@ func TestCreateUser(t *testing.T) {
 			want: want{
 				statusCode: http.StatusConflict,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s.%s %q already exists", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, userName+"-1"),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey:  fmt.Sprintf("%s.%s %q already exists", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, userName+"-1"),
+					testutils.ReasonKey: metav1.StatusReasonAlreadyExists,
 				},
 			},
 			requestData: mocks.PrepareUserType(userName+"-1", testutils.ViewerKey),
@@ -248,8 +255,8 @@ func TestCreateUser(t *testing.T) {
 			want: want{
 				statusCode: http.StatusBadRequest,
 				response: map[string]interface{}{
-					testutils.DetailsKey: "Key: 'User.Role' Error:Field validation for 'Role' failed on the 'oneof' tag",
-					testutils.ErrorKey:   testutils.InvalidRequest,
+					testutils.ErrorKey:  "Key: 'User.Role' Error:Field validation for 'Role' failed on the 'oneof' tag",
+					testutils.ReasonKey: metav1.StatusReasonBadRequest,
 				},
 			},
 			requestData: mocks.PrepareUserType(userName, testutils.ViewerKey+testutils.NonExistentSuffix),
@@ -329,8 +336,10 @@ func TestUpdateUser(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, userName+testutils.NonExistentSuffix),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotDeleteRolebinding, userName+testutils.NonExistentSuffix),
+						fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, userName+testutils.NonExistentSuffix)),
+					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},
 			requestData: mocks.PrepareUpdateUserDataType(testutils.ViewerKey),
@@ -343,8 +352,8 @@ func TestUpdateUser(t *testing.T) {
 			want: want{
 				statusCode: http.StatusBadRequest,
 				response: map[string]interface{}{
-					testutils.DetailsKey: "Key: 'UpdateUserData.Role' Error:Field validation for 'Role' failed on the 'oneof' tag",
-					testutils.ErrorKey:   testutils.InvalidRequest,
+					testutils.ErrorKey:  "Key: 'UpdateUserData.Role' Error:Field validation for 'Role' failed on the 'oneof' tag",
+					testutils.ReasonKey: metav1.StatusReasonBadRequest,
 				},
 			},
 			requestData: mocks.PrepareUpdateUserDataType(testutils.ViewerKey + testutils.NonExistentSuffix),
@@ -421,8 +430,10 @@ func TestDeleteUser(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, userName+testutils.NonExistentSuffix),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotDeleteRolebinding, userName+testutils.NonExistentSuffix),
+						fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, userName+testutils.NonExistentSuffix)),
+					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},
 		},
@@ -434,8 +445,10 @@ func TestDeleteUser(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, userName),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotDeleteRolebinding, userName),
+						fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, userName)),
+					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},
 		},

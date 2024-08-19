@@ -3,13 +3,12 @@ package v1
 import (
 	"fmt"
 	"github.com/dana-team/platform-backend/src/controllers"
-	"github.com/dana-team/platform-backend/src/middleware"
+	"github.com/dana-team/platform-backend/src/routes"
 	websocketpkg "github.com/dana-team/platform-backend/src/websocket"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"go.uber.org/zap"
 	"io"
-	"k8s.io/client-go/kubernetes"
 	"net/http"
 )
 
@@ -38,7 +37,7 @@ func createLogHandler(streamFunc func(*gin.Context, *zap.Logger) (io.ReadCloser,
 			return
 		}
 
-		logger, err := getLogger(c)
+		logger, err := routes.GetLogger(c)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("error getting logger %s", err.Error())})
 			return
@@ -70,7 +69,7 @@ func createLogHandler(streamFunc func(*gin.Context, *zap.Logger) (io.ReadCloser,
 
 // streamPodLogs streams logs for a specific pod and container.
 func streamPodLogs(c *gin.Context, logger *zap.Logger) (io.ReadCloser, error) {
-	client, err := getKubeClient(c)
+	client, err := routes.GetKubeClient(c)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +83,7 @@ func streamPodLogs(c *gin.Context, logger *zap.Logger) (io.ReadCloser, error) {
 
 // streamCappLogs streams logs for a specific Capp.
 func streamCappLogs(c *gin.Context, logger *zap.Logger) (io.ReadCloser, error) {
-	client, err := getKubeClient(c)
+	client, err := routes.GetKubeClient(c)
 	if err != nil {
 		return nil, err
 	}
@@ -95,22 +94,4 @@ func streamCappLogs(c *gin.Context, logger *zap.Logger) (io.ReadCloser, error) {
 	podName := c.Query(podNameQueryParam)
 
 	return controllers.FetchCappLogs(c.Request.Context(), client, namespace, cappName, containerName, podName, logger)
-}
-
-// getKubeClient retrieves the Kubernetes client from the gin.Context.
-func getKubeClient(c *gin.Context) (kubernetes.Interface, error) {
-	kube, exists := c.Get(middleware.KubeClientCtxKey)
-	if !exists {
-		return nil, fmt.Errorf("kube client not found")
-	}
-	return kube.(kubernetes.Interface), nil
-}
-
-// getLogger retrieves the logger from the gin.Context.
-func getLogger(c *gin.Context) (*zap.Logger, error) {
-	logger, exists := c.Get(middleware.LoggerCtxKey)
-	if !exists {
-		return nil, fmt.Errorf("logger not found in context")
-	}
-	return logger.(*zap.Logger), nil
 }

@@ -2,41 +2,33 @@ package v1
 
 import (
 	"fmt"
-	"github.com/dana-team/platform-backend/src/middleware"
+	"github.com/dana-team/platform-backend/src/customerrors"
+	"github.com/dana-team/platform-backend/src/routes"
 	"github.com/dana-team/platform-backend/src/utils/pagination"
 	"net/http"
-
-	"go.uber.org/zap"
 
 	"github.com/dana-team/platform-backend/src/controllers"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/gin-gonic/gin"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/client-go/kubernetes"
 )
 
 func namespaceHandler(handler func(controller controllers.NamespaceController, c *gin.Context) (interface{}, error)) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		client, exists := c.Get(middleware.KubeClientCtxKey)
-		if !exists {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Kubernetes client not found"})
+		kubeClient, err := routes.GetKubeClient(c)
+		if routes.AddErrorToContext(c, err) {
 			return
 		}
 
-		ctxLogger, exists := c.Get(middleware.LoggerCtxKey)
-		if !exists {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Logger not found in context"})
+		logger, err := routes.GetLogger(c)
+		if routes.AddErrorToContext(c, err) {
 			return
 		}
 
-		logger := ctxLogger.(*zap.Logger)
-		kubeClient := client.(kubernetes.Interface)
 		context := c.Request.Context()
-
 		namespaceController := controllers.NewNamespaceController(kubeClient, context, logger)
+
 		result, err := handler(namespaceController, c)
-		if err != nil {
-			c.AbortWithStatusJSON(int(err.(*k8serrors.StatusError).ErrStatus.Code), gin.H{"error": "Operation failed", "details": err.Error()})
+		if routes.AddErrorToContext(c, err) {
 			return
 		}
 
@@ -48,7 +40,7 @@ func GetNamespaces() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		limit, page, err := pagination.ExtractPaginationParamsFromCtx(c)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
@@ -62,7 +54,7 @@ func GetNamespace() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var namespaceUri types.NamespaceUri
 		if err := c.BindUri(&namespaceUri); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
@@ -76,7 +68,7 @@ func CreateNamespace() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var namespace types.Namespace
 		if err := c.BindJSON(&namespace); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
@@ -90,7 +82,7 @@ func DeleteNamespace() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var namespaceUri types.NamespaceUri
 		if err := c.BindUri(&namespaceUri); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 

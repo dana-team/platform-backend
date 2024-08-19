@@ -7,6 +7,7 @@ import (
 	"github.com/dana-team/platform-backend/src/middleware"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"go.uber.org/zap"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -47,6 +48,7 @@ func setupLogin(tokenProvider auth.TokenProvider) (*gin.Engine, error) {
 		return nil, err
 	}
 	r.Use(middleware.LoggerMiddleware(mockLogger))
+	r.Use(middleware.ErrorHandlingMiddleware())
 	r.POST("/login", Login(tokenProvider))
 
 	return r, nil
@@ -88,7 +90,8 @@ func TestLogin(t *testing.T) {
 			want: want{
 				statusCode: http.StatusBadRequest,
 				response: map[string]interface{}{
-					testutils.ErrorKey: "Authorization header not found",
+					testutils.ErrorKey:  "Authorization header not found",
+					testutils.ReasonKey: metav1.StatusReasonBadRequest,
 				},
 			},
 		},
@@ -101,7 +104,8 @@ func TestLogin(t *testing.T) {
 			want: want{
 				statusCode: http.StatusUnauthorized,
 				response: map[string]interface{}{
-					testutils.ErrorKey: "Invalid credentials",
+					testutils.ErrorKey:  "invalid credentials",
+					testutils.ReasonKey: metav1.StatusReasonUnauthorized,
 				},
 			},
 		},
@@ -114,7 +118,8 @@ func TestLogin(t *testing.T) {
 			want: want{
 				statusCode: http.StatusInternalServerError,
 				response: map[string]interface{}{
-					testutils.ErrorKey: "Internal server error",
+					testutils.ErrorKey:  "some internal error",
+					testutils.ReasonKey: metav1.StatusReasonInternalError,
 				},
 			},
 		},

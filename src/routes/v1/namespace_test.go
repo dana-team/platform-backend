@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/dana-team/platform-backend/src/controllers"
 	"github.com/dana-team/platform-backend/src/middleware"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -134,8 +136,10 @@ func TestGetNamespace(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.ErrorKey:   testutils.OperationFailed,
-					testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.NamespaceKey, testNamespaceName+"-1"+testutils.NonExistentSuffix),
+					testutils.ReasonKey: metav1.StatusReasonNotFound,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotFetchNamespace, testNamespaceName+"-1"+testutils.NonExistentSuffix),
+						fmt.Sprintf("%s %q not found", testutils.NamespaceKey, testNamespaceName+"-1"+testutils.NonExistentSuffix)),
 				},
 			},
 		},
@@ -194,8 +198,8 @@ func TestCreateNamespace(t *testing.T) {
 			want: want{
 				statusCode: http.StatusBadRequest,
 				response: map[string]interface{}{
-					testutils.DetailsKey: "Key: 'Namespace.Name' Error:Field validation for 'Name' failed on the 'required' tag",
-					testutils.ErrorKey:   testutils.InvalidRequest,
+					testutils.ErrorKey:  "Key: 'Namespace.Name' Error:Field validation for 'Name' failed on the 'required' tag",
+					testutils.ReasonKey: metav1.StatusReasonBadRequest,
 				},
 			},
 			requestData: map[string]interface{}{},
@@ -204,8 +208,10 @@ func TestCreateNamespace(t *testing.T) {
 			want: want{
 				statusCode: http.StatusConflict,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s %q already exists", testutils.NamespaceKey, testNamespaceName+"-1"),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotCreateNamespace, testNamespaceName+"-1"),
+						fmt.Sprintf("%s %q already exists", testutils.NamespaceKey, testNamespaceName+"-1")),
+					testutils.ReasonKey: metav1.StatusReasonAlreadyExists,
 				},
 			},
 			requestData: mocks.PrepareNamespaceType(testNamespaceName + "-1"),
@@ -278,8 +284,10 @@ func TestDeleteNamespace(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.NamespaceKey, testNamespaceName+testutils.NonExistentSuffix),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotDeleteNamespace, testNamespaceName+testutils.NonExistentSuffix),
+						fmt.Sprintf("%s %q not found", testutils.NamespaceKey, testNamespaceName+testutils.NonExistentSuffix)),
+					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},
 		},

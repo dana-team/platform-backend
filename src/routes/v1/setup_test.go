@@ -35,6 +35,8 @@ func setup() {
 
 func setupRouter(logger *zap.Logger) *gin.Engine {
 	engine := gin.Default()
+	engine.Use(middleware.ErrorHandlingMiddleware())
+
 	engine.Use(func(c *gin.Context) {
 		c.Set(middleware.LoggerCtxKey, logger)
 		c.Set(middleware.KubeClientCtxKey, fakeClient)

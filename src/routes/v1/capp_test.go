@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
+	"github.com/dana-team/platform-backend/src/controllers"
 	"github.com/dana-team/platform-backend/src/middleware"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -111,8 +113,8 @@ func TestGetCapps(t *testing.T) {
 			want: want{
 				statusCode: http.StatusBadRequest,
 				response: map[string]interface{}{
-					testutils.DetailsKey: "found '1', expected: ',' or 'end of string'",
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey:  controllers.ErrParsingLabelSelector,
+					testutils.ReasonKey: metav1.StatusReasonBadRequest,
 				},
 			},
 		},
@@ -223,8 +225,11 @@ func TestGetCapp(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName+testutils.NonExistentSuffix),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ReasonKey: metav1.StatusReasonNotFound,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotGetCapp, testutils.CappName+testutils.NonExistentSuffix, testNamespaceName),
+						fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName+testutils.NonExistentSuffix),
+					),
 				},
 			},
 		},
@@ -236,8 +241,11 @@ func TestGetCapp(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ReasonKey: metav1.StatusReasonNotFound,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotGetCapp, testutils.CappName, testNamespaceName+testutils.NonExistentSuffix),
+						fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName),
+					),
 				},
 			},
 		},
@@ -325,8 +333,11 @@ func TestGetCappState(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName+testutils.NonExistentSuffix),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotGetCapp, testutils.CappName+testutils.NonExistentSuffix, testNamespaceName),
+						fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName+testutils.NonExistentSuffix),
+					),
+					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},
 		},
@@ -338,8 +349,10 @@ func TestGetCappState(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotGetCapp, testutils.CappName, testNamespaceName+testutils.NonExistentSuffix),
+						fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName)),
+					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},
 		},
@@ -490,8 +503,10 @@ func TestGetCappDNS(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName+testutils.NonExistentSuffix),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotGetCapp, testutils.CappName+testutils.NonExistentSuffix, testNamespaceName),
+						fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName+testutils.NonExistentSuffix)),
+					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},
 		},
@@ -503,8 +518,10 @@ func TestGetCappDNS(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotGetCapp, testutils.CappName, testNamespaceName+testutils.NonExistentSuffix),
+						fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName)),
+					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},
 		},
@@ -592,8 +609,8 @@ func TestCreateCapp(t *testing.T) {
 			want: want{
 				statusCode: http.StatusBadRequest,
 				response: map[string]interface{}{
-					testutils.DetailsKey: "Key: 'CreateCapp.Metadata.Name' Error:Field validation for 'Name' failed on the 'required' tag",
-					testutils.ErrorKey:   testutils.InvalidRequest,
+					testutils.ErrorKey:  "Key: 'CreateCapp.Metadata.Name' Error:Field validation for 'Name' failed on the 'required' tag",
+					testutils.ReasonKey: metav1.StatusReasonBadRequest,
 				},
 			},
 			requestData: mocks.PrepareCreateCappType("", []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}}, nil),
@@ -605,8 +622,10 @@ func TestCreateCapp(t *testing.T) {
 			want: want{
 				statusCode: http.StatusConflict,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s.%s %q already exists", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName+"-1"),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotCreateCapp, testutils.CappName+"-1", testNamespaceName),
+						fmt.Sprintf("%s.%s %q already exists", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName+"-1")),
+					testutils.ReasonKey: metav1.StatusReasonAlreadyExists,
 				},
 			},
 			requestData: mocks.PrepareCreateCappType(testutils.CappName+"-1", []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}}, nil),
@@ -689,8 +708,10 @@ func TestUpdateCapp(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName+testutils.NonExistentSuffix),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotGetCapp, testutils.CappName+testutils.NonExistentSuffix, testNamespaceName),
+						fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName+testutils.NonExistentSuffix)),
+					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},
 			requestData: mocks.PrepareUpdateCappType([]types.KeyValue{{Key: testutils.LabelKey + "-updated", Value: testutils.LabelValue + "-updated"}}, nil),
@@ -703,8 +724,10 @@ func TestUpdateCapp(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotGetCapp, testutils.CappName, testNamespaceName+testutils.NonExistentSuffix),
+						fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName)),
+					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},
 			requestData: mocks.PrepareUpdateCappType([]types.KeyValue{{Key: testutils.LabelKey + "-updated", Value: testutils.LabelValue + "-updated"}}, nil),
@@ -783,8 +806,10 @@ func TestEditCappState(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName+testutils.NonExistentSuffix),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotGetCapp, testutils.CappName+testutils.NonExistentSuffix, testNamespaceName),
+						fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName+testutils.NonExistentSuffix)),
+					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},
 			requestData: types.CappState{State: testutils.DisabledState},
@@ -797,8 +822,10 @@ func TestEditCappState(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotGetCapp, testutils.CappName, testNamespaceName+testutils.NonExistentSuffix),
+						fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName)),
+					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},
 			requestData: types.CappState{State: testutils.DisabledState},
@@ -811,8 +838,8 @@ func TestEditCappState(t *testing.T) {
 			want: want{
 				statusCode: http.StatusBadRequest,
 				response: map[string]interface{}{
-					testutils.DetailsKey: "Key: 'CappState.State' Error:Field validation for 'State' failed on the 'oneof' tag",
-					testutils.ErrorKey:   testutils.InvalidRequest,
+					testutils.ErrorKey:  "Key: 'CappState.State' Error:Field validation for 'State' failed on the 'oneof' tag",
+					testutils.ReasonKey: metav1.StatusReasonBadRequest,
 				},
 			},
 			requestData: types.CappState{State: "blabla"},
@@ -888,8 +915,10 @@ func TestDeleteCapp(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName+testutils.NonExistentSuffix),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotDeleteCapp, testutils.CappName+testutils.NonExistentSuffix, testNamespaceName),
+						fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName+testutils.NonExistentSuffix)),
+					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},
 		},
@@ -901,8 +930,10 @@ func TestDeleteCapp(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotDeleteCapp, testutils.CappName, testNamespaceName+testutils.NonExistentSuffix),
+						fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName)),
+					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},
 		},

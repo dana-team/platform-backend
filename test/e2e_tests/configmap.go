@@ -39,8 +39,8 @@ var _ = Describe("Validate ConfigMap routes and functionality", func() {
 			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
-				testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.ConfigmapsKey, configMapName+testutils.NonExistentSuffix),
-				testutils.ErrorKey:   testutils.OperationFailed,
+				testutils.ErrorKey:  fmt.Sprintf("%s %q not found", testutils.ConfigmapsKey, configMapName+testutils.NonExistentSuffix),
+				testutils.ReasonKey: testutils.ReasonNotFound,
 			}
 
 			configMap := mocks.PrepareConfigMap(configMapName+testutils.NonExistentSuffix, namespaceName, nil)
@@ -54,8 +54,8 @@ var _ = Describe("Validate ConfigMap routes and functionality", func() {
 			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
-				testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.ConfigmapsKey, configMapName),
-				testutils.ErrorKey:   testutils.OperationFailed,
+				testutils.ErrorKey:  fmt.Sprintf("%s %q not found", testutils.ConfigmapsKey, configMapName),
+				testutils.ReasonKey: testutils.ReasonNotFound,
 			}
 
 			configMap := mocks.PrepareConfigMap(configMapName, namespaceName+testutils.NonExistentSuffix, nil)

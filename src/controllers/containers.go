@@ -3,11 +3,15 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/dana-team/platform-backend/src/customerrors"
 	"github.com/dana-team/platform-backend/src/types"
-	"github.com/dana-team/platform-backend/src/utils"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+)
+
+const (
+	ErrCouldNotGetPod = "failed to get pod %q in the namespace %q"
 )
 
 // ContainerController defines methods to interact with pod containers.
@@ -37,10 +41,8 @@ func (c *containerController) GetContainers(namespace, podName string) (types.Ge
 
 	pod, err := c.client.CoreV1().Pods(namespace).Get(c.ctx, podName, metav1.GetOptions{})
 	if err != nil {
-		errorMessage := fmt.Sprintf("failed to get pod %q, in the namespace %q with error: %s", podName, namespace, err.Error())
-		c.logger.Error(errorMessage)
-
-		return types.GetContainersResponse{}, utils.FormatK8sError(err, errorMessage)
+		c.logger.Error(fmt.Sprintf("%v with error: %s", fmt.Sprintf(ErrCouldNotGetPod, podName, namespace), err.Error()))
+		return types.GetContainersResponse{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotGetPod, podName, namespace), err)
 	}
 
 	response := types.GetContainersResponse{}

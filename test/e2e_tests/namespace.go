@@ -153,8 +153,8 @@ var _ = Describe("Validate Namespace routes and functionality", func() {
 			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
-				testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.NamespaceKey, oneNamespaceName+testutils.NonExistentSuffix),
-				testutils.ErrorKey:   testutils.OperationFailed,
+				testutils.ErrorKey:  fmt.Sprintf("%s %q not found", testutils.NamespaceKey, oneNamespaceName+testutils.NonExistentSuffix),
+				testutils.ReasonKey: testutils.ReasonNotFound,
 			}
 
 			ns := mocks.PrepareNamespace(oneNamespaceName+testutils.NonExistentSuffix, map[string]string{})
@@ -197,8 +197,8 @@ var _ = Describe("Validate Namespace routes and functionality", func() {
 
 			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, uri, "", "", userToken)
 			expectedResponse := map[string]interface{}{
-				testutils.DetailsKey: "Key: 'Namespace.Name' Error:Field validation for 'Name' failed on the 'required' tag",
-				testutils.ErrorKey:   testutils.InvalidRequest,
+				testutils.ErrorKey:  "Key: 'Namespace.Name' Error:Field validation for 'Name' failed on the 'required' tag",
+				testutils.ReasonKey: testutils.ReasonBadRequest,
 			}
 
 			Expect(status).Should(Equal(http.StatusBadRequest))
@@ -213,8 +213,8 @@ var _ = Describe("Validate Namespace routes and functionality", func() {
 
 			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, uri, "", "", userToken)
 			expectedResponse := map[string]interface{}{
-				testutils.DetailsKey: fmt.Sprintf("%s %q already exists", testutils.NamespaceKey, oneNamespaceName),
-				testutils.ErrorKey:   testutils.OperationFailed,
+				testutils.ErrorKey:  fmt.Sprintf("%s %q already exists", testutils.NamespaceKey, oneNamespaceName),
+				testutils.ReasonKey: testutils.ReasonAlreadyExists,
 			}
 
 			Expect(status).Should(Equal(http.StatusConflict))
@@ -245,8 +245,8 @@ var _ = Describe("Validate Namespace routes and functionality", func() {
 			status, response := performHTTPRequest(httpClient, nil, http.MethodDelete, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
-				testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.NamespaceKey, oneNamespaceName+testutils.NonExistentSuffix),
-				testutils.ErrorKey:   testutils.OperationFailed,
+				testutils.ErrorKey:  fmt.Sprintf("%s %q not found", testutils.NamespaceKey, oneNamespaceName+testutils.NonExistentSuffix),
+				testutils.ReasonKey: testutils.ReasonNotFound,
 			}
 
 			ns := mocks.PrepareNamespace(oneNamespaceName+testutils.NonExistentSuffix, map[string]string{})

@@ -1,13 +1,13 @@
 package controllers
 
 import (
+	"github.com/dana-team/platform-backend/src/customerrors"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/dana-team/platform-backend/src/utils"
 	"github.com/dana-team/platform-backend/src/utils/pagination"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"testing"
 )
@@ -58,7 +58,7 @@ func TestCreateNamespace(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			response, err := namespaceController.CreateNamespace(test.requestParams.namespace)
 			if test.want.errorStatus != metav1.StatusSuccess {
-				reason := err.(errors.APIStatus).Status().Reason
+				reason := err.(customerrors.ErrorWithStatusCode).StatusReason()
 
 				assert.Equal(t, test.want.errorStatus, reason)
 			} else {
@@ -112,7 +112,7 @@ func TestGetNamespace(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			response, err := namespaceController.GetNamespace(test.requestParams.namespace)
 			if test.want.errorStatus != metav1.StatusSuccess {
-				reason := err.(errors.APIStatus).Status().Reason
+				reason := err.(customerrors.ErrorWithStatusCode).StatusReason()
 
 				assert.Equal(t, test.want.errorStatus, reason)
 			} else {
@@ -156,7 +156,7 @@ func TestGetNamespaces(t *testing.T) {
 			limit, page, _ := pagination.ExtractPaginationParamsFromCtx(c)
 			response, err := namespaceController.GetNamespaces(limit, page)
 			if test.want.errorStatus != metav1.StatusSuccess {
-				reason := err.(errors.APIStatus).Status().Reason
+				reason := err.(customerrors.ErrorWithStatusCode).StatusReason()
 
 				assert.Equal(t, test.want.errorStatus, reason)
 			} else {
@@ -206,7 +206,7 @@ func TestDeleteNamespace(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			err := namespaceController.DeleteNamespace(test.requestParams.namespace)
 			if test.want.errorStatus != metav1.StatusSuccess {
-				reason := err.(errors.APIStatus).Status().Reason
+				reason := err.(customerrors.ErrorWithStatusCode).StatusReason()
 
 				assert.Equal(t, test.want.errorStatus, reason)
 			} else {

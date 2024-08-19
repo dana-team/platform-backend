@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"fmt"
+	"github.com/dana-team/platform-backend/src/customerrors"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/dana-team/platform-backend/src/utils"
 	"github.com/dana-team/platform-backend/src/utils/pagination"
@@ -9,7 +10,6 @@ import (
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strings"
 	"testing"
@@ -80,7 +80,7 @@ func TestGetSecret(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			response, err := secretController.GetSecret(test.requestParams.namespace, test.requestParams.name)
 			if test.want.errorStatus != metav1.StatusSuccess {
-				reason := err.(errors.APIStatus).Status().Reason
+				reason := err.(customerrors.ErrorWithStatusCode).StatusReason()
 
 				assert.Equal(t, test.want.errorStatus, reason)
 			} else {
@@ -229,7 +229,7 @@ func TestCreateSecret(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			response, err := secretController.CreateSecret(test.requestParams.namespace, test.requestParams.request)
 			if test.want.errorStatus != metav1.StatusSuccess {
-				reason := err.(errors.APIStatus).Status().Reason
+				reason := err.(customerrors.ErrorWithStatusCode).StatusReason()
 
 				assert.Equal(t, test.want.errorStatus, reason)
 			} else {
@@ -302,7 +302,7 @@ func TestUpdateSecret(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			response, err := secretController.UpdateSecret(test.requestParams.namespace, test.requestParams.name, test.requestParams.request)
 			if test.want.errorStatus != metav1.StatusSuccess {
-				reason := err.(errors.APIStatus).Status().Reason
+				reason := err.(customerrors.ErrorWithStatusCode).StatusReason()
 
 				assert.Equal(t, test.want.errorStatus, reason)
 			} else {
@@ -358,7 +358,7 @@ func TestDeleteSecret(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			response, err := secretController.DeleteSecret(test.requestParams.namespace, test.requestParams.name)
 			if test.want.errorStatus != metav1.StatusSuccess {
-				reason := err.(errors.APIStatus).Status().Reason
+				reason := err.(customerrors.ErrorWithStatusCode).StatusReason()
 
 				assert.Equal(t, test.want.errorStatus, reason)
 			} else {

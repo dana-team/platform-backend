@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/dana-team/platform-backend/src/customerrors"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/dana-team/platform-backend/src/utils"
 	"github.com/dana-team/platform-backend/src/utils/pagination"
@@ -10,6 +11,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+)
+
+const (
+	ErrCouldNotGetNamespaces   = "Could not get namespaces"
+	ErrCouldNotFetchNamespace  = "Could not fetch namespace %q"
+	ErrCouldNotCreateNamespace = "Could not create namespace %q"
+	ErrCouldNotDeleteNamespace = "Could not delete namespace %q"
 )
 
 type NamespaceController interface {
@@ -50,8 +58,8 @@ func (n *namespaceController) GetNamespaces(limit, page int) (types.NamespaceLis
 
 	namespaces, err := pagination.FetchPage[corev1.Namespace](limit, page, namespacePaginator)
 	if err != nil {
-		n.logger.Error(fmt.Sprintf("Could not get secrets with error: %v", err))
-		return types.NamespaceList{}, err
+		n.logger.Error(fmt.Sprintf("%v with error: %v", ErrCouldNotGetNamespaces, err))
+		return types.NamespaceList{}, customerrors.NewAPIError(ErrCouldNotGetNamespaces, err)
 	}
 
 	for _, namespace := range namespaces {
@@ -66,12 +74,12 @@ func (n *namespaceController) GetNamespace(name string) (types.Namespace, error)
 
 	namespace, err := n.client.CoreV1().Namespaces().Get(n.ctx, name, metav1.GetOptions{})
 	if err != nil {
-		n.logger.Error(fmt.Sprintf("Could not fetch namespace %q with error: %s", name, err.Error()))
-		return types.Namespace{}, err
+		n.logger.Error(fmt.Sprintf("%v with error: %s", fmt.Sprintf(ErrCouldNotFetchNamespace, name), err.Error()))
+		return types.Namespace{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotFetchNamespace, name), err)
 	}
 
 	n.logger.Debug(fmt.Sprintf("Fetched namespace %q successfully", name))
-	return types.Namespace{Name: namespace.Name}, err
+	return types.Namespace{Name: namespace.Name}, nil
 }
 
 func (n *namespaceController) CreateNamespace(name string) (types.Namespace, error) {
@@ -82,20 +90,20 @@ func (n *namespaceController) CreateNamespace(name string) (types.Namespace, err
 	newNamespace.Labels = utils.AddManagedLabel(map[string]string{})
 	namespace, err := n.client.CoreV1().Namespaces().Create(n.ctx, &newNamespace, metav1.CreateOptions{})
 	if err != nil {
-		n.logger.Error(fmt.Sprintf("Could not create namespace %q with error: %s", name, err.Error()))
-		return types.Namespace{}, err
+		n.logger.Error(fmt.Sprintf("%v with error: %s", fmt.Sprintf(ErrCouldNotCreateNamespace, name), err.Error()))
+		return types.Namespace{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotCreateNamespace, name), err)
 	}
 
 	n.logger.Debug(fmt.Sprintf("Created namespace %q successfully", name))
-	return types.Namespace{Name: namespace.Name}, err
+	return types.Namespace{Name: namespace.Name}, nil
 }
 
 func (n *namespaceController) DeleteNamespace(name string) error {
 	n.logger.Debug(fmt.Sprintf("Trying to delete namespace: %q", name))
 
 	if err := n.client.CoreV1().Namespaces().Delete(n.ctx, name, metav1.DeleteOptions{}); err != nil {
-		n.logger.Debug(fmt.Sprintf("Deleted namespace %q successfully", name))
-		return err
+		n.logger.Debug(fmt.Sprintf(ErrCouldNotDeleteNamespace, name))
+		return customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotDeleteNamespace, name), err)
 	}
 	return nil
 }

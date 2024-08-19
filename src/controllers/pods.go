@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/dana-team/platform-backend/src/customerrors"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/dana-team/platform-backend/src/utils"
 	"github.com/dana-team/platform-backend/src/utils/pagination"
@@ -10,6 +11,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+)
+
+const (
+	ErrCouldNotGetPods = "Could not get pods"
 )
 
 // PodController defines methods to interact with pod pods.
@@ -54,8 +59,8 @@ func (n *podController) GetPods(namespace, cappName string, limit, page int) (ty
 
 	pods, err := pagination.FetchPage[corev1.Pod](limit, page, podPaginator)
 	if err != nil {
-		n.logger.Error(fmt.Sprintf("Could not get secrets with error: %v", err))
-		return types.GetPodsResponse{}, err
+		n.logger.Error(fmt.Sprintf("%v with error: %v", ErrCouldNotGetPods, err))
+		return types.GetPodsResponse{}, customerrors.NewAPIError(ErrCouldNotGetPods, err)
 	}
 
 	response := types.GetPodsResponse{}
@@ -80,8 +85,8 @@ func (p *PodPaginator) FetchList(listOptions metav1.ListOptions) (*types.List[co
 	})
 
 	if err != nil {
-		p.Logger.Error(fmt.Sprintf("error fetching Capp pods: %s", err.Error()))
-		return nil, err
+		p.Logger.Error(fmt.Sprintf("%v: %s", errFetchingCappPods, err.Error()))
+		return nil, customerrors.NewAPIError(errFetchingCappPods, err)
 	}
 
 	return (*types.List[corev1.Pod])(pods), nil

@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"github.com/dana-team/platform-backend/src/customerrors"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/dana-team/platform-backend/src/utils"
 	"github.com/dana-team/platform-backend/src/utils/pagination"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -17,6 +17,15 @@ import (
 const (
 	tlsType    = "tls"
 	opaqueType = "opaque"
+)
+
+const (
+	ErrCouldNotCreateSecret = "Could not create secret %q"
+	ErrCouldNotListSecrets  = "Could not list secrets"
+	ErrCouldNotGetSecret    = "Could not get secret %q"
+	ErrCouldNotUpdateSecret = "Could not update secret %q"
+	ErrCouldNotDecodeSecret = "Error decoding secret %q with error: %v"
+	ErrCouldNotDeleteSecret = "Could not delete secret %q"
 )
 
 type SecretController interface {
@@ -69,8 +78,8 @@ func (n *secretController) CreateSecret(namespace string, request types.CreateSe
 	}
 	newSecret, err := n.client.CoreV1().Secrets(namespace).Create(n.ctx, secret, metav1.CreateOptions{})
 	if err != nil {
-		n.logger.Error(fmt.Sprintf("Could not create secret %q with error: %v", request.SecretName, err.Error()))
-		return types.CreateSecretResponse{}, err
+		n.logger.Error(fmt.Sprintf("%v with error: %v", fmt.Sprintf(ErrCouldNotCreateSecret, request.SecretName), err.Error()))
+		return types.CreateSecretResponse{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotCreateSecret, request.SecretName), err)
 	}
 
 	n.logger.Debug(fmt.Sprintf("Created secret %q successfully", newSecret.Name))
@@ -94,8 +103,8 @@ func (n *secretController) GetSecrets(namespace string, limit, page int) (types.
 
 	secrets, err := pagination.FetchPage[corev1.Secret](limit, page, secretPaginator)
 	if err != nil {
-		n.logger.Error(fmt.Sprintf("Could not get secrets with error: %v", err))
-		return types.GetSecretsResponse{}, err
+		n.logger.Error(fmt.Sprintf("%v with error: %v", ErrCouldNotListSecrets, err))
+		return types.GetSecretsResponse{}, customerrors.NewAPIError(ErrCouldNotListSecrets, err)
 	}
 
 	n.logger.Debug("Fetched all secrets successfully")
@@ -120,16 +129,16 @@ func (n *secretController) GetSecret(namespace, name string) (types.GetSecretRes
 
 	secret, err := n.client.CoreV1().Secrets(namespace).Get(n.ctx, name, metav1.GetOptions{})
 	if err != nil {
-		n.logger.Error(fmt.Sprintf("Could not get secret %q with error: %v", name, err.Error()))
-		return types.GetSecretResponse{}, err
+		n.logger.Error(fmt.Sprintf("%v with error: %v", fmt.Sprintf(ErrCouldNotGetSecret, name), err.Error()))
+		return types.GetSecretResponse{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotGetSecret, name), err)
 	}
 
 	n.logger.Debug("Fetched secret successfully")
 
 	secretData, err := decodeData(secret.Data)
 	if err != nil {
-		n.logger.Error(fmt.Sprintf("Error decoding secret %q value: %v", secret.Name, err.Error()))
-		return types.GetSecretResponse{}, k8serrors.NewInternalError(err)
+		n.logger.Error(fmt.Sprintf(ErrCouldNotDecodeSecret, name, err))
+		return types.GetSecretResponse{}, customerrors.NewInternalServerError(fmt.Sprintf(ErrCouldNotDecodeSecret, name, err))
 
 	}
 	response := types.GetSecretResponse{
@@ -148,22 +157,21 @@ func (n *secretController) UpdateSecret(namespace, name string, request types.Up
 
 	secret, err := n.client.CoreV1().Secrets(namespace).Get(n.ctx, name, metav1.GetOptions{})
 	if err != nil {
-		n.logger.Error(fmt.Sprintf("Could not get secret %q with error: %v", name, err.Error()))
-		return types.UpdateSecretResponse{}, err
+		n.logger.Error(fmt.Sprintf("%v with error: %v", fmt.Sprintf(ErrCouldNotGetSecret, name), err.Error()))
+		return types.UpdateSecretResponse{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotGetSecret, name), err)
 	}
 	secret.Data = convertKeyValueToByteMap(request.Data)
 
 	result, err := n.client.CoreV1().Secrets(namespace).Update(n.ctx, secret, metav1.UpdateOptions{})
 	if err != nil {
-		n.logger.Error(fmt.Sprintf("Could not update secret %q with error: %v", name, err.Error()))
-		return types.UpdateSecretResponse{}, err
+		n.logger.Error(fmt.Sprintf("%v with error: %v", fmt.Sprintf(ErrCouldNotUpdateSecret, name), err.Error()))
+		return types.UpdateSecretResponse{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotUpdateSecret, name), err)
 	}
 
 	secretData, err := decodeData(result.Data)
 	if err != nil {
-		n.logger.Error(fmt.Sprintf("Error decoding secret %q value: %v", result.Name, err.Error()))
-		return types.UpdateSecretResponse{}, k8serrors.NewInternalError(err)
-
+		n.logger.Error(fmt.Sprintf(ErrCouldNotDecodeSecret, result.Name, err))
+		return types.UpdateSecretResponse{}, customerrors.NewInternalServerError(fmt.Sprintf(ErrCouldNotDecodeSecret, result.Name, err))
 	}
 
 	response := types.UpdateSecretResponse{
@@ -181,8 +189,8 @@ func (n *secretController) DeleteSecret(namespace, name string) (types.DeleteSec
 	n.logger.Debug(fmt.Sprintf("Trying to delete an existing secret in %q namespace", namespace))
 
 	if err := n.client.CoreV1().Secrets(namespace).Delete(n.ctx, name, metav1.DeleteOptions{}); err != nil {
-		n.logger.Error(fmt.Sprintf("Could not delete secret %q with error: %v", name, err.Error()))
-		return types.DeleteSecretResponse{}, err
+		n.logger.Error(fmt.Sprintf("%v with error: %v", fmt.Sprintf(ErrCouldNotDeleteSecret, name), err.Error()))
+		return types.DeleteSecretResponse{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotDeleteSecret, name), err)
 	}
 
 	return types.DeleteSecretResponse{
@@ -194,7 +202,7 @@ func (n *secretController) DeleteSecret(namespace, name string) (types.DeleteSec
 func (p *SecretPaginator) FetchList(listOptions metav1.ListOptions) (*types.List[corev1.Secret], error) {
 	secrets, err := p.client.CoreV1().Secrets(p.namespace).List(p.Ctx, listOptions)
 	if err != nil {
-		p.Logger.Error(fmt.Sprintf("Could not get secrets with error: %v", err))
+		p.Logger.Error(fmt.Sprintf("%v with error: %v", ErrCouldNotListSecrets, err))
 		return nil, err
 	}
 
@@ -215,7 +223,7 @@ func newSecretFromRequest(namespace string, request types.CreateSecretRequest) (
 	switch request.Type {
 	case tlsType:
 		if request.Cert == "" || request.Key == "" {
-			return secret, k8serrors.NewBadRequest("cert and key are required for TLS secrets")
+			return secret, customerrors.NewValidationError("cert and key are required for TLS secrets")
 		}
 		secret.Type = corev1.SecretTypeTLS
 		secret.Data = map[string][]byte{
@@ -224,7 +232,7 @@ func newSecretFromRequest(namespace string, request types.CreateSecretRequest) (
 		}
 	case opaqueType:
 		if len(request.Data) == 0 {
-			return secret, k8serrors.NewBadRequest("data is required for Opaque secrets")
+			return secret, customerrors.NewValidationError("data is required for Opaque secrets")
 		}
 		secret.Type = corev1.SecretTypeOpaque
 		secret.Data = map[string][]byte{}
@@ -232,7 +240,7 @@ func newSecretFromRequest(namespace string, request types.CreateSecretRequest) (
 			secret.Data[kv.Key] = []byte(base64.StdEncoding.EncodeToString([]byte(kv.Value)))
 		}
 	default:
-		return secret, k8serrors.NewBadRequest("unsupported secret type")
+		return secret, customerrors.NewValidationError("unsupported secret type")
 	}
 	return secret, nil
 }

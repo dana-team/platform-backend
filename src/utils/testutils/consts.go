@@ -65,9 +65,8 @@ const (
 	NamespaceKey     = "namespaces"
 	NamespaceNameKey = "namespaceName"
 	IdKey            = "id"
-	OperationFailed  = "Operation failed"
 	InvalidRequest   = "Invalid request"
-	DetailsKey       = "details"
+	ReasonKey        = "reason"
 	ErrorKey         = "error"
 	MessageKey       = "message"
 	TypeKey          = "type"
@@ -128,4 +127,10 @@ const (
 	Timeout           = 300 * time.Second
 	Interval          = 10 * time.Second
 	DefaultEventually = 2 * time.Second
+)
+
+const (
+	ReasonNotFound      = "NotFound"
+	ReasonBadRequest    = "BadRequest"
+	ReasonAlreadyExists = "AlreadyExists"
 )

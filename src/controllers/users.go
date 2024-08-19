@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/dana-team/platform-backend/src/customerrors"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/dana-team/platform-backend/src/utils"
 	"github.com/dana-team/platform-backend/src/utils/pagination"
@@ -20,6 +21,15 @@ const (
 	AdminPlatformRole       = "admin"
 	ContributorPlatformRole = "contributor"
 	ViewerPlatformRole      = "viewer"
+)
+
+const (
+	ErrCouldNotListUsers         = "Could not list users"
+	ErrCouldNotGetRoleBinding    = "Could not get rolebinding %q"
+	ErrCouldNotCreateRolebinding = "Could not create rolebinding %q"
+	ErrCouldNotUpdateRolebinding = "Could not update rolebinding %q"
+	ErrCouldNotGetRolebindings   = "Could not get rolebindings"
+	ErrCouldNotDeleteRolebinding = "Could not delete rolebinding %q"
 )
 
 type UserController interface {
@@ -72,8 +82,8 @@ func (u *userController) GetUsers(namespace string, limit, page int) (types.User
 
 	roleBindings, err := pagination.FetchPage[rbacv1.RoleBinding](limit, page, userPaginator)
 	if err != nil {
-		u.logger.Error(fmt.Sprintf("Could not get secrets with error: %v", err))
-		return types.UsersOutput{}, err
+		u.logger.Error(fmt.Sprintf("%v with error: %v", ErrCouldNotListUsers, err))
+		return types.UsersOutput{}, customerrors.NewAPIError(ErrCouldNotListUsers, err)
 	}
 	for _, roleBinding := range roleBindings {
 		userOutputs.Users = append(userOutputs.Users, types.User{Name: roleBinding.Name, Role: convertToPlatformRole(roleBinding.RoleRef.Name)})
@@ -89,8 +99,8 @@ func (u *userController) GetUser(userIdentifier types.UserIdentifier) (types.Use
 
 	roleBinding, err := u.client.RbacV1().RoleBindings(userIdentifier.NamespaceName).Get(u.ctx, userIdentifier.UserName, metav1.GetOptions{})
 	if err != nil {
-		u.logger.Error(fmt.Sprintf("Could fetch rolebinding %q with error: %v", userIdentifier.UserName, err.Error()))
-		return userOutput, err
+		u.logger.Error(fmt.Sprintf("%v with error: %v", fmt.Sprintf(ErrCouldNotGetRoleBinding, userIdentifier.UserName), err.Error()))
+		return userOutput, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotGetRoleBinding, userIdentifier.UserName), err)
 	}
 	u.logger.Debug(fmt.Sprintf("fetched roleBinding %q successfully", roleBinding.Name))
 
@@ -107,7 +117,7 @@ func (u *userController) AddUser(user types.UserInput) (types.User, error) {
 	roleBinding, err := u.client.RbacV1().RoleBindings(user.Namespace).Create(u.ctx,
 		prepareRoleBinding(user.Name, user.Role), metav1.CreateOptions{})
 	if err != nil {
-		u.logger.Error(fmt.Sprintf("Could create rolebinding %q with error: %v", user.Name, err.Error()))
+		u.logger.Error(fmt.Sprintf("%v with error: %v", fmt.Sprintf(ErrCouldNotCreateRolebinding, user.Name), err.Error()))
 		return userOutput, err
 	}
 	u.logger.Debug(fmt.Sprintf("created roleBinding %q successfully", roleBinding.Name))
@@ -138,8 +148,8 @@ func (u *userController) UpdateUser(user types.UserInput) (types.User, error) {
 	})
 
 	if err != nil {
-		u.logger.Error(fmt.Sprintf("Could not update rolebinding %q with error: %v", user.Name, err.Error()))
-		return userOutput, err
+		u.logger.Error(fmt.Sprintf("%v with error: %v", fmt.Sprintf(ErrCouldNotUpdateRolebinding, user.Name), err.Error()))
+		return userOutput, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotUpdateRolebinding, user.Name), err)
 	}
 
 	u.logger.Debug(fmt.Sprintf("updated roleBinding %q successfully", user.Name))
@@ -153,10 +163,9 @@ func (u *userController) DeleteUser(userIdentifier types.UserIdentifier) (types.
 	u.logger.Debug(fmt.Sprintf("Trying to delete rolebinding %q in namespace %q", userIdentifier.UserName, userIdentifier.NamespaceName))
 
 	if err := u.client.RbacV1().RoleBindings(userIdentifier.NamespaceName).Delete(u.ctx, userIdentifier.UserName, metav1.DeleteOptions{}); err != nil {
-		u.logger.Error(fmt.Sprintf("Could note delete rolebinding %q with error: %v",
-			userIdentifier.UserName, err.Error()))
-		return types.DeleteUserResponse{Message: fmt.Sprintf("Could note delete rolebinding %q with error: %s",
-			userIdentifier.UserName, err.Error())}, err
+		message := fmt.Sprintf(ErrCouldNotDeleteRolebinding, userIdentifier.UserName)
+		u.logger.Error(fmt.Sprintf("%v with error: %v", message, err.Error()))
+		return types.DeleteUserResponse{Message: fmt.Sprintf("%v with error: %v", message, err.Error())}, customerrors.NewAPIError(message, err)
 	}
 
 	u.logger.Debug(fmt.Sprintf("Deleted roleBinding %q in namespace %q successfully", userIdentifier.UserName, userIdentifier.NamespaceName))
@@ -167,8 +176,8 @@ func (u *userController) DeleteUser(userIdentifier types.UserIdentifier) (types.
 func (p *UserPaginator) FetchList(listOptions metav1.ListOptions) (*types.List[rbacv1.RoleBinding], error) {
 	roleBindings, err := p.client.RbacV1().RoleBindings(p.namespace).List(p.Ctx, listOptions)
 	if err != nil {
-		p.Logger.Error(fmt.Sprintf("Could not get rolebindings with error: %v", err.Error()))
-		return nil, err
+		p.Logger.Error(fmt.Sprintf("%v with error: %v", ErrCouldNotGetRolebindings, err.Error()))
+		return nil, customerrors.NewAPIError(ErrCouldNotGetRolebindings, err)
 	}
 
 	p.Logger.Debug("Fetched all rolebindings successfully")

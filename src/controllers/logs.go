@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/dana-team/platform-backend/src/customerrors"
 	"go.uber.org/zap"
 	"io"
 	corev1 "k8s.io/api/core/v1"
@@ -12,13 +13,20 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+const (
+	errCouldNotOpenLogStream = "error opening log stream"
+	errFetchingCappPods      = "error fetching Capp pods"
+	errNoPodsFound           = "no pods found for Capp %q in namespace %q"
+	errPodNotFound           = "pod %q not found for Capp %q in namespace %q"
+)
+
 // FetchPodLogs retrieves the logs of a specific container in a pod.
 // It opens a log stream, reads the logs, and returns them as a string.
 func FetchPodLogs(ctx context.Context, client kubernetes.Interface, namespace, podName, containerName string, logger *zap.Logger) (io.ReadCloser, error) {
 	logStream, err := utils.GetPodLogStream(ctx, client, namespace, podName, containerName)
 	if err != nil {
-		logger.Error(fmt.Sprintf("error opening log stream: %s", err.Error()))
-		return nil, fmt.Errorf("error opening log stream: %w", err)
+		logger.Error(fmt.Sprintf("%v: %v", errCouldNotOpenLogStream, err))
+		return nil, customerrors.NewAPIError(errCouldNotOpenLogStream, err)
 	}
 
 	return logStream, nil
@@ -29,19 +37,19 @@ func FetchPodLogs(ctx context.Context, client kubernetes.Interface, namespace, p
 func FetchCappLogs(ctx context.Context, client kubernetes.Interface, namespace, cappName, containerName, podName string, logger *zap.Logger) (io.ReadCloser, error) {
 	pods, err := utils.GetPodsByLabel(ctx, client, namespace, fmt.Sprintf(utils.ParentCappLabelSelector, cappName), metav1.ListOptions{})
 	if err != nil {
-		logger.Error(fmt.Sprintf("error fetching Capp pods: %s", err.Error()))
-		return nil, fmt.Errorf("error fetching Capp pods: %w", err)
+		logger.Error(fmt.Sprintf("%v: %v", errFetchingCappPods, err))
+		return nil, customerrors.NewAPIError(errFetchingCappPods, err)
 	}
 
 	if len(pods.Items) == 0 {
-		logger.Error(fmt.Sprintf("no pods found for Capp %q in namespace %q", cappName, namespace))
-		return nil, fmt.Errorf("no pods found for Capp %q in namespace %q", cappName, namespace)
+		logger.Error(fmt.Sprintf(errNoPodsFound, cappName, namespace))
+		return nil, customerrors.NewAPIError(fmt.Sprintf(errNoPodsFound, cappName, namespace), err)
 	}
 
 	podName, ok := FetchCappPodName(podName, pods)
-	logger.Error(fmt.Sprintf("pod %q not found for Capp %q in namespace %q", podName, cappName, namespace))
+	logger.Error(fmt.Sprintf(errPodNotFound, podName, cappName, namespace))
 	if !ok {
-		return nil, fmt.Errorf("pod %q not found for Capp %q in namespace %q", podName, cappName, namespace)
+		return nil, customerrors.NewAPIError(fmt.Sprintf(errPodNotFound, podName, cappName, namespace), err)
 	}
 
 	if containerName == "" {

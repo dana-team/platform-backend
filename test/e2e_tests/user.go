@@ -68,8 +68,8 @@ var _ = Describe("Validate Secret routes and functionality", func() {
 			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
-				testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, oneUserName+testutils.NonExistentSuffix),
-				testutils.ErrorKey:   testutils.OperationFailed,
+				testutils.ErrorKey:  fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, oneUserName+testutils.NonExistentSuffix),
+				testutils.ReasonKey: testutils.ReasonNotFound,
 			}
 
 			user := mocks.PrepareRoleBinding(oneUserName+testutils.NonExistentSuffix, namespaceName, "")
@@ -83,8 +83,8 @@ var _ = Describe("Validate Secret routes and functionality", func() {
 			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
-				testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, oneUserName),
-				testutils.ErrorKey:   testutils.OperationFailed,
+				testutils.ErrorKey:  fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, oneUserName),
+				testutils.ReasonKey: testutils.ReasonNotFound,
 			}
 
 			user := mocks.PrepareRoleBinding(oneUserName, namespaceName+testutils.NonExistentSuffix, "")
@@ -131,8 +131,8 @@ var _ = Describe("Validate Secret routes and functionality", func() {
 
 			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, uri, "", "", userToken)
 			expectedResponse := map[string]interface{}{
-				testutils.DetailsKey: fmt.Sprintf("%s.%s %q already exists", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, oneUserName),
-				testutils.ErrorKey:   testutils.OperationFailed,
+				testutils.ErrorKey:  fmt.Sprintf("%s.%s %q already exists", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, oneUserName),
+				testutils.ReasonKey: testutils.ReasonAlreadyExists,
 			}
 
 			Expect(status).Should(Equal(http.StatusConflict))
@@ -147,8 +147,8 @@ var _ = Describe("Validate Secret routes and functionality", func() {
 
 			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, uri, "", "", userToken)
 			expectedResponse := map[string]interface{}{
-				testutils.DetailsKey: "Key: 'User.Role' Error:Field validation for 'Role' failed on the 'oneof' tag",
-				testutils.ErrorKey:   testutils.InvalidRequest,
+				testutils.ErrorKey:  "Key: 'User.Role' Error:Field validation for 'Role' failed on the 'oneof' tag",
+				testutils.ReasonKey: testutils.ReasonBadRequest,
 			}
 
 			Expect(status).Should(Equal(http.StatusBadRequest))
@@ -186,8 +186,8 @@ var _ = Describe("Validate Secret routes and functionality", func() {
 
 			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPut, uri, "", "", userToken)
 			expectedResponse := map[string]interface{}{
-				testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, oneUserName+testutils.NonExistentSuffix),
-				testutils.ErrorKey:   testutils.OperationFailed,
+				testutils.ErrorKey:  fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, oneUserName+testutils.NonExistentSuffix),
+				testutils.ReasonKey: testutils.ReasonNotFound,
 			}
 
 			Expect(status).Should(Equal(http.StatusNotFound))
@@ -202,8 +202,8 @@ var _ = Describe("Validate Secret routes and functionality", func() {
 
 			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPut, uri, "", "", userToken)
 			expectedResponse := map[string]interface{}{
-				testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, oneUserName),
-				testutils.ErrorKey:   testutils.OperationFailed,
+				testutils.ErrorKey:  fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, oneUserName),
+				testutils.ReasonKey: testutils.ReasonNotFound,
 			}
 
 			Expect(status).Should(Equal(http.StatusNotFound))
@@ -218,8 +218,8 @@ var _ = Describe("Validate Secret routes and functionality", func() {
 
 			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPut, uri, "", "", userToken)
 			expectedResponse := map[string]interface{}{
-				testutils.DetailsKey: "Key: 'UpdateUserData.Role' Error:Field validation for 'Role' failed on the 'oneof' tag",
-				testutils.ErrorKey:   testutils.InvalidRequest,
+				testutils.ErrorKey:  "Key: 'UpdateUserData.Role' Error:Field validation for 'Role' failed on the 'oneof' tag",
+				testutils.ReasonKey: testutils.ReasonBadRequest,
 			}
 
 			Expect(status).Should(Equal(http.StatusBadRequest))
@@ -250,8 +250,8 @@ var _ = Describe("Validate Secret routes and functionality", func() {
 			status, response := performHTTPRequest(httpClient, nil, http.MethodDelete, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
-				testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, oneUserName+testutils.NonExistentSuffix),
-				testutils.ErrorKey:   testutils.OperationFailed,
+				testutils.ErrorKey:  fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, oneUserName+testutils.NonExistentSuffix),
+				testutils.ReasonKey: testutils.ReasonNotFound,
 			}
 
 			Expect(status).Should(Equal(http.StatusNotFound))
@@ -263,8 +263,8 @@ var _ = Describe("Validate Secret routes and functionality", func() {
 			status, response := performHTTPRequest(httpClient, nil, http.MethodDelete, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
-				testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, oneUserName),
-				testutils.ErrorKey:   testutils.OperationFailed,
+				testutils.ErrorKey:  fmt.Sprintf("%s.%s %q not found", testutils.RoleBindingsKey, testutils.RoleBindingsGroupKey, oneUserName),
+				testutils.ReasonKey: testutils.ReasonNotFound,
 			}
 
 			Expect(status).Should(Equal(http.StatusNotFound))
