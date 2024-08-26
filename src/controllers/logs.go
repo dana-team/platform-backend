@@ -22,8 +22,8 @@ const (
 
 // FetchPodLogs retrieves the logs of a specific container in a pod.
 // It opens a log stream, reads the logs, and returns them as a string.
-func FetchPodLogs(ctx context.Context, client kubernetes.Interface, namespace, podName, containerName string, logger *zap.Logger) (io.ReadCloser, error) {
-	logStream, err := utils.GetPodLogStream(ctx, client, namespace, podName, containerName)
+func FetchPodLogs(ctx context.Context, client kubernetes.Interface, namespace, podName, containerName string, previous bool, logger *zap.Logger) (io.ReadCloser, error) {
+	logStream, err := utils.GetPodLogStream(ctx, client, namespace, podName, containerName, previous)
 	if err != nil {
 		logger.Error(fmt.Sprintf("%v: %v", errCouldNotOpenLogStream, err))
 		return nil, customerrors.NewAPIError(errCouldNotOpenLogStream, err)
@@ -34,7 +34,7 @@ func FetchPodLogs(ctx context.Context, client kubernetes.Interface, namespace, p
 
 // FetchCappLogs retrieves the logs of a Capp's Knative service.
 // It fetches the pods associated with the service, selects the first pod, and retrieves its logs.
-func FetchCappLogs(ctx context.Context, client kubernetes.Interface, namespace, cappName, containerName, podName string, logger *zap.Logger) (io.ReadCloser, error) {
+func FetchCappLogs(ctx context.Context, client kubernetes.Interface, namespace, cappName, containerName, podName string, previous bool, logger *zap.Logger) (io.ReadCloser, error) {
 	pods, err := utils.GetPodsByLabel(ctx, client, namespace, fmt.Sprintf(utils.ParentCappLabelSelector, cappName), metav1.ListOptions{})
 	if err != nil {
 		logger.Error(fmt.Sprintf("%v: %v", errFetchingCappPods, err))
@@ -56,7 +56,7 @@ func FetchCappLogs(ctx context.Context, client kubernetes.Interface, namespace, 
 		containerName = cappName
 	}
 
-	return FetchPodLogs(ctx, client, namespace, podName, containerName, logger)
+	return FetchPodLogs(ctx, client, namespace, podName, containerName, previous, logger)
 }
 
 // FetchCappPodName returns the validated pod name from the provided list of pods.
