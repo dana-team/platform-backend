@@ -85,7 +85,7 @@ func Test_GetCappLogs(t *testing.T) {
 			},
 			want: want{
 				statusCode:    http.StatusSwitchingProtocols,
-				expectedLines: []string{fmt.Sprintf("error: Error streaming %q logs: error opening log stream: container %q not found in the pod %q", "Capp", "container"+testutils.NonExistentSuffix, pod2)},
+				expectedLines: []string{fmt.Sprintf("error: Error streaming %q logs: error opening log stream, container %q not found in the pod %q", "Capp", "container"+testutils.NonExistentSuffix, pod2)},
 			},
 		},
 		"ShouldStreamLogsWithValidContainerName": {
@@ -181,7 +181,7 @@ func Test_GetPodLogs(t *testing.T) {
 			},
 			want: want{
 				statusCode:    http.StatusSwitchingProtocols,
-				expectedLines: []string{fmt.Sprintf(`error: Error streaming "Pod" logs: error opening log stream: pod %q has multiple containers, please specify the container name`, pod3)},
+				expectedLines: []string{fmt.Sprintf(`error: Error streaming "Pod" logs: error opening log stream, pod %q has multiple containers, please specify the container name`, pod3)},
 			},
 		},
 		"ShouldNotStreamLogsWithNonExistingPodName": {
@@ -191,7 +191,7 @@ func Test_GetPodLogs(t *testing.T) {
 			},
 			want: want{
 				statusCode:    http.StatusSwitchingProtocols,
-				expectedLines: []string{fmt.Sprintf(`error: Error streaming "Pod" logs: error opening log stream: failed to get pod: pods %q not found`, "test-invalid-pod")},
+				expectedLines: []string{fmt.Sprintf(`error: Error streaming "Pod" logs: error opening log stream, failed to get pod: pods %q not found`, "test-invalid-pod")},
 			},
 		},
 		"ShouldNotStreamLogsWithInvalidContainerName": {
@@ -201,7 +201,7 @@ func Test_GetPodLogs(t *testing.T) {
 			},
 			want: want{
 				statusCode:    http.StatusSwitchingProtocols,
-				expectedLines: []string{fmt.Sprintf(`error: Error streaming "Pod" logs: error opening log stream: container %q not found in the pod %q`, "container"+testutils.NonExistentSuffix, pod1)},
+				expectedLines: []string{fmt.Sprintf(`error: Error streaming "Pod" logs: error opening log stream, container %q not found in the pod %q`, "container"+testutils.NonExistentSuffix, pod1)},
 			},
 		},
 	}

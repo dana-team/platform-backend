@@ -3,13 +3,13 @@ package controllers
 import (
 	"fmt"
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
+	"github.com/dana-team/platform-backend/src/customerrors"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/dana-team/platform-backend/src/utils/pagination"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strconv"
 	"testing"
@@ -76,8 +76,7 @@ func TestGetCapp(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			response, err := cappController.GetCapp(test.requestParams.namespace, test.requestParams.name)
 			if test.want.errorStatus != metav1.StatusSuccess {
-				reason := err.(errors.APIStatus).Status().Reason
-
+				reason := err.(customerrors.ErrorWithStatusCode).StatusReason()
 				assert.Equal(t, test.want.errorStatus, reason)
 			} else {
 				assert.NoError(t, err)
@@ -168,7 +167,7 @@ func TestGetCappState(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			response, err := cappController.GetCappState(test.requestParams.namespace, test.requestParams.name)
 			if test.want.errorStatus != metav1.StatusSuccess {
-				reason := err.(errors.APIStatus).Status().Reason
+				reason := err.(customerrors.ErrorWithStatusCode).StatusReason()
 
 				assert.Equal(t, test.want.errorStatus, reason)
 			} else {
@@ -325,7 +324,7 @@ func TestGetCappDNS(t *testing.T) {
 
 			response, err := cappController.GetCappDNS(test.requestParams.namespace, test.requestParams.name)
 			if test.want.errorStatus != metav1.StatusSuccess {
-				reason := err.(errors.APIStatus).Status().Reason
+				reason := err.(customerrors.ErrorWithStatusCode).StatusReason()
 
 				assert.Equal(t, test.want.errorStatus, reason)
 			} else {
@@ -420,7 +419,7 @@ func TestGetCapps(t *testing.T) {
 			limit, page, _ := pagination.ExtractPaginationParamsFromCtx(c)
 			response, err := cappController.GetCapps(test.requestParams.namespace, limit, page, test.requestParams.cappQuery)
 			if test.want.errorStatus != metav1.StatusSuccess {
-				reason := err.(errors.APIStatus).Status().Reason
+				reason := err.(customerrors.ErrorWithStatusCode).StatusReason()
 
 				assert.Equal(t, test.want.errorStatus, reason)
 			} else {
@@ -481,7 +480,7 @@ func TestCreateCapp(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			response, err := cappController.CreateCapp(test.requestParams.namespace, test.requestParams.capp)
 			if test.want.errorStatus != metav1.StatusSuccess {
-				reason := err.(errors.APIStatus).Status().Reason
+				reason := err.(customerrors.ErrorWithStatusCode).StatusReason()
 
 				assert.Equal(t, test.want.errorStatus, reason)
 			} else {
@@ -545,7 +544,7 @@ func TestUpdateCapp(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			response, err := cappController.UpdateCapp(test.requestParams.namespace, test.requestParams.name, test.requestParams.capp)
 			if test.want.errorStatus != metav1.StatusSuccess {
-				reason := err.(errors.APIStatus).Status().Reason
+				reason := err.(customerrors.ErrorWithStatusCode).StatusReason()
 
 				assert.Equal(t, test.want.errorStatus, reason)
 			} else {
@@ -607,7 +606,7 @@ func TestEditCapp(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			response, err := cappController.EditCappState(test.requestParams.namespace, test.requestParams.name, test.requestParams.state)
 			if test.want.errorStatus != metav1.StatusSuccess {
-				reason := err.(errors.APIStatus).Status().Reason
+				reason := err.(customerrors.ErrorWithStatusCode).StatusReason()
 
 				assert.Equal(t, test.want.errorStatus, reason)
 			} else {
@@ -664,7 +663,7 @@ func TestDeleteCapp(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			response, err := cappController.DeleteCapp(test.requestParams.namespace, test.requestParams.name)
 			if test.want.errorStatus != metav1.StatusSuccess {
-				reason := err.(errors.APIStatus).Status().Reason
+				reason := err.(customerrors.ErrorWithStatusCode).StatusReason()
 
 				assert.Equal(t, test.want.errorStatus, reason)
 			} else {

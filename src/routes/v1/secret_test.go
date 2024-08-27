@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/dana-team/platform-backend/src/controllers"
 	"github.com/dana-team/platform-backend/src/middleware"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -149,8 +151,10 @@ func TestGetSecret(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.SecretsKey, testutils.SecretName+testutils.NonExistentSuffix),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotGetSecret, testutils.SecretName+testutils.NonExistentSuffix),
+						fmt.Sprintf("%s %q not found", testutils.SecretsKey, testutils.SecretName+testutils.NonExistentSuffix)),
+					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},
 		},
@@ -162,8 +166,10 @@ func TestGetSecret(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.SecretsKey, testutils.SecretName),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotGetSecret, testutils.SecretName),
+						fmt.Sprintf("%s %q not found", testutils.SecretsKey, testutils.SecretName)),
+					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},
 		},
@@ -241,8 +247,8 @@ func TestCreateSecret(t *testing.T) {
 			want: want{
 				statusCode: http.StatusBadRequest,
 				response: map[string]interface{}{
-					testutils.DetailsKey: "data is required for Opaque secrets",
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey:  "data is required for Opaque secrets",
+					testutils.ReasonKey: metav1.StatusReasonBadRequest,
 				},
 			},
 		},
@@ -253,8 +259,10 @@ func TestCreateSecret(t *testing.T) {
 			want: want{
 				statusCode: http.StatusConflict,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s %q already exists", testutils.SecretsKey, testutils.SecretName+"-1"),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotCreateSecret, testutils.SecretName+"-1"),
+						fmt.Sprintf("%s %q already exists", testutils.SecretsKey, testutils.SecretName+"-1")),
+					testutils.ReasonKey: metav1.StatusReasonAlreadyExists,
 				},
 			},
 			requestData: mocks.PrepareCreateSecretRequestType(testutils.SecretName+"-1", strings.ToLower(string(corev1.SecretTypeOpaque)), "", "",
@@ -336,8 +344,10 @@ func TestUpdateSecret(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.SecretsKey, testutils.SecretName+testutils.NonExistentSuffix),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotGetSecret, testutils.SecretName+testutils.NonExistentSuffix),
+						fmt.Sprintf("%s %q not found", testutils.SecretsKey, testutils.SecretName+testutils.NonExistentSuffix)),
+					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},
 			requestData: mocks.PrepareSecretRequestType([]types.KeyValue{{Key: testutils.SecretDataKey, Value: testutils.SecretDataValue}}),
@@ -350,8 +360,10 @@ func TestUpdateSecret(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.SecretsKey, testutils.SecretName),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotGetSecret, testutils.SecretName),
+						fmt.Sprintf("%s %q not found", testutils.SecretsKey, testutils.SecretName)),
+					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},
 			requestData: mocks.PrepareSecretRequestType([]types.KeyValue{{Key: testutils.SecretDataKey, Value: testutils.SecretDataValue}}),
@@ -364,8 +376,8 @@ func TestUpdateSecret(t *testing.T) {
 			want: want{
 				statusCode: http.StatusBadRequest,
 				response: map[string]interface{}{
-					testutils.DetailsKey: "Key: 'UpdateSecretRequest.Data' Error:Field validation for 'Data' failed on the 'required' tag",
-					testutils.ErrorKey:   testutils.InvalidRequest,
+					testutils.ErrorKey:  "Key: 'UpdateSecretRequest.Data' Error:Field validation for 'Data' failed on the 'required' tag",
+					testutils.ReasonKey: metav1.StatusReasonBadRequest,
 				},
 			},
 			requestData: map[string]interface{}{},
@@ -439,8 +451,10 @@ func TestDeleteSecret(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.SecretsKey, testutils.SecretName+testutils.NonExistentSuffix),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotDeleteSecret, testutils.SecretName+testutils.NonExistentSuffix),
+						fmt.Sprintf("%s %q not found", testutils.SecretsKey, testutils.SecretName+testutils.NonExistentSuffix)),
+					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},
 		},
@@ -452,8 +466,10 @@ func TestDeleteSecret(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.SecretsKey, testutils.SecretName),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotDeleteSecret, testutils.SecretName),
+						fmt.Sprintf("%s %q not found", testutils.SecretsKey, testutils.SecretName)),
+					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},
 		},

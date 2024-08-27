@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -14,7 +15,7 @@ import (
 
 const (
 	containerNamespace = testutils.TestNamespace + testutils.ContainersKey
-	failedToGetPodErr  = "failed to get pod %q, in the namespace %q with error: pods %q not found"
+	failedToGetPodErr  = "failed to get pod %q in the namespace %q, pods %q not found"
 )
 
 func TestGetContainer(t *testing.T) {
@@ -58,8 +59,8 @@ func TestGetContainer(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf(failedToGetPodErr, pod1+testutils.NonExistentSuffix, testNamespaceName, pod1+testutils.NonExistentSuffix),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey:  fmt.Sprintf(failedToGetPodErr, pod1+testutils.NonExistentSuffix, testNamespaceName, pod1+testutils.NonExistentSuffix),
+					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},
 		},
@@ -71,8 +72,8 @@ func TestGetContainer(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf(failedToGetPodErr, pod1, testNamespaceName+testutils.NonExistentSuffix, pod1),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey:  fmt.Sprintf(failedToGetPodErr, pod1, testNamespaceName+testutils.NonExistentSuffix, pod1),
+					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},
 		},

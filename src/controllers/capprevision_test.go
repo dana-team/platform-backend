@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
+	"github.com/dana-team/platform-backend/src/customerrors"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/dana-team/platform-backend/src/utils/pagination"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"testing"
 )
@@ -88,8 +88,7 @@ func TestGetCappRevision(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			response, err := cappRevisionController.GetCappRevision(test.requestParams.namespace, test.requestParams.name)
 			if test.want.errorStatus != metav1.StatusSuccess {
-				reason := err.(errors.APIStatus).Status().Reason
-
+				reason := err.(customerrors.ErrorWithStatusCode).StatusReason()
 				assert.Equal(t, test.want.errorStatus, reason)
 			} else {
 				assert.NoError(t, err)
@@ -174,8 +173,7 @@ func TestGetCappRevisions(t *testing.T) {
 			limit, page, _ := pagination.ExtractPaginationParamsFromCtx(c)
 			response, err := cappRevisionController.GetCappRevisions(test.requestParams.namespace, limit, page, test.requestParams.cappQuery)
 			if test.want.errorStatus != metav1.StatusSuccess {
-				reason := err.(errors.APIStatus).Status().Reason
-
+				reason := err.(customerrors.ErrorWithStatusCode).StatusReason()
 				assert.Equal(t, test.want.errorStatus, reason)
 			} else {
 				assert.NoError(t, err)

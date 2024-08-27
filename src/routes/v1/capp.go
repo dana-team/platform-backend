@@ -1,39 +1,33 @@
 package v1
 
 import (
+	"github.com/dana-team/platform-backend/src/customerrors"
+	"github.com/dana-team/platform-backend/src/routes"
 	"github.com/dana-team/platform-backend/src/utils/pagination"
 	"net/http"
 
 	"github.com/dana-team/platform-backend/src/controllers"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func cappHandler(handler func(controller controllers.CappController, c *gin.Context) (interface{}, error)) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		dynClient, exists := c.Get("dynClient")
-		if !exists {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Kubernetes client not found"})
+		kubeClient, err := routes.GetDynClient(c)
+		if routes.AddErrorToContext(c, err) {
 			return
 		}
 
-		ctxLogger, exists := c.Get("logger")
-		if !exists {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Logger not found in context"})
+		logger, err := routes.GetLogger(c)
+		if routes.AddErrorToContext(c, err) {
 			return
 		}
 
-		logger := ctxLogger.(*zap.Logger)
-		kubeClient := dynClient.(client.Client)
 		context := c.Request.Context()
-
 		cappController := controllers.NewCappController(kubeClient, context, logger)
+
 		result, err := handler(cappController, c)
-		if err != nil {
-			c.AbortWithStatusJSON(int(err.(*k8serrors.StatusError).ErrStatus.Code), gin.H{"error": "Operation failed", "details": err.Error()})
+		if routes.AddErrorToContext(c, err) {
 			return
 		}
 
@@ -45,19 +39,19 @@ func GetCapps() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cappUri types.CappNamespaceUri
 		if err := c.BindUri(&cappUri); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
 		var cappQuery types.CappQuery
 		if err := c.BindQuery(&cappQuery); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
 		limit, page, err := pagination.ExtractPaginationParamsFromCtx(c)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
@@ -71,7 +65,7 @@ func GetCapp() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cappUri types.CappUri
 		if err := c.BindUri(&cappUri); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
@@ -85,12 +79,12 @@ func CreateCapp() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cappUri types.CappNamespaceUri
 		if err := c.BindUri(&cappUri); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 		var capp types.CreateCapp
 		if err := c.BindJSON(&capp); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
@@ -104,12 +98,12 @@ func UpdateCapp() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cappUri types.CappUri
 		if err := c.BindUri(&cappUri); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 		var capp types.UpdateCapp
 		if err := c.BindJSON(&capp); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
@@ -123,12 +117,12 @@ func EditCappState() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cappUri types.CappUri
 		if err := c.BindUri(&cappUri); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 		var state types.CappState
 		if err := c.BindJSON(&state); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
@@ -142,7 +136,7 @@ func GetCappState() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cappUri types.CappUri
 		if err := c.BindUri(&cappUri); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
@@ -156,7 +150,7 @@ func GetCappDNS() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cappUri types.CappUri
 		if err := c.BindUri(&cappUri); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
@@ -170,7 +164,7 @@ func DeleteCapp() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cappUri types.CappUri
 		if err := c.BindUri(&cappUri); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 

@@ -3,6 +3,7 @@ package e2e_tests
 import (
 	"fmt"
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
+	"github.com/dana-team/platform-backend/src/controllers"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
@@ -135,12 +136,8 @@ var _ = Describe("Validate CappRevision routes and functionality", func() {
 			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, fmt.Sprintf("%s?%s", uri, params.Encode()), "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
-				testutils.DetailsKey: fmt.Sprintf("unable to parse requirement: values[0][%s]: Invalid value: %q: "+
-					"a valid label must be an empty string or consist of alphanumeric characters, "+
-					"'-', '_' or '.', and must start and end with an alphanumeric character "+
-					"(e.g. 'MyValue',  or 'my_value',  or '12345', regex used for validation is '(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?')",
-					testutils.LabelCappName, testutils.InvalidLabelSelector),
-				testutils.ErrorKey: testutils.OperationFailed,
+				testutils.ErrorKey:  controllers.ErrParsingLabelSelector,
+				testutils.ReasonKey: testutils.ReasonBadRequest,
 			}
 
 			Expect(status).Should(Equal(http.StatusBadRequest))
@@ -186,8 +183,8 @@ var _ = Describe("Validate CappRevision routes and functionality", func() {
 			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
-				testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CapprevisionsKey, cappv1alpha1.GroupVersion.Group, oneCappName+testutils.NonExistentSuffix),
-				testutils.ErrorKey:   testutils.OperationFailed,
+				testutils.ErrorKey:  fmt.Sprintf("%s.%s %q not found", testutils.CapprevisionsKey, cappv1alpha1.GroupVersion.Group, oneCappName+testutils.NonExistentSuffix),
+				testutils.ReasonKey: testutils.ReasonNotFound,
 			}
 
 			cappRevision := mocks.PrepareCappRevision(oneCappName+testutils.NonExistentSuffix, namespaceName, nil, nil)
@@ -201,8 +198,8 @@ var _ = Describe("Validate CappRevision routes and functionality", func() {
 			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
 
 			expectedResponse := map[string]interface{}{
-				testutils.DetailsKey: fmt.Sprintf("%s.%s %q not found", testutils.CapprevisionsKey, cappv1alpha1.GroupVersion.Group, oneCappName),
-				testutils.ErrorKey:   testutils.OperationFailed,
+				testutils.ErrorKey:  fmt.Sprintf("%s.%s %q not found", testutils.CapprevisionsKey, cappv1alpha1.GroupVersion.Group, oneCappName),
+				testutils.ReasonKey: testutils.ReasonNotFound,
 			}
 
 			cappRevision := mocks.PrepareCappRevision(oneCappName, namespaceName+testutils.NonExistentSuffix, nil, nil)

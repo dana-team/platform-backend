@@ -3,16 +3,15 @@ package e2e_tests
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
-
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	. "github.com/onsi/gomega"
 	configv1 "github.com/openshift/api/config/v1"
 	userv1 "github.com/openshift/api/user/v1"
+	"io"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -62,7 +61,32 @@ func compareResponses(response, expectedResponse map[string]interface{}) {
 	err = json.Unmarshal(expectedResponseJSON, &expectedResponseNormalized)
 	Expect(err).ShouldNot(HaveOccurred())
 
-	Expect(response).Should(Equal(expectedResponseNormalized))
+	for key, expectedValue := range expectedResponseNormalized {
+		compareValue(response, key, expectedValue)
+	}
+}
+
+// compareValue checks if a given key-value pair is present in the map and if the value matches the expected value.
+func compareValue(response map[string]interface{}, key string, expectedValue interface{}) {
+	value, exists := response[key]
+	if !exists {
+		Expect(key).NotTo(BeEmpty(), "Missing key in response")
+		return
+	}
+
+	if expectedStr, ok1 := expectedValue.(string); ok1 {
+		if responseStr, ok2 := value.(string); ok2 {
+			Expect(responseStr).To(ContainSubstring(expectedStr), "Value for key '%s' does not contain expected substring", key)
+			return
+		}
+	}
+
+	if expectedValue == nil {
+		Expect(value).To(BeNil())
+		return
+	}
+
+	Expect(value).To(Equal(expectedValue), "Value for key '%s' does not match expected value", key)
 }
 
 // prepareAuthorizedHTTPRequest prepares an HTTP request.

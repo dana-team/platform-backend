@@ -47,7 +47,7 @@ func TestGetContainers(t *testing.T) {
 			},
 			want: want{
 				response: types.GetContainersResponse{},
-				error:    fmt.Sprintf("failed to get pod %q, in the namespace %q with error: %v", pod2, namespaceName+testutils.NonExistentSuffix, fmt.Sprintf(`pods %q not found`, pod2)),
+				error:    fmt.Sprintf("%v, %v", fmt.Sprintf(ErrCouldNotGetPod, pod2, namespaceName+testutils.NonExistentSuffix), fmt.Sprintf(`pods %q not found`, pod2)),
 			},
 		},
 	}

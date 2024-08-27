@@ -10,6 +10,7 @@ import (
 )
 
 func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider, scheme *runtime.Scheme) {
+	engine.Use(middleware.ErrorHandlingMiddleware())
 	v1 := engine.Group("/v1")
 
 	engine.GET("/healthz", func(c *gin.Context) {

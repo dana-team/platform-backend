@@ -3,8 +3,10 @@ package v1
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/dana-team/platform-backend/src/controllers"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -55,8 +57,10 @@ func TestGetConfigMap(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.ConfigmapsKey, configMapName+testutils.NonExistentSuffix),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotGetConfigMap, configMapName+testutils.NonExistentSuffix),
+						fmt.Sprintf("%s %q not found", testutils.ConfigmapsKey, configMapName+testutils.NonExistentSuffix)),
+					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},
 		},
@@ -68,8 +72,10 @@ func TestGetConfigMap(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.DetailsKey: fmt.Sprintf("%s %q not found", testutils.ConfigmapsKey, configMapName),
-					testutils.ErrorKey:   testutils.OperationFailed,
+					testutils.ErrorKey: fmt.Sprintf("%v, %v",
+						fmt.Sprintf(controllers.ErrCouldNotGetConfigMap, configMapName),
+						fmt.Sprintf("%s %q not found", testutils.ConfigmapsKey, configMapName)),
+					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},
 		},

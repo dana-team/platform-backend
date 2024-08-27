@@ -3,9 +3,9 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/dana-team/platform-backend/src/customerrors"
 	"github.com/dana-team/platform-backend/src/utils"
 	"github.com/dana-team/platform-backend/src/utils/pagination"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
@@ -26,6 +26,16 @@ const (
 	disabledState = "disabled"
 	noRevision    = "No revision available"
 	dnsLimit      = 10
+)
+
+const (
+	ErrCouldNotListCapps    = "Could not list capps"
+	ErrCouldNotCreateCapp   = "Could not create capp %q in namespace %q"
+	ErrCouldNotGetCapp      = "Could not get capp %q in namespace %q"
+	ErrCouldNotGetDns       = "Could not get dns related to capp %q in namespace %q"
+	ErrCouldNotUpdateCapp   = "Could not get capp %q in namespace %q"
+	ErrCouldNotDeleteCapp   = "Could not delete capp %q in namespace %q"
+	ErrParsingLabelSelector = "Could not parse labelSelector"
 )
 
 type CappController interface {
@@ -81,8 +91,8 @@ func (c *cappController) CreateCapp(namespace string, capp types.CreateCapp) (ty
 
 	newCapp := createCappFromType(namespace, capp)
 	if err := c.client.Create(c.ctx, &newCapp); err != nil {
-		c.logger.Error(fmt.Sprintf("Could not create capp in namespace %q with error: %v", namespace, err.Error()))
-		return types.Capp{}, err
+		c.logger.Error(fmt.Sprintf("%v with error: %v", fmt.Sprintf(ErrCouldNotCreateCapp, capp.Metadata.Name, namespace), err.Error()))
+		return types.Capp{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotCreateCapp, capp.Metadata.Name, namespace), err)
 	}
 
 	return createCappFromV1Capp(newCapp), nil
@@ -130,8 +140,8 @@ func (c *cappController) GetCapps(namespace string, limit, page int, cappQuery t
 
 	cappList, err := pagination.FetchPage[cappv1alpha1.Capp](limit, page, cappPaginator)
 	if err != nil {
-		c.logger.Error(fmt.Sprintf("Could not get capps with error: %v", err))
-		return types.CappList{}, err
+		c.logger.Error(fmt.Sprintf("%v with error: %v", ErrCouldNotListCapps, err))
+		return types.CappList{}, customerrors.NewAPIError(ErrCouldNotListCapps, err)
 	}
 
 	result := types.CappList{}
@@ -154,8 +164,8 @@ func (c *cappController) GetCapp(namespace, name string) (types.Capp, error) {
 	capp := &cappv1alpha1.Capp{}
 	err := c.client.Get(c.ctx, client.ObjectKey{Namespace: namespace, Name: name}, capp)
 	if err != nil {
-		c.logger.Error(fmt.Sprintf("Could not fetch capp %q in namespace %q with error: %v", name, namespace, err.Error()))
-		return types.Capp{}, err
+		c.logger.Error(fmt.Sprintf("%v with error: %v", fmt.Sprintf(ErrCouldNotGetCapp, name, namespace), err.Error()))
+		return types.Capp{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotGetCapp, name, namespace), err)
 	}
 
 	return convertCappToType(*capp), nil
@@ -167,8 +177,8 @@ func (c *cappController) GetCappState(namespace, name string) (types.GetCappStat
 	capp := &cappv1alpha1.Capp{}
 	err := c.client.Get(c.ctx, client.ObjectKey{Namespace: namespace, Name: name}, capp)
 	if err != nil {
-		c.logger.Error(fmt.Sprintf("Could not fetch capp %q in namespace %q with error: %v", name, namespace, err.Error()))
-		return types.GetCappStateResponse{}, err
+		c.logger.Error(fmt.Sprintf("%v with error: %v", fmt.Sprintf(ErrCouldNotGetCapp, name, namespace), err.Error()))
+		return types.GetCappStateResponse{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotGetCapp, name, namespace), err)
 	}
 
 	var cappState types.GetCappStateResponse
@@ -198,8 +208,8 @@ func (c *cappController) GetCappDNS(namespace, name string) (types.GetDNSRespons
 
 	err := c.client.List(c.ctx, dnsRecords, listOptions)
 	if err != nil {
-		c.logger.Error(fmt.Sprintf("Could not fetch dns related to capp %q in namespace %q with error: %v", name, namespace, err.Error()))
-		return types.GetDNSResponse{}, err
+		c.logger.Error(fmt.Sprintf("%v with error: %v", fmt.Sprintf(ErrCouldNotGetDns, name, namespace), err.Error()))
+		return types.GetDNSResponse{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotGetDns, name, namespace), err)
 	}
 
 	if len(dnsRecords.Items) == 0 {
@@ -257,8 +267,8 @@ func (c *cappController) UpdateCapp(namespace, name string, newCapp types.Update
 	capp := &cappv1alpha1.Capp{}
 	err := c.client.Get(c.ctx, client.ObjectKey{Namespace: namespace, Name: name}, capp)
 	if err != nil {
-		c.logger.Error(fmt.Sprintf("Could not fetch capp %q in namespace %q with error: %v", name, namespace, err.Error()))
-		return types.Capp{}, err
+		c.logger.Error(fmt.Sprintf("%v with error: %v", fmt.Sprintf(ErrCouldNotGetCapp, name, namespace), err.Error()))
+		return types.Capp{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotGetCapp, name, namespace), err)
 	}
 
 	capp.Annotations = utils.ConvertKeyValueToMap(newCapp.Annotations)
@@ -266,8 +276,8 @@ func (c *cappController) UpdateCapp(namespace, name string, newCapp types.Update
 	capp.Spec = newCapp.Spec
 
 	if err := c.client.Update(c.ctx, capp); err != nil {
-		c.logger.Error(fmt.Sprintf("Could not update capp %q in namespace %q with error: %v", name, namespace, err.Error()))
-		return types.Capp{}, err
+		c.logger.Error(fmt.Sprintf("%v with error: %v", fmt.Sprintf(ErrCouldNotUpdateCapp, name, namespace), err.Error()))
+		return types.Capp{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotUpdateCapp, name, namespace), err)
 	}
 
 	return convertCappToType(*capp), nil
@@ -279,14 +289,14 @@ func (c *cappController) EditCappState(namespace string, cappName string, state 
 	capp := &cappv1alpha1.Capp{}
 	err := c.client.Get(c.ctx, client.ObjectKey{Namespace: namespace, Name: cappName}, capp)
 	if err != nil {
-		c.logger.Error(fmt.Sprintf("Could not fetch capp %q in namespace %q with error: %v", cappName, namespace, err.Error()))
-		return types.CappStateReponse{}, err
+		c.logger.Error(fmt.Sprintf("%v with error: %v", fmt.Sprintf(ErrCouldNotGetCapp, cappName, namespace), err.Error()))
+		return types.CappStateReponse{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotGetCapp, cappName, namespace), err)
 	}
 
 	capp.Spec.State = state
 	if err := c.client.Update(c.ctx, capp); err != nil {
-		c.logger.Error(fmt.Sprintf("Could not update capp %q in namespace %q with error: %v", state, namespace, err.Error()))
-		return types.CappStateReponse{}, err
+		c.logger.Error(fmt.Sprintf("%v with error: %v", fmt.Sprintf(ErrCouldNotUpdateCapp, cappName, namespace), err.Error()))
+		return types.CappStateReponse{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotUpdateCapp, cappName, namespace), err)
 	}
 
 	return types.CappStateReponse{Name: capp.Name, State: capp.Spec.State}, nil
@@ -302,8 +312,8 @@ func (c *cappController) DeleteCapp(namespace, name string) (types.CappError, er
 		},
 	}
 	if err := c.client.Delete(c.ctx, capp); err != nil {
-		c.logger.Error(fmt.Sprintf("Could not delete capp %q in namespace %q with error: %v", name, namespace, err.Error()))
-		return types.CappError{}, err
+		c.logger.Error(fmt.Sprintf("%v with error: %v", fmt.Sprintf(ErrCouldNotDeleteCapp, name, namespace), err.Error()))
+		return types.CappError{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotDeleteCapp, name, namespace), err)
 	}
 
 	return types.CappError{
@@ -316,8 +326,8 @@ func (p *CappPaginator) FetchList(listOptions metav1.ListOptions) (*types.List[c
 	cappList := &cappv1alpha1.CappList{}
 	selector, err := labels.Parse(p.cappQuery.LabelSelector)
 	if err != nil {
-		p.Logger.Error(fmt.Sprintf("Could not parse labelSelector with error: %v", err.Error()))
-		return nil, k8serrors.NewBadRequest(err.Error())
+		p.Logger.Error(fmt.Sprintf("%s with error: %v", ErrParsingLabelSelector, err.Error()))
+		return nil, customerrors.NewValidationError(ErrParsingLabelSelector)
 	}
 
 	err = p.client.List(p.Ctx, cappList, &client.ListOptions{

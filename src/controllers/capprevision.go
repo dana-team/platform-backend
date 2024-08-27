@@ -3,9 +3,9 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/dana-team/platform-backend/src/customerrors"
 	"github.com/dana-team/platform-backend/src/utils"
 	"github.com/dana-team/platform-backend/src/utils/pagination"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 
@@ -13,6 +13,11 @@ import (
 	"github.com/dana-team/platform-backend/src/types"
 	"go.uber.org/zap"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	ErrCouldNotListCappRevisions = "Could not list capp revisions"
+	ErrCouldNotGetCappRevision   = "Could not get capp revision %q in namespace %q"
 )
 
 type CappRevisionController interface {
@@ -50,8 +55,8 @@ func (c *cappRevisionController) GetCappRevision(namespace string, name string) 
 
 	cappRevision := cappv1alpha1.CappRevision{}
 	if err := c.client.Get(c.ctx, client.ObjectKey{Namespace: namespace, Name: name}, &cappRevision); err != nil {
-		c.logger.Error(fmt.Sprintf("Could not fetch capp revision %q in namespace %q with error: %s", name, namespace, err.Error()))
-		return types.CappRevision{}, err
+		c.logger.Error(fmt.Sprintf("%s with error: %s", fmt.Sprintf(ErrCouldNotGetCappRevision, name, namespace), err.Error()))
+		return types.CappRevision{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotGetCappRevision, name, namespace), err)
 	}
 
 	return convertCappRevisionToType(cappRevision), nil
@@ -69,8 +74,8 @@ func (c *cappRevisionController) GetCappRevisions(namespace string, limit, page 
 
 	cappRevisionList, err := pagination.FetchPage[cappv1alpha1.CappRevision](limit, page, cappRevisionPaginator)
 	if err != nil {
-		c.logger.Error(fmt.Sprintf("Could not get capps with error: %v", err))
-		return types.CappRevisionList{}, err
+		c.logger.Error(fmt.Sprintf("%s with error: %s", ErrCouldNotListCappRevisions, err.Error()))
+		return types.CappRevisionList{}, customerrors.NewAPIError(ErrCouldNotListCappRevisions, err)
 	}
 
 	result := types.CappRevisionList{}
@@ -87,8 +92,8 @@ func (p *CappRevisionPaginator) FetchList(listOptions metav1.ListOptions) (*type
 	cappRevisionList := &cappv1alpha1.CappRevisionList{}
 	selector, err := labels.Parse(p.cappQuery.LabelSelector)
 	if err != nil {
-		p.Logger.Error(fmt.Sprintf("Could not parse labelSelector with error: %v", err.Error()))
-		return nil, k8serrors.NewBadRequest(err.Error())
+		p.Logger.Error(fmt.Sprintf("%s with error: %v", ErrParsingLabelSelector, err.Error()))
+		return nil, customerrors.NewValidationError(ErrParsingLabelSelector)
 	}
 
 	err = p.client.List(p.Ctx, cappRevisionList, &client.ListOptions{
@@ -98,7 +103,7 @@ func (p *CappRevisionPaginator) FetchList(listOptions metav1.ListOptions) (*type
 		LabelSelector: selector,
 	})
 	if err != nil {
-		p.Logger.Error(fmt.Sprintf("Could not fetch capp revisions in namespace %q with error: %v", p.namespace, err.Error()))
+		p.Logger.Error(fmt.Sprintf("%v with error: %v", ErrCouldNotListCappRevisions, err.Error()))
 		return nil, err
 	}
 

@@ -1,40 +1,34 @@
 package v1
 
 import (
+	"github.com/dana-team/platform-backend/src/customerrors"
+	"github.com/dana-team/platform-backend/src/routes"
 	"github.com/dana-team/platform-backend/src/utils/pagination"
 	"net/http"
 
 	"github.com/dana-team/platform-backend/src/controllers"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/client-go/kubernetes"
 )
 
 // secretHandler handles the request of the client to the Kubernetes cluster.
 func secretHandler(handler func(controller controllers.SecretController, c *gin.Context) (interface{}, error)) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		client, exists := c.Get("kubeClient")
-		if !exists {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Kubernetes client not found"})
+		kubeClient, err := routes.GetKubeClient(c)
+		if routes.AddErrorToContext(c, err) {
 			return
 		}
 
-		ctxLogger, exists := c.Get("logger")
-		if !exists {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Logger not found in context"})
+		logger, err := routes.GetLogger(c)
+		if routes.AddErrorToContext(c, err) {
 			return
 		}
 
-		logger := ctxLogger.(*zap.Logger)
-		kubeClient := client.(kubernetes.Interface)
 		context := c.Request.Context()
-
 		secretController := controllers.NewSecretController(kubeClient, context, logger)
+
 		result, err := handler(secretController, c)
-		if err != nil {
-			c.AbortWithStatusJSON(int(err.(*k8serrors.StatusError).ErrStatus.Code), gin.H{"error": "Operation failed", "details": err.Error()})
+		if routes.AddErrorToContext(c, err) {
 			return
 		}
 
@@ -47,12 +41,12 @@ func CreateSecret() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var uriRequest types.SecretNamespaceUriRequest
 		if err := c.BindUri(&uriRequest); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 		var request types.CreateSecretRequest
 		if err := c.BindJSON(&request); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
@@ -67,13 +61,13 @@ func GetSecrets() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var request types.SecretNamespaceUriRequest
 		if err := c.BindUri(&request); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
 		limit, page, err := pagination.ExtractPaginationParamsFromCtx(c)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
@@ -88,7 +82,7 @@ func GetSecret() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var request types.SecretUriRequest
 		if err := c.BindUri(&request); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
@@ -103,12 +97,12 @@ func UpdateSecret() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var uriRequest types.SecretUriRequest
 		if err := c.BindUri(&uriRequest); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 		var request types.UpdateSecretRequest
 		if err := c.BindJSON(&request); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
@@ -123,7 +117,7 @@ func DeleteSecret() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var request types.SecretUriRequest
 		if err := c.BindUri(&request); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
+			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 

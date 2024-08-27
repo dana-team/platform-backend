@@ -3,12 +3,17 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/dana-team/platform-backend/src/customerrors"
 	"github.com/dana-team/platform-backend/src/utils"
 
 	"github.com/dana-team/platform-backend/src/types"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+)
+
+const (
+	ErrCouldNotGetConfigMap = "Could not get config map %q"
 )
 
 type ConfigMapController interface {
@@ -36,8 +41,8 @@ func (c *configMapController) GetConfigMap(namespace string, name string) (types
 
 	configMap, err := c.client.CoreV1().ConfigMaps(namespace).Get(c.ctx, name, metav1.GetOptions{})
 	if err != nil {
-		c.logger.Error(fmt.Sprintf("Could not get config map %q with error: %v", name, err.Error()))
-		return types.ConfigMap{}, err
+		c.logger.Error(fmt.Sprintf("%v with error: %v", fmt.Sprintf(ErrCouldNotGetConfigMap, name), err.Error()))
+		return types.ConfigMap{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotGetConfigMap, name), err)
 	}
 
 	c.logger.Debug(fmt.Sprintf("Got config map %q successfully", name))
