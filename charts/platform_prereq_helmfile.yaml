@@ -1,6 +1,8 @@
 repositories:
   - name: jetstack
     url: https://charts.jetstack.io
+  - name: ocm
+    url: https://open-cluster-management.io/helm-charts
 
 releases:
   - name: cert-manager
@@ -13,7 +15,7 @@ releases:
         value: true
 
   - name: rcs-deployer
-    namespace: rcs-ocm-deployer
+    namespace: rcs-deployer-system
     createNamespace: true
     chart: oci://ghcr.io/dana-team/helm-charts/rcs-ocm-deployer
     version: v0.3.1
@@ -32,7 +34,7 @@ releases:
     chart: oci://ghcr.io/dana-team/helm-charts/rcs-ocm-addons
     version: v0.2.1
     needs:
-      - rcs-ocm-deployer/rcs-deployer
+      - rcs-deployer-system/rcs-deployer
     set:
       - name: installStrategy.status.placements[0].name
         value: ci-test-placement
@@ -42,3 +44,19 @@ releases:
         value: ci-test-placement
       - name: installStrategy.score.placements[0].namespace
         value: ci-test-ns
+
+  - name: managed-serviceaccount
+    createNamespace: true
+    namespace: open-cluster-management-addon-agent
+    chart: ocm/managed-serviceaccount
+    version: 0.6.0
+
+  - name: cluster-gateway-addon-manager
+    createNamespace: true
+    namespace: open-cluster-management-addon-agent
+    chart: ocm/cluster-gateway-addon-manager
+    disableValidationOnInstall: true
+    version: 1.4.0
+    set:
+      - name: manualSecretManagement
+        value: false

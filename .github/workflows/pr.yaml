@@ -81,7 +81,7 @@ jobs:
         run: make setup-ci-hub
 
       - name: Await rcs addons to be ready
-        run: until kubectl get mca rcs-score -n ${{ secrets.BBACKEND_CI_CLUSTER_NAME }} -o jsonpath='{.status.conditions[?(@.type=="Available")].status}' | grep -q "True"; do echo "Waiting for rcs addons to be ready..."; sleep 5; done; echo "rcs addons is ready"
+        run: until kubectl get mca rcs-score -n ${{ secrets.BACKEND_CI_CLUSTER_NAME }} -o jsonpath='{.status.conditions[?(@.type=="Available")].status}' | grep -q "True"; do echo "Waiting for rcs addons to be ready..."; sleep 5; done; echo "rcs addons is ready"
 
       - name: Deploy backend
         run: | 

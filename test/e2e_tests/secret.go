@@ -5,14 +5,15 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"strings"
+
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
-	"net/http"
-	"strings"
 )
 
 var _ = Describe("Validate Secret routes and functionality", func() {
@@ -140,7 +141,6 @@ var _ = Describe("Validate Secret routes and functionality", func() {
 			Expect(status).Should(Equal(http.StatusOK))
 			compareResponses(response, expectedResponse)
 		})
-
 	})
 
 	Context("Validate get Secret route", func() {

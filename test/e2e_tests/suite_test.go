@@ -5,13 +5,16 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
+	"net/http"
+	"strings"
+	"testing"
+
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	configv1 "github.com/openshift/api/config/v1"
-	"net/http"
+
 	ctrl "sigs.k8s.io/controller-runtime"
 	zapctrl "sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -192,15 +195,20 @@ func getTokenFromLogin() {
 
 		userToken, ok = token.(string)
 		return ok
-
 	}, testutils.Timeout, testutils.Interval).Should(Equal(true))
 }
 
 // getClusterIngressDomain returns the ingress domain of an OpenShift cluster.
 func getClusterIngressDomain() {
-	ingress := &configv1.Ingress{}
-	getClusterResource(k8sClient, ingress, clusterIngressName)
-	clusterDomain = ingress.Spec.Domain
+	if platformURL == "" {
+		ingress := &configv1.Ingress{}
+		getClusterResource(k8sClient, ingress, clusterIngressName)
+		clusterDomain = ingress.Spec.Domain
+		return
+	}
+
+	urlSplit := strings.Split(platformURL, ".")
+	clusterDomain = strings.Join(urlSplit[1:], ".")
 }
 
 // cleanUpTestNamespaces deletes test namespaces.
