@@ -22,6 +22,41 @@ func PrepareSecret(name, namespace, dataKey, dataValue string) corev1.Secret {
 	}
 }
 
+// PrepareTokenSecret returns a mock token secret object.
+func PrepareTokenSecret(name, namespace, tokenValue, serviceAccountName string) corev1.Secret {
+	return corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+			Annotations: map[string]string{
+				testutils.ServiceAccountAnnotation: serviceAccountName,
+			},
+		},
+		Type: corev1.SecretTypeServiceAccountToken,
+		Data: map[string][]byte{
+			testutils.TokenKey: []byte(tokenValue),
+		},
+	}
+}
+
+// PrepareDockerConfigSecret returns a mock docker config secret object.
+func PrepareDockerConfigSecret(name, namespace, serviceAccountTokenSecretName string) corev1.Secret {
+	ownerReference := metav1.OwnerReference{
+		APIVersion: testutils.V1,
+		Kind:       testutils.Secret,
+		Name:       serviceAccountTokenSecretName,
+	}
+
+	return corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            name,
+			Namespace:       namespace,
+			OwnerReferences: []metav1.OwnerReference{ownerReference},
+		},
+		Type: corev1.SecretTypeDockercfg,
+	}
+}
+
 // PrepareCreateSecretRequestType returns a Secret Request type object.
 func PrepareCreateSecretRequestType(name, secretType, cert, key string, data []types.KeyValue) types.CreateSecretRequest {
 	return types.CreateSecretRequest{

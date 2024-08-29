@@ -109,3 +109,31 @@ func CreateTestCNAMERecordWithoutConditions(dynClient runtimeClient.WithWatch, n
 		panic(err)
 	}
 }
+
+// CreateTestServiceAccount creates a test service account
+func CreateTestServiceAccount(fakeClient *fake.Clientset, namespace, name string, dockerCfgSecretName string) {
+	serviceAccount := PrepareServiceAccount(name, namespace, dockerCfgSecretName)
+	_, err := fakeClient.CoreV1().ServiceAccounts(namespace).Create(context.TODO(), serviceAccount, metav1.CreateOptions{})
+	if err != nil {
+		panic(err)
+	}
+}
+
+// CreateTestServiceAccountWithToken creates a test service account
+func CreateTestServiceAccountWithToken(fakeClient *fake.Clientset, namespace, serviceAccountName, tokenSecretName, tokenValue, dockerCfgSecretName string) {
+	tokenSecret := PrepareTokenSecret(tokenSecretName, namespace, tokenValue, serviceAccountName)
+	createTestSecret(fakeClient, tokenSecret)
+
+	dockerCfgSecret := PrepareDockerConfigSecret(dockerCfgSecretName, namespace, tokenSecretName)
+	createTestSecret(fakeClient, dockerCfgSecret)
+
+	CreateTestServiceAccount(fakeClient, namespace, serviceAccountName, dockerCfgSecretName)
+}
+
+// createTestSecret receives a secret and creates it.
+func createTestSecret(fakeClient *fake.Clientset, secret corev1.Secret) {
+	_, err := fakeClient.CoreV1().Secrets(secret.Namespace).Create(context.TODO(), &secret, metav1.CreateOptions{})
+	if err != nil {
+		panic(err)
+	}
+}

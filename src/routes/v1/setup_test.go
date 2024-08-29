@@ -112,6 +112,11 @@ func setupRouter(logger *zap.Logger) *gin.Engine {
 			{
 				podsGroup.Use(middleware.PaginationMiddleware()).GET("/capps/:cappName/pods", GetPods())
 			}
+
+			serviceAccountsGroup := namespacesGroup.Group("/:namespaceName/serviceaccounts")
+			{
+				serviceAccountsGroup.GET("/:serviceAccountName/token", GetToken())
+			}
 		}
 	}
 	return engine

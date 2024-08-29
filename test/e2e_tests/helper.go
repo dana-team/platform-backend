@@ -16,16 +16,17 @@ import (
 )
 
 const (
-	e2eUser              = "e2e-user"
-	e2ePassword          = "e2e-password"
-	e2eNamespace         = "e2e-namespace"
-	e2eLabelKey          = "e2e-label-key"
-	e2eLabelValue        = "e2e-label-value"
-	testCappName         = "e2e-capp"
-	testCappRevisionName = "e2e-capp-revision"
-	testConfigMapName    = "e2e-configmap"
-	testSecretName       = "e2e-secret"
-	testUserName         = "e2e-user"
+	e2eUser                = "e2e-user"
+	e2ePassword            = "e2e-password"
+	e2eNamespace           = "e2e-namespace"
+	e2eLabelKey            = "e2e-label-key"
+	e2eLabelValue          = "e2e-label-value"
+	testCappName           = "e2e-capp"
+	testCappRevisionName   = "e2e-capp-revision"
+	testConfigMapName      = "e2e-configmap"
+	testServiceAccountName = "e2e-serviceaccount"
+	testSecretName         = "e2e-secret"
+	testUserName           = "e2e-user"
 )
 
 const (

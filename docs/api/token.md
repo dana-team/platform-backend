@@ -17,22 +17,17 @@
   - **Response**: Confirmation of creation or an error message.
     ```json
     {
-      "serviceAccountName": "string",
+      "serviceAccountName": "string"
     }
     ```
 
-- **GET** `/v1/namespaces/{namespace}/token`
+- **GET** `/v1/namespaces/{namespace}/serviceaccounts/{serviceAccountName}/token`
   - **Description**: Gets a new token from the service account.
   - **Path Parameter**:
     - `namespace` - The namespace of the service account to create token from.
-  - **Body**:
-    ```json
-    {
-      "serviceAccountName": "string"
-    }
   - **Response**: Token from the created service account.
     ```json
     {
-      "token": "string",
+      "token": "string"
     }
     ```
