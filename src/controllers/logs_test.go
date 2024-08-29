@@ -104,6 +104,7 @@ func TestFetchPodLogs(t *testing.T) {
 		namespace     string
 		podName       string
 		containerName string
+		previous      bool
 	}
 	type want struct {
 		errContains string
@@ -119,6 +120,7 @@ func TestFetchPodLogs(t *testing.T) {
 				namespace:     testutils.TestNamespace,
 				podName:       testutils.PodName + testutils.NonExistentSuffix,
 				containerName: testutils.TestContainerName,
+				previous:      true,
 			},
 			want: want{
 				errContains: "error opening log stream",
@@ -132,7 +134,7 @@ func TestFetchPodLogs(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			_, err := FetchPodLogs(context.TODO(), tc.args.client, tc.args.namespace, tc.args.podName, tc.args.containerName, mockLogger)
+			_, err := FetchPodLogs(context.TODO(), tc.args.client, tc.args.namespace, tc.args.podName, tc.args.containerName, tc.args.previous, mockLogger)
 			if tc.want.errContains == "" {
 				if err != nil {
 					t.Errorf("Unexpected error: %v", err)
@@ -153,6 +155,7 @@ func TestFetchCappLogs(t *testing.T) {
 		cappName      string
 		containerName string
 		podName       string
+		previous      bool
 	}
 	type want struct {
 		errContains string
@@ -169,6 +172,7 @@ func TestFetchCappLogs(t *testing.T) {
 				cappName:      testutils.CappName + testutils.NonExistentSuffix,
 				containerName: testutils.TestContainerName,
 				podName:       cappPod,
+				previous:      true,
 			},
 			want: want{
 				errContains: "no pods found for Capp",
@@ -181,6 +185,7 @@ func TestFetchCappLogs(t *testing.T) {
 				cappName:      testutils.CappName,
 				containerName: testutils.TestContainerName,
 				podName:       testutils.PodName + testutils.NonExistentSuffix,
+				previous:      false,
 			},
 			want: want{
 				errContains: fmt.Sprintf("no pods found for Capp %q in namespace %q", testutils.CappName, testutils.TestNamespace),
@@ -194,7 +199,7 @@ func TestFetchCappLogs(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			_, err := FetchCappLogs(context.TODO(), tc.args.client, tc.args.namespace, tc.args.cappName, tc.args.containerName, tc.args.podName, mockLogger)
+			_, err := FetchCappLogs(context.TODO(), tc.args.client, tc.args.namespace, tc.args.cappName, tc.args.containerName, tc.args.podName, tc.args.previous, mockLogger)
 			if tc.want.errContains == "" {
 				if err != nil {
 					t.Errorf("Unexpected error: %v", err)

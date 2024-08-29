@@ -9,10 +9,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-var (
-	tailLines int64 = 10
-)
-
 // GetPodsByLabel returns the pods in a namespace using a given label selector.
 func GetPodsByLabel(ctx context.Context, client kubernetes.Interface, namespace, labelSelector string, listOptions metav1.ListOptions) (*corev1.PodList, error) {
 	listOptions.LabelSelector = labelSelector
@@ -20,7 +16,7 @@ func GetPodsByLabel(ctx context.Context, client kubernetes.Interface, namespace,
 }
 
 // GetPodLogStream returns the logs of a container in a pod.
-func GetPodLogStream(ctx context.Context, client kubernetes.Interface, namespace, podName, containerName string) (io.ReadCloser, error) {
+func GetPodLogStream(ctx context.Context, client kubernetes.Interface, namespace, podName, containerName string, previous bool) (io.ReadCloser, error) {
 	if containerName == "" {
 		var err error
 		containerName, err = getDefaultContainerName(ctx, client, namespace, podName)
@@ -41,7 +37,7 @@ func GetPodLogStream(ctx context.Context, client kubernetes.Interface, namespace
 	req := client.CoreV1().Pods(namespace).GetLogs(podName, &corev1.PodLogOptions{
 		Container: containerName,
 		Follow:    true,
-		TailLines: &tailLines,
+		Previous:  previous,
 	})
 
 	return req.Stream(ctx)

@@ -17,6 +17,9 @@ const (
 	cappNameParam       = "cappName"
 	containerQueryParam = "container"
 	podNameQueryParam   = "cappName"
+	previousQueryParam  = "previous"
+	trueValue           = "true"
+	trueValueCapital    = "True"
 )
 
 // GetPodLogs returns a handler function that fetches logs for a specified pod and container.
@@ -78,7 +81,7 @@ func streamPodLogs(c *gin.Context, logger *zap.Logger) (io.ReadCloser, error) {
 	podName := c.Param(podNameQueryParam)
 	containerName := c.Query(containerQueryParam)
 
-	return controllers.FetchPodLogs(c.Request.Context(), client, namespace, podName, containerName, logger)
+	return controllers.FetchPodLogs(c.Request.Context(), client, namespace, podName, containerName, isPreviousLogsRequested(c), logger)
 }
 
 // streamCappLogs streams logs for a specific Capp.
@@ -93,5 +96,11 @@ func streamCappLogs(c *gin.Context, logger *zap.Logger) (io.ReadCloser, error) {
 	containerName := c.DefaultQuery(containerQueryParam, cappName)
 	podName := c.Query(podNameQueryParam)
 
-	return controllers.FetchCappLogs(c.Request.Context(), client, namespace, cappName, containerName, podName, logger)
+	return controllers.FetchCappLogs(c.Request.Context(), client, namespace, cappName, containerName, podName, isPreviousLogsRequested(c), logger)
+}
+
+// isPreviousLogsRequested returns true if the query parameter for previous logs is set to "true" or "True".
+func isPreviousLogsRequested(c *gin.Context) bool {
+	previous := c.Query(previousQueryParam)
+	return previous == trueValue || previous == trueValueCapital
 }

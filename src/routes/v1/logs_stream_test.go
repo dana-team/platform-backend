@@ -68,6 +68,16 @@ func Test_GetCappLogs(t *testing.T) {
 				expectedLines: []string{fmt.Sprintf("Capp: %q line: fake logs", testutils.CappName)},
 			},
 		},
+		"ShouldStreamLogsWithPreviousQueryParam": {
+			args: args{
+				token: "valid_token",
+				wsUrl: "/v1/logs/capp/" + testNamespaceGetCappLogs + "/" + testutils.CappName + "?previous=true",
+			},
+			want: want{
+				statusCode:    http.StatusSwitchingProtocols,
+				expectedLines: []string{fmt.Sprintf("Capp: %q line: fake logs", testutils.CappName)},
+			},
+		},
 		"ShouldNotStreamLogsWithNonExistingPodName": {
 			args: args{
 				token: "valid_token",
@@ -168,6 +178,16 @@ func Test_GetPodLogs(t *testing.T) {
 			args: args{
 				token: "valid_token",
 				wsUrl: "/v1/logs/pod/" + testNamespaceGetPodLogs + "/" + pod1 + "?container=test-container",
+			},
+			want: want{
+				statusCode:    http.StatusSwitchingProtocols,
+				expectedLines: []string{fmt.Sprintf("Pod: %q line: fake logs", pod1)},
+			},
+		},
+		"ShouldStreamLogsWithPreviousQueryParam": {
+			args: args{
+				token: "valid_token",
+				wsUrl: "/v1/logs/pod/" + testNamespaceGetPodLogs + "/" + pod1 + "?previous=true",
 			},
 			want: want{
 				statusCode:    http.StatusSwitchingProtocols,
