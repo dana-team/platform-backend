@@ -19,7 +19,7 @@ CAPP_RELEASE ?= v0.3.0
 RCS_RELEASE ?= v0.3.1
 ADDONS_RELEASE ?= v0.2.1
 CERT_MANAGER_RELEASE ?= v1.15.3
-PREREQ_HELMFILE ?= $(shell pwd)/charts/platform_prereq_helmfile.yaml
+PREREQ_HELMFILE ?= $(shell pwd)/charts/platform_prereq_hub_helmfile.yaml
 
 ##@ Development
 
@@ -144,9 +144,9 @@ deploy-capp: helm helm-plugins
 		PROVIDER_DNS_USERNAME=${PROVIDER_DNS_USERNAME} \
 		PROVIDER_DNS_PASSWORD=${PROVIDER_DNS_PASSWORD}
 
-	$(HELM) upgrade --install capp-operator container-app-operator/charts/container-app-operator \
+	$(HELM) upgrade --install container-app-operator container-app-operator/charts/container-app-operator \
       --wait --create-namespace --namespace capp-operator-system \
-      --set image.manager.tag=$(CAPP_RELEASE)
+      --set image.manager.tag=$(CAPP_RELEASE) --set image.pullPolicy=$(IMG_PULL_POLICY)
 
 	rm -rf container-app-operator/
 
@@ -157,9 +157,59 @@ undeploy-capp: helm helm-plugins
 	$(HELM) uninstall capp-operator --namespace capp-operator-system
 	rm -rf container-app-operator/
 
+.PHONY: setup-hub
+setup-hub: helmfile install-capp-crds clusteradm ## setup hub cluster with RCS
+	REQUIRED_VARS="\
+		PLACEMENTS_NAMESPACE \
+		PLACEMENT_NAME \
+		MANAGED_CLUSTER_NAME \
+	"
+	for var in $${REQUIRED_VARS}; do \
+		if [ -z "$${!var}" ]; then \
+			echo "Error: Variable $$var is not set."; \
+			exit 1; \
+		fi; \
+	done
+
+	kubectl get namespace ${PLACEMENTS_NAMESPACE} || kubectl create namespace ${PLACEMENTS_NAMESPACE}
+	$(CLUSTERADM) create clusterset ${MANAGED_CLUSTER_NAME}
+	$(CLUSTERADM) clusterset set ${MANAGED_CLUSTER_NAME} --clusters ${MANAGED_CLUSTER_NAME}
+	$(CLUSTERADM) clusterset bind ${MANAGED_CLUSTER_NAME} --namespace ${PLACEMENTS_NAMESPACE}
+	$(CLUSTERADM) create placement ${PLACEMENT_NAME} --namespace ${PLACEMENTS_NAMESPACE} --clustersets=${MANAGED_CLUSTER_NAME}
+
+	$(HELMFILE) apply -f $(PREREQ_HELMFILE) \
+	--state-values-set placementName=${PLACEMENT_NAME} \
+	--state-values-set placementsNamespace=${PLACEMENTS_NAMESPACE}
+	rm -rf container-app-operator/
+
+.PHONY: cleanup-hub
+cleanup-hub: helmfile  ## cleanup hub cluster.
+	REQUIRED_VARS="\
+		PLACEMENTS_NAMESPACE \
+		PLACEMENT_NAME \
+		MANAGED_CLUSTER_NAME \
+	"
+	for var in $${REQUIRED_VARS}; do \
+		if [ -z "$${!var}" ]; then \
+			echo "Error: Variable $$var is not set."; \
+			exit 1; \
+		fi; \
+	done
+	$(HELMFILE) -f $(PREREQ_HELMFILE) destroy
+	kubectl delete placements ${PLACEMENT_NAME} --namespace ${PLACEMENTS_NAMESPACE} --ignore-not-found
+	$(CLUSTERADM) clusterset unbind ${MANAGED_CLUSTER_NAME} --namespace ${PLACEMENTS_NAMESPACE}
+	$(CLUSTERADM) delete clusterset ${MANAGED_CLUSTER_NAME}
+	kubectl delete ns ${PLACEMENTS_NAMESPACE} --ignore-not-found
+
 .PHONY: doc-chart
 doc-chart: helm-docs helm
 	$(HELM_DOCS) charts/
+
+.PHONY: install-capp-crds
+install-capp-crds:
+	[ -d "container-app-operator" ] || git clone $(CAPP_REPO)
+	make -C container-app-operator install
+	rm -rf container-app-operator/
 
 ##@ Dependencies
 
@@ -177,9 +227,11 @@ GINKGO ?= $(LOCALBIN)/ginkgo
 YQ ?= $(LOCALBIN)/yq
 HELM_DOCS ?= $(LOCALBIN)/helm-docs-$(HELM_DOCS_VERSION)
 HELMFILE ?= $(LOCALBIN)/helmfile-$(HELMFILE_VERSION)
+CLUSTERADM ?= $(LOCALBIN)/clusteradm
 
 HELM_URL ?= https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
 HELMFILE_URL ?= https://github.com/helmfile/helmfile/releases/download/v${HELMFILE_VERSION}/helmfile_${HELMFILE_VERSION}_linux_amd64.tar.gz
+CLUSTERADM_URL ?= https://raw.githubusercontent.com/open-cluster-management-io/clusteradm/main/install.sh
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.3.0
@@ -234,17 +286,6 @@ yq: $(YQ) ## Download yq locally if necessary.
 $(YQ): $(LOCALBIN)
 	test -s $(LOCALBIN)/yq || GOBIN=$(LOCALBIN) go install github.com/mikefarah/yq/v4@latest
 
-.PHONY: setup-ci-hub
-setup-ci-hub: helmfile install-capp ## setup hub cluster with RCS
-	$(LOCALBIN)/helmfile-$(HELMFILE_VERSION) apply -f $(PREREQ_HELMFILE)
-	rm -rf container-app-operator/
-
-
-
-.PHONY: cleanup-hub
-cleanup-hub: helmfile  ## cleanup hub cluster.
-	$(LOCALBIN)/helmfile-$(HELMFILE_VERSION) -f $(PREREQ_HELMFILE) destroy
-
 .PHONY: helmfile
 helmfile: $(HELMFILE) ## Install helmfile on the local machine
 $(HELMFILE): $(LOCALBIN)
@@ -253,11 +294,10 @@ $(HELMFILE): $(LOCALBIN)
 	rm $(LOCALBIN)/helmfile.tar.gz $(LOCALBIN)/*.md $(LOCALBIN)/LICENSE
 	mv $(LOCALBIN)/helmfile $(LOCALBIN)/helmfile-$(HELMFILE_VERSION)
 
-.PHONY: install-capp
-install-capp:
-	[ -d "container-app-operator" ] || git clone $(CAPP_REPO)
-	make -C container-app-operator install
-	rm -rf container-app-operator/
+.PHONY: clusteradm
+clusteradm: $(CLUSTERADM) ## Download clusteradm locally if necessary.
+$(CLUSTERADM): $(LOCALBIN)
+	test -s $(LOCALBIN)/clusteradm || curl -L $(CLUSTERADM_URL) | sed  's|/usr/local/bin|$(LOCALBIN)|g' | bash
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
 # $1 - target path with name of binary (ideally with version)

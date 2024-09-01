@@ -78,7 +78,11 @@ jobs:
           kubeconfig: ${{ secrets.BACKEND_CI_HUB_CLUSTER_KUBECONFIG }}
 
       - name: Setup hub cluster
-        run: make setup-ci-hub
+        run: | 
+          make setup-hub \
+          PLACEMENT_NAME=test-ci \
+          PLACEMENT_NAMESPACES=test-ci-ns \
+          MANAGED_CLUSTER_NAME=${{ secrets.BACKEND_CI_CLUSTER_NAME }}
 
       - name: Await rcs addons to be ready
         run: until kubectl get mca rcs-score -n ${{ secrets.BACKEND_CI_CLUSTER_NAME }} -o jsonpath='{.status.conditions[?(@.type=="Available")].status}' | grep -q "True"; do echo "Waiting for rcs addons to be ready..."; sleep 5; done; echo "rcs addons is ready"
@@ -88,7 +92,7 @@ jobs:
           make deploy \
           IMG_REPO=${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }} \
           IMG_TAG=${IMAGE_TAG} \
-          CLUSTER_NAME=${{ secrets.BBACKEND_CI_HUB_CLUSTER_NAME }} \
+          CLUSTER_NAME=${{ secrets.BACKEND_CI_HUB_CLUSTER_NAME }} \
           CLUSTER_DOMAIN=${{ secrets.BACKEND_CI_CLUSTER_DOMAIN }}
 
       - name: Await backend to be ready
@@ -102,7 +106,11 @@ jobs:
         if: always()
 
       - name: Cleanup hub
-        run: make cleanup-hub
+        run: |
+          make cleanup-hub \
+          PLACEMENT_NAME=test-ci \
+          PLACEMENT_NAMESPACES=test-ci-ns \
+          MANAGED_CLUSTER_NAME=${{ secrets.BACKEND_CI_CLUSTER_NAME }}
         if: always()
 
       - name: Set Kubernetes context

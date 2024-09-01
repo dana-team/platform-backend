@@ -527,7 +527,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 	})
 
 	Context("Validate get dns of a certain Capp route", func() {
-		FIt("Should get records of an existing Capp", func() {
+		It("Should get records of an existing Capp", func() {
 			hostname := "dns-capp"
 			domain := "dana-dev.com"
 			cappName := generateName(hostname)

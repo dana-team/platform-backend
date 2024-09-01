@@ -14,17 +14,17 @@ releases:
       - name: crds.enabled
         value: true
 
-  - name: rcs-deployer
+  - name: rcs-ocm-deployer
     namespace: rcs-deployer-system
     createNamespace: true
     chart: oci://ghcr.io/dana-team/helm-charts/rcs-ocm-deployer
     version: v0.3.1
     disableValidationOnInstall: true
     set:
-      - name: config.placementNamespace
-        value: ci-test-ns
+      - name: config.placementsNamespace
+        value: {{ .Values | get "placementsNamespace" "" }}
       - name: config.placements[0]
-        value: ci-test-placement
+        value: {{ .Values | get "placementName" "" }}
     needs:
       - cert-manager/cert-manager
 
@@ -34,16 +34,16 @@ releases:
     chart: oci://ghcr.io/dana-team/helm-charts/rcs-ocm-addons
     version: v0.2.1
     needs:
-      - rcs-deployer-system/rcs-deployer
+      - rcs-deployer-system/rcs-ocm-deployer
     set:
       - name: installStrategy.status.placements[0].name
-        value: ci-test-placement
+        value: {{ .Values | get "placementName" "" }}
       - name: installStrategy.status.placements[0].namespace
-        value: ci-test-ns
+        value: {{ .Values | get "placementsNamespace" "" }}
       - name: installStrategy.score.placements[0].name
-        value: ci-test-placement
+        value: {{ .Values | get "placementName" "" }}
       - name: installStrategy.score.placements[0].namespace
-        value: ci-test-ns
+        value: {{ .Values | get "placementsNamespace" "" }}
 
   - name: managed-serviceaccount
     createNamespace: true
