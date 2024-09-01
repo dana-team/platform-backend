@@ -3,8 +3,8 @@ module github.com/dana-team/platform-backend
 go 1.22.2
 
 require (
-	github.com/crossplane/crossplane-runtime v1.16.0-rc.1.0.20240424114634-8641eb2ba384
-	github.com/dana-team/container-app-operator v0.2.0
+	github.com/crossplane/crossplane-runtime v1.16.0
+	github.com/dana-team/container-app-operator v0.3.0
 	github.com/dana-team/provider-dns v0.1.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/gorilla/websocket v1.5.3
@@ -36,8 +36,9 @@ require (
 	github.com/blendle/zapdriver v1.3.1 // indirect
 	github.com/bytedance/sonic v1.11.6 // indirect
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
+	github.com/cert-manager/cert-manager v1.15.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/cisco-open/operator-tools v0.34.0 // indirect
+	github.com/cisco-open/operator-tools v0.36.0 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/cloudwego/iasm v0.2.0 // indirect
 	github.com/crossplane/upjet v1.3.0 // indirect
@@ -47,7 +48,7 @@ require (
 	github.com/evanphx/json-patch v5.9.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.9.0 // indirect
 	github.com/fatih/camelcase v1.0.0 // indirect
-	github.com/fatih/color v1.16.0 // indirect
+	github.com/fatih/color v1.17.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
@@ -146,6 +147,7 @@ require (
 	k8s.io/kube-openapi v0.0.0-20240430033511-f0e62f92d13f // indirect
 	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8 // indirect
 	knative.dev/networking v0.0.0-20240716111826-bab7f2a3e556 // indirect
+	sigs.k8s.io/gateway-api v1.1.0 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
