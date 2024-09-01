@@ -3,6 +3,7 @@ module github.com/dana-team/platform-backend
 go 1.22.2
 
 require (
+	github.com/crossplane/crossplane-runtime v1.16.0-rc.1.0.20240424114634-8641eb2ba384
 	github.com/dana-team/container-app-operator v0.2.0
 	github.com/dana-team/provider-dns v0.1.0
 	github.com/gin-gonic/gin v1.10.0
@@ -19,7 +20,7 @@ require (
 	k8s.io/apimachinery v0.30.3
 	k8s.io/client-go v0.30.3
 	knative.dev/pkg v0.0.0-20240716082220-4355f0c73608
-	knative.dev/serving v0.42.0
+	knative.dev/serving v0.42.2
 	sigs.k8s.io/controller-runtime v0.18.4
 )
 
@@ -39,7 +40,6 @@ require (
 	github.com/cisco-open/operator-tools v0.34.0 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/cloudwego/iasm v0.2.0 // indirect
-	github.com/crossplane/crossplane-runtime v1.16.0-rc.1.0.20240424114634-8641eb2ba384 // indirect
 	github.com/crossplane/upjet v1.3.0 // indirect
 	github.com/dana-team/nfspvc-operator v0.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect

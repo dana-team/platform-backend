@@ -460,8 +460,8 @@ knative.dev/networking v0.0.0-20240716111826-bab7f2a3e556 h1:9OTyJkrjiFh/burZiti
 knative.dev/networking v0.0.0-20240716111826-bab7f2a3e556/go.mod h1:1PosUDkXqoHNzYxtLIwa7LFqSsIXBShHOseAb6XBeEU=
 knative.dev/pkg v0.0.0-20240716082220-4355f0c73608 h1:BOiRzcnRS9Z5ruxlCiS/K1/Hb5bUN0X4W3xCegdcYQE=
 knative.dev/pkg v0.0.0-20240716082220-4355f0c73608/go.mod h1:M67lDZ4KbltYSon0Ox4/6qjlZNOIXW4Ldequ81yofbw=
-knative.dev/serving v0.42.0 h1:utItXW+L6inUfJ7Y1LgnbAMc/RyxvvAQNliGU2XC34s=
-knative.dev/serving v0.42.0/go.mod h1:3cgU8/864RcqA0ZPrc3jFcmS3uJL/mOlUZiYsXonwaE=
+knative.dev/serving v0.42.2 h1:yKieg3MeNvpVz+4JJPbvmpee3v3LK3zO5h5HJBtzaNk=
+knative.dev/serving v0.42.2/go.mod h1:3cgU8/864RcqA0ZPrc3jFcmS3uJL/mOlUZiYsXonwaE=
 nullprogram.com/x/optparse v1.0.0/go.mod h1:KdyPE+Igbe0jQUrVfMqDMeJQIJZEuyV7pjYmp6pbG50=
 rsc.io/pdf v0.1.1/go.mod h1:n8OzWcQ6Sp37PL01nO98y4iUCRdTGarVfzxY20ICaU4=
 sigs.k8s.io/controller-runtime v0.18.4 h1:87+guW1zhvuPLh1PHybKdYFLU0YJp4FhJRmiHvm5BZw=
