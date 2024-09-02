@@ -2,8 +2,9 @@ package middleware
 
 import (
 	"fmt"
+	"github.com/dana-team/platform-backend/src/customerrors"
+	multicluster "github.com/oam-dev/cluster-gateway/pkg/apis/cluster/transport"
 	"k8s.io/apimachinery/pkg/runtime"
-	"net/http"
 	"os"
 	"strings"
 
@@ -41,24 +42,24 @@ const (
 // TokenAuthMiddleware validates the Authorization header and sets up Kubernetes client.
 func TokenAuthMiddleware(tokenProvider auth.TokenProvider, scheme *runtime.Scheme) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctxLogger, exists := c.Get("logger")
-		if !exists {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "logger not set in context"})
+		logger, err := GetLogger(c)
+		if AddErrorToContext(c, err) {
 			return
 		}
-		logger := ctxLogger.(*zap.Logger)
 
 		token, err := validateToken(c)
 		if err != nil {
 			logger.Error("Failed to obtain OpenShift token", zap.Error(err))
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"Failed to obtain OpenShift token": err.Error()})
+			AddErrorToContext(c, customerrors.NewUnauthorizedError("failed to obtain OpenShift token"))
+			c.Abort()
 			return
 		}
 
 		username, err := tokenProvider.ObtainUsername(token, logger)
 		if err != nil {
 			logger.Error("Failed to get user info", zap.Error(err))
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user info"})
+			AddErrorToContext(c, customerrors.NewInternalServerError("failed to get user info"))
+			c.Abort()
 			return
 		}
 		userLogger := logger.With(zap.String("user", username))
@@ -66,21 +67,24 @@ func TokenAuthMiddleware(tokenProvider auth.TokenProvider, scheme *runtime.Schem
 		config, err := createKubernetesConfig(token, os.Getenv(envKubeAPIServer))
 		if err != nil {
 			userLogger.Error("Failed to create Kubernetes client config", zap.Error(err))
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to create Kubernetes client config"})
+			AddErrorToContext(c, customerrors.NewInternalServerError("failed to create Kubernetes client config"))
+			c.Abort()
 			return
 		}
 
 		kubeClient, err := kubernetes.NewForConfig(config)
 		if err != nil {
 			userLogger.Error("Failed to create Kubernetes client", zap.Error(err))
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to create Kubernetes client"})
+			AddErrorToContext(c, customerrors.NewInternalServerError("failed to create Kubernetes client"))
+			c.Abort()
 			return
 		}
 
 		dynClient, err := client.New(config, client.Options{Scheme: scheme})
 		if err != nil {
 			userLogger.Error("Failed to create Kubernetes dynamic client", zap.Error(err))
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to create Kubernetes dynamic client"})
+			AddErrorToContext(c, customerrors.NewInternalServerError("failed to create Kubernetes dynamic client"))
+			c.Abort()
 			return
 		}
 
@@ -137,5 +141,7 @@ func createKubernetesConfig(token, kubeApiServer string) (*rest.Config, error) {
 			Insecure: skipTlsVerify,
 		},
 	}
+
+	config.Wrap(multicluster.NewClusterGatewayRoundTripper)
 	return config, nil
 }

@@ -3,6 +3,7 @@ package v1
 import (
 	"fmt"
 	"github.com/dana-team/platform-backend/src/controllers"
+	"github.com/dana-team/platform-backend/src/middleware"
 	"github.com/dana-team/platform-backend/src/routes"
 	websocketpkg "github.com/dana-team/platform-backend/src/websocket"
 	"github.com/gin-gonic/gin"
@@ -13,13 +14,13 @@ import (
 )
 
 const (
-	namespaceParam      = "namespace"
+	namespaceParam      = "namespaceName"
 	cappNameParam       = "cappName"
 	containerQueryParam = "container"
-	podNameQueryParam   = "cappName"
 	previousQueryParam  = "previous"
 	trueValue           = "true"
 	trueValueCapital    = "True"
+	podNameQueryParam   = "podName"
 )
 
 // GetPodLogs returns a handler function that fetches logs for a specified pod and container.
@@ -40,7 +41,7 @@ func createLogHandler(streamFunc func(*gin.Context, *zap.Logger) (io.ReadCloser,
 			return
 		}
 
-		logger, err := routes.GetLogger(c)
+		logger, err := middleware.GetLogger(c)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("error getting logger %s", err.Error())})
 			return
@@ -72,7 +73,7 @@ func createLogHandler(streamFunc func(*gin.Context, *zap.Logger) (io.ReadCloser,
 
 // streamPodLogs streams logs for a specific pod and container.
 func streamPodLogs(c *gin.Context, logger *zap.Logger) (io.ReadCloser, error) {
-	client, err := routes.GetKubeClient(c)
+	client, err := middleware.GetKubeClient(c)
 	if err != nil {
 		return nil, err
 	}
@@ -81,12 +82,13 @@ func streamPodLogs(c *gin.Context, logger *zap.Logger) (io.ReadCloser, error) {
 	podName := c.Param(podNameQueryParam)
 	containerName := c.Query(containerQueryParam)
 
-	return controllers.FetchPodLogs(c.Request.Context(), client, namespace, podName, containerName, isPreviousLogsRequested(c), logger)
+	context := routes.GetContext(c)
+	return controllers.FetchPodLogs(context, client, namespace, podName, containerName, isPreviousLogsRequested(c), logger)
 }
 
 // streamCappLogs streams logs for a specific Capp.
 func streamCappLogs(c *gin.Context, logger *zap.Logger) (io.ReadCloser, error) {
-	client, err := routes.GetKubeClient(c)
+	client, err := middleware.GetKubeClient(c)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +98,8 @@ func streamCappLogs(c *gin.Context, logger *zap.Logger) (io.ReadCloser, error) {
 	containerName := c.DefaultQuery(containerQueryParam, cappName)
 	podName := c.Query(podNameQueryParam)
 
-	return controllers.FetchCappLogs(c.Request.Context(), client, namespace, cappName, containerName, podName, isPreviousLogsRequested(c), logger)
+	context := routes.GetContext(c)
+	return controllers.FetchCappLogs(context, client, namespace, cappName, containerName, podName, isPreviousLogsRequested(c), logger)
 }
 
 // isPreviousLogsRequested returns true if the query parameter for previous logs is set to "true" or "True".

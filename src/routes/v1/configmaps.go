@@ -2,7 +2,7 @@ package v1
 
 import (
 	"github.com/dana-team/platform-backend/src/customerrors"
-	"github.com/dana-team/platform-backend/src/routes"
+	"github.com/dana-team/platform-backend/src/middleware"
 	"net/http"
 
 	"github.com/dana-team/platform-backend/src/controllers"
@@ -13,13 +13,13 @@ import (
 // configMapHandler handles the request of the client to the Kubernetes cluster.
 func configMapHandler(handler func(controller controllers.ConfigMapController, c *gin.Context) (interface{}, error)) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		kubeClient, err := routes.GetKubeClient(c)
-		if routes.AddErrorToContext(c, err) {
+		kubeClient, err := middleware.GetKubeClient(c)
+		if middleware.AddErrorToContext(c, err) {
 			return
 		}
 
-		logger, err := routes.GetLogger(c)
-		if routes.AddErrorToContext(c, err) {
+		logger, err := middleware.GetLogger(c)
+		if middleware.AddErrorToContext(c, err) {
 			return
 		}
 
@@ -27,7 +27,7 @@ func configMapHandler(handler func(controller controllers.ConfigMapController, c
 		configMapController := controllers.NewConfigMapController(kubeClient, context, logger)
 
 		result, err := handler(configMapController, c)
-		if routes.AddErrorToContext(c, err) {
+		if middleware.AddErrorToContext(c, err) {
 			return
 		}
 
@@ -40,7 +40,7 @@ func GetConfigMap() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var uriRequest types.ConfigMapUri
 		if err := c.BindUri(&uriRequest); err != nil {
-			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
+			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 

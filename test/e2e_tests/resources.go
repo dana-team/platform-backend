@@ -5,6 +5,7 @@ import (
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
+	multicluster "github.com/oam-dev/cluster-gateway/pkg/apis/cluster/transport"
 	. "github.com/onsi/gomega"
 	configv1 "github.com/openshift/api/config/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -78,6 +79,11 @@ func createCapp(k8sClient client.Client, capp *cappv1alpha1.Capp) *cappv1alpha1.
 	Eventually(func() string {
 		return getCapp(k8sClient, newCapp.Name, newCapp.Namespace).Status.KnativeObjectStatus.ConfigurationStatusFields.LatestReadyRevisionName
 	}, testutils.Timeout, testutils.Interval).ShouldNot(Equal(""))
+
+	Eventually(func() string {
+		newCapp = getCapp(k8sClient, newCapp.Name, newCapp.Namespace)
+		return newCapp.Status.ApplicationLinks.Site
+	}, testutils.Timeout, testutils.Interval).ShouldNot(Equal(""), "missing site in capp status")
 	return newCapp
 }
 
@@ -103,15 +109,16 @@ func getCapp(k8sClient client.Client, name string, namespace string) *cappv1alph
 }
 
 // getCappRevisionNames returns a list of the CappRevision names related to a specific Capp in a namespace.
-func getCappRevisionNames(k8sClient client.Client, cappName string, namespace string) []string {
+func getCappRevisionNames(k8sClient client.Client, cappName, namespace, clusterName string) []string {
 	revisions := cappv1alpha1.CappRevisionList{}
 	labelSelector := client.MatchingLabels{testutils.LabelCappName: cappName}
 	listOptions := []client.ListOption{
 		labelSelector,
 		client.InNamespace(namespace),
 	}
-
 	Expect(k8sClient.List(context.TODO(), &revisions, listOptions...)).To(Succeed())
+
+	Expect(k8sClient.List(multicluster.WithMultiClusterContext(context.TODO(), clusterName), &revisions, listOptions...)).To(Succeed())
 
 	names := make([]string, len(revisions.Items))
 	for i, revision := range revisions.Items {
@@ -193,9 +200,9 @@ func createTestNamespace(k8sClient client.Client, name string) {
 }
 
 // createTestCapp creates a test Capp object.
-func createTestCapp(k8sClient client.Client, name, namespace string, labels, annotations map[string]string) {
+func createTestCapp(k8sClient client.Client, name, namespace string, labels, annotations map[string]string) *cappv1alpha1.Capp {
 	capp := mocks.PrepareCapp(name, namespace, clusterDomain, labels, annotations)
-	createCapp(k8sClient, &capp)
+	return createCapp(k8sClient, &capp)
 }
 
 // createTestCapp creates a test Capp object.

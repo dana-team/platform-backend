@@ -14,6 +14,9 @@ var (
 	ParentCappLabel         = cappAPIGroup + "/parent-capp"
 	ParentCappNSLabel       = cappAPIGroup + "/parent-capp-ns"
 	ParentCappLabelSelector = ParentCappLabel + "=%s"
+
+	CappNameLabel         = cappAPIGroup + "/cappName"
+	CappNameLabelSelector = CappNameLabel + "=%s"
 )
 
 // AddManagedLabel adds the managed label to the given labels map.

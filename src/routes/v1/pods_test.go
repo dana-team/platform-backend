@@ -3,6 +3,7 @@ package v1
 import (
 	"encoding/json"
 	"fmt"
+	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/middleware"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
@@ -74,16 +75,16 @@ func TestGetPods(t *testing.T) {
 				},
 			},
 		},
-		"ShouldNotGetPods": {
+		"ShouldNotGetPodsOnNotFoundCapp": {
 			args: args{
 				namespace: testNamespaceName,
 				cappName:  testutils.CappName + testutils.NonExistentSuffix,
 			},
 			want: want{
-				statusCode: http.StatusOK,
+				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.CountKey: 0,
-					testutils.PodsKey:  interface{}(nil),
+					testutils.ErrorKey:  fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName+testutils.NonExistentSuffix),
+					testutils.ReasonKey: testutils.ReasonNotFound,
 				},
 			},
 		},
@@ -93,10 +94,10 @@ func TestGetPods(t *testing.T) {
 				cappName:  testutils.CappName,
 			},
 			want: want{
-				statusCode: http.StatusOK,
+				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.CountKey: 0,
-					testutils.PodsKey:  interface{}(nil),
+					testutils.ErrorKey:  fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName),
+					testutils.ReasonKey: testutils.ReasonNotFound,
 				},
 			},
 		},
@@ -104,6 +105,7 @@ func TestGetPods(t *testing.T) {
 
 	setup()
 	mocks.CreateTestNamespace(fakeClient, testNamespaceName)
+	mocks.CreateTestCapp(dynClient, testutils.CappName, testNamespaceName, testutils.Domain, map[string]string{}, map[string]string{})
 	mocks.CreateTestPod(fakeClient, testNamespaceName, pod1, testutils.CappName, false)
 	mocks.CreateTestPod(fakeClient, testNamespaceName, pod2, testutils.CappName, true)
 	mocks.CreateTestPod(fakeClient, testNamespaceName, pod3, "", false)
