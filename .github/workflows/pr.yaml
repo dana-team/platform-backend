@@ -71,12 +71,28 @@ jobs:
           PROVIDER_DNS_USERNAME=${{ secrets.PROVIDER_DNS_USERNAME }} \
           PROVIDER_DNS_PASSWORD=${{ secrets.PROVIDER_DNS_PASSWORD }}
 
+      - name: Set Kubernetes context
+        uses: Azure/k8s-set-context@v4
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.BACKEND_CI_HUB_CLUSTER_KUBECONFIG }}
+
+      - name: Setup hub cluster
+        run: | 
+          make setup-hub \
+          PLACEMENT_NAME=test-ci \
+          PLACEMENT_NAMESPACES=test-ci-ns \
+          MANAGED_CLUSTER_NAME=${{ secrets.BACKEND_CI_CLUSTER_NAME }}
+
+      - name: Await rcs addons to be ready
+        run: until kubectl get mca rcs-score -n ${{ secrets.BACKEND_CI_CLUSTER_NAME }} -o jsonpath='{.status.conditions[?(@.type=="Available")].status}' | grep -q "True"; do echo "Waiting for rcs addons to be ready..."; sleep 5; done; echo "rcs addons is ready"
+
       - name: Deploy backend
         run: | 
           make deploy \
           IMG_REPO=${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }} \
           IMG_TAG=${IMAGE_TAG} \
-          CLUSTER_NAME=${{ secrets.BACKEND_CI_CLUSTER_NAME }} \
+          CLUSTER_NAME=${{ secrets.BACKEND_CI_HUB_CLUSTER_NAME }} \
           CLUSTER_DOMAIN=${{ secrets.BACKEND_CI_CLUSTER_DOMAIN }}
 
       - name: Await backend to be ready
@@ -87,6 +103,21 @@ jobs:
 
       - name: Undeploy backend
         run: make undeploy
+        if: always()
+
+      - name: Cleanup hub
+        run: |
+          make cleanup-hub \
+          PLACEMENT_NAME=test-ci \
+          PLACEMENT_NAMESPACES=test-ci-ns \
+          MANAGED_CLUSTER_NAME=${{ secrets.BACKEND_CI_CLUSTER_NAME }}
+        if: always()
+
+      - name: Set Kubernetes context
+        uses: Azure/k8s-set-context@v4
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.BACKEND_CI_CLUSTER_KUBECONFIG }}
         if: always()
 
       - name: Uninstall prereq

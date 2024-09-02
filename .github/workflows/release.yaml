@@ -1,8 +1,7 @@
 name: post-merge
 on:
-  push:
-    branches:
-      - main
+  release:
+    types: [published]
 
 env:
   REGISTRY: ghcr.io

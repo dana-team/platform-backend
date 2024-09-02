@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/url"
+
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/controllers"
 	"github.com/dana-team/platform-backend/src/types"
@@ -12,8 +15,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
-	"net/http"
-	"net/url"
 )
 
 var _ = Describe("Validate Capp routes and functionality", func() {
@@ -537,7 +538,8 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 
 			expectedResponse := map[string]interface{}{
 				testutils.RecordsKey: []types.DNS{
-					{Status: corev1.ConditionTrue, Name: fmt.Sprintf("%s.%s", hostname, domain)}},
+					{Status: corev1.ConditionTrue, Name: fmt.Sprintf("%s.%s", hostname, domain)},
+				},
 			}
 			Expect(status).Should(Equal(http.StatusOK))
 			Expect(response[testutils.RecordsKey], expectedResponse[testutils.RecordsKey])
