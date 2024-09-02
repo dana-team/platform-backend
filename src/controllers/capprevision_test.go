@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/customerrors"
 	"github.com/dana-team/platform-backend/src/types"
@@ -25,6 +24,7 @@ func createTestCappRevision(name, namespace string, labels, annotations map[stri
 
 func TestGetCappRevision(t *testing.T) {
 	namespaceName := testutils.CappRevisionNamespace + "-get"
+	labels := []types.KeyValue{{Key: testutils.LabelKey + "-1", Value: testutils.LabelValue + "-1"}}
 
 	type requestParams struct {
 		name      string
@@ -48,16 +48,17 @@ func TestGetCappRevision(t *testing.T) {
 			want: want{
 				cappRevision: types.CappRevision{
 					Metadata: types.Metadata{Name: testutils.CappRevisionName + "-1", Namespace: namespaceName},
-					Labels:   []types.KeyValue{{Key: testutils.LabelKey + "-1", Value: testutils.LabelValue + "-1"}},
+					Labels:   labels,
 					Spec: cappv1alpha1.CappRevisionSpec{
 						RevisionNumber: 1,
-						CappTemplate:   cappv1alpha1.CappTemplate{Spec: mocks.PrepareCappSpec()},
+						CappTemplate:   cappv1alpha1.CappTemplate{Spec: mocks.PrepareCappSpec(), Labels: mocks.ConvertKeyValueSliceToMap(labels)},
 					},
 					Status: cappv1alpha1.CappRevisionStatus{},
 				},
 				errorStatus: metav1.StatusSuccess,
 			},
 		},
+
 		"ShouldFailGettingNonExistingCappRevision": {
 			requestParams: requestParams{
 				namespace: namespaceName,
@@ -80,10 +81,12 @@ func TestGetCappRevision(t *testing.T) {
 		},
 	}
 	setup()
+
 	cappRevisionController := NewCappRevisionController(dynClient, mocks.GinContext(), logger)
 	createTestNamespace(namespaceName, map[string]string{})
 	createTestCappRevision(testutils.CappRevisionName+"-1", namespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{})
 	createTestCappRevision(testutils.CappRevisionName+"-2", namespaceName, map[string]string{testutils.LabelKey + "-2": testutils.LabelValue + "-2"}, map[string]string{})
+
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
 			response, err := cappRevisionController.GetCappRevision(test.requestParams.namespace, test.requestParams.name)
@@ -104,7 +107,7 @@ func TestGetCappRevisions(t *testing.T) {
 	namespaceName := testutils.CappRevisionNamespace + "-getmany"
 
 	type requestParams struct {
-		cappQuery types.CappRevisionQuery
+		cappName  string
 		namespace string
 		limit     int
 		page      int
@@ -119,39 +122,30 @@ func TestGetCappRevisions(t *testing.T) {
 		requestParams requestParams
 		want          want
 	}{
-		"ShouldSucceedGettingAllCappRevisions": {
+		"ShouldSucceedGettingCappRevisionsOfCapp": {
 			requestParams: requestParams{
 				namespace: namespaceName,
-				cappQuery: types.CappRevisionQuery{},
+				cappName:  testutils.CappName + "-1",
+			},
+			want: want{
+				cappRevisions: types.CappRevisionList{CappRevisions: []string{testutils.CappRevisionName + "-1"}, ListMetadata: types.ListMetadata{Count: 1}},
+				errorStatus:   metav1.StatusSuccess,
+			},
+		},
+		"ShouldSucceedGettingCappRevisions": {
+			requestParams: requestParams{
+				namespace: namespaceName,
+				cappName:  "",
 			},
 			want: want{
 				cappRevisions: types.CappRevisionList{CappRevisions: []string{testutils.CappRevisionName + "-1", testutils.CappRevisionName + "-2"}, ListMetadata: types.ListMetadata{Count: 2}},
 				errorStatus:   metav1.StatusSuccess,
-			}},
-		"ShouldSucceedGettingCappRevisionsByLabels": {
-			requestParams: requestParams{
-				namespace: namespaceName,
-				cappQuery: types.CappRevisionQuery{LabelSelector: fmt.Sprintf("%s-2=%s-2", testutils.LabelKey, testutils.LabelValue)},
-			},
-			want: want{
-				cappRevisions: types.CappRevisionList{CappRevisions: []string{testutils.CappRevisionName + "-2"}, ListMetadata: types.ListMetadata{Count: 1}},
-				errorStatus:   metav1.StatusSuccess,
-			},
-		},
-		"ShouldThrowErrorWithInvalidSelector": {
-			requestParams: requestParams{
-				namespace: namespaceName,
-				cappQuery: types.CappRevisionQuery{LabelSelector: testutils.InvalidLabelSelector},
-			},
-			want: want{
-				cappRevisions: types.CappRevisionList{},
-				errorStatus:   metav1.StatusReasonBadRequest,
 			},
 		},
 		"ShouldFailGettingNonExistingNamespace": {
 			requestParams: requestParams{
 				namespace: testutils.CappRevisionNamespace + testutils.NonExistentSuffix,
-				cappQuery: types.CappRevisionQuery{},
+				cappName:  testutils.CappName,
 			},
 			want: want{
 				cappRevisions: types.CappRevisionList{},
@@ -161,8 +155,8 @@ func TestGetCappRevisions(t *testing.T) {
 	}
 	setup()
 	createTestNamespace(namespaceName, map[string]string{})
-	createTestCappRevision(testutils.CappRevisionName+"-1", namespaceName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{})
-	createTestCappRevision(testutils.CappRevisionName+"-2", namespaceName, map[string]string{testutils.LabelKey + "-2": testutils.LabelValue + "-2"}, map[string]string{})
+	createTestCappRevision(testutils.CappRevisionName+"-1", namespaceName, map[string]string{testutils.LabelCappName: testutils.CappName + "-1"}, map[string]string{})
+	createTestCappRevision(testutils.CappRevisionName+"-2", namespaceName, map[string]string{testutils.LabelCappName: testutils.CappName + "-2"}, map[string]string{})
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -171,7 +165,7 @@ func TestGetCappRevisions(t *testing.T) {
 			cappRevisionController := NewCappRevisionController(dynClient, c, logger)
 
 			limit, page, _ := pagination.ExtractPaginationParamsFromCtx(c)
-			response, err := cappRevisionController.GetCappRevisions(test.requestParams.namespace, limit, page, test.requestParams.cappQuery)
+			response, err := cappRevisionController.GetCappRevisions(test.requestParams.namespace, limit, page, test.requestParams.cappName)
 			if test.want.errorStatus != metav1.StatusSuccess {
 				reason := err.(customerrors.ErrorWithStatusCode).StatusReason()
 				assert.Equal(t, test.want.errorStatus, reason)

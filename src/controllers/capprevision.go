@@ -22,7 +22,7 @@ const (
 
 type CappRevisionController interface {
 	// GetCappRevisions gets all CappRevision names and count from a specific namespace.
-	GetCappRevisions(namespace string, limit, page int, cappRevisionQuery types.CappRevisionQuery) (types.CappRevisionList, error)
+	GetCappRevisions(namespace string, limit, page int, cappName string) (types.CappRevisionList, error)
 
 	// GetCappRevision gets a specific CappRevision from the specified namespace.
 	GetCappRevision(namespace, name string) (types.CappRevision, error)
@@ -39,7 +39,7 @@ type CappRevisionPaginator struct {
 	pagination.GenericPaginator
 	namespace string
 	client    client.Client
-	cappQuery types.CappRevisionQuery
+	cappQuery string
 }
 
 func NewCappRevisionController(client client.Client, context context.Context, logger *zap.Logger) CappRevisionController {
@@ -62,8 +62,13 @@ func (c *cappRevisionController) GetCappRevision(namespace string, name string) 
 	return convertCappRevisionToType(cappRevision), nil
 }
 
-func (c *cappRevisionController) GetCappRevisions(namespace string, limit, page int, cappQuery types.CappRevisionQuery) (types.CappRevisionList, error) {
+func (c *cappRevisionController) GetCappRevisions(namespace string, limit, page int, cappName string) (types.CappRevisionList, error) {
+	cappQuery := ""
 	c.logger.Debug(fmt.Sprintf("Trying to fetch all capp revisions in namespace: %q", namespace))
+
+	if cappName != "" {
+		cappQuery = fmt.Sprintf(utils.CappNameLabelSelector, cappName)
+	}
 
 	cappRevisionPaginator := &CappRevisionPaginator{
 		GenericPaginator: pagination.CreatePaginator(c.ctx, c.logger),
@@ -90,7 +95,7 @@ func (c *cappRevisionController) GetCappRevisions(namespace string, limit, page 
 // FetchList retrieves a list of capps from the specified namespace with given options.
 func (p *CappRevisionPaginator) FetchList(listOptions metav1.ListOptions) (*types.List[cappv1alpha1.CappRevision], error) {
 	cappRevisionList := &cappv1alpha1.CappRevisionList{}
-	selector, err := labels.Parse(p.cappQuery.LabelSelector)
+	selector, err := labels.Parse(p.cappQuery)
 	if err != nil {
 		p.Logger.Error(fmt.Sprintf("%s with error: %v", ErrParsingLabelSelector, err.Error()))
 		return nil, customerrors.NewValidationError(ErrParsingLabelSelector)

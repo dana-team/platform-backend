@@ -503,9 +503,7 @@ func TestGetCappDNS(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.ErrorKey: fmt.Sprintf("%v, %v",
-						fmt.Sprintf(controllers.ErrCouldNotGetCapp, testutils.CappName+testutils.NonExistentSuffix, testNamespaceName),
-						fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName+testutils.NonExistentSuffix)),
+					testutils.ErrorKey:  fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName+testutils.NonExistentSuffix),
 					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},
@@ -518,9 +516,7 @@ func TestGetCappDNS(t *testing.T) {
 			want: want{
 				statusCode: http.StatusNotFound,
 				response: map[string]interface{}{
-					testutils.ErrorKey: fmt.Sprintf("%v, %v",
-						fmt.Sprintf(controllers.ErrCouldNotGetCapp, testutils.CappName, testNamespaceName+testutils.NonExistentSuffix),
-						fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName)),
+					testutils.ErrorKey:  fmt.Sprintf("%s.%s %q not found", testutils.CappsKey, cappv1alpha1.GroupVersion.Group, testutils.CappName),
 					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},

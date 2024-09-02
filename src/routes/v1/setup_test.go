@@ -15,6 +15,10 @@ import (
 	"testing"
 )
 
+const (
+	cluster = "test-cluster"
+)
+
 var (
 	router     *gin.Engine
 	fakeClient *fake.Clientset
@@ -42,78 +46,15 @@ func setupRouter(logger *zap.Logger) *gin.Engine {
 		c.Set(middleware.KubeClientCtxKey, fakeClient)
 		c.Set(middleware.DynamicClientCtxKey, dynClient)
 		c.Set(middleware.TokenCtxKey, token)
+		c.Set(middleware.ClusterCtxKey, cluster)
 		c.Next()
 	})
+
 	v1 := engine.Group("/v1")
-	{
-		namespacesGroup := v1.Group("/namespaces")
-		{
-			namespacesGroup.Use(middleware.PaginationMiddleware()).GET("", GetNamespaces())
-			namespacesGroup.GET("/:namespaceName", GetNamespace())
-			namespacesGroup.POST("", CreateNamespace())
-			namespacesGroup.DELETE("/:namespaceName", DeleteNamespace())
 
-			secretsGroup := namespacesGroup.Group("/:namespaceName/secrets")
-			{
-				secretsGroup.POST("", CreateSecret())
-				secretsGroup.Use(middleware.PaginationMiddleware()).GET("", GetSecrets())
-				secretsGroup.GET("/:secretName", GetSecret())
-				secretsGroup.PUT("/:secretName", UpdateSecret())
-				secretsGroup.DELETE("/:secretName", DeleteSecret())
-			}
+	setupNamespaceRoutes(v1, nil, nil)
+	setupClustersRoutes(v1, nil, nil)
 
-			cappGroup := namespacesGroup.Group("/:namespaceName/capps")
-			{
-
-				cappGroup.POST("", CreateCapp())
-				cappGroup.Use(middleware.PaginationMiddleware()).GET("", GetCapps())
-				cappGroup.GET("/:cappName", GetCapp())
-				cappGroup.PUT("/:cappName", UpdateCapp())
-				cappGroup.PUT("/:cappName/state", EditCappState())
-				cappGroup.GET("/:cappName/state", GetCappState())
-				cappGroup.GET("/:cappName/dns", GetCappDNS())
-				cappGroup.DELETE("/:cappName", DeleteCapp())
-
-			}
-
-			cappRevisionGroup := namespacesGroup.Group("/:namespaceName/capprevisions")
-			{
-
-				cappRevisionGroup.Use(middleware.PaginationMiddleware()).GET("", GetCappRevisions())
-				cappRevisionGroup.GET("/:cappRevisionName", GetCappRevision())
-			}
-
-			usersGroup := namespacesGroup.Group("/:namespaceName/users")
-			{
-				usersGroup.POST("", CreateUser())
-				usersGroup.Use(middleware.PaginationMiddleware()).GET("", GetUsers())
-				usersGroup.GET("/:userName", GetUser())
-				usersGroup.PUT("/:userName", UpdateUser())
-				usersGroup.DELETE("/:userName", DeleteUser())
-			}
-
-			logsGroup := v1.Group("/logs")
-			{
-				logsGroup.GET("/pod/:namespace/:cappName", GetPodLogs())
-				logsGroup.GET("/capp/:namespace/:cappName", GetCappLogs())
-			}
-
-			configMapGroup := namespacesGroup.Group("/:namespaceName/configmaps")
-			{
-				configMapGroup.GET("/:configMapName", GetConfigMap())
-			}
-
-			containersGroup := namespacesGroup.Group("/:namespaceName")
-			{
-				containersGroup.GET("/pods/:podName/containers", GetContainers())
-			}
-
-			podsGroup := namespacesGroup.Group("/:namespaceName")
-			{
-				podsGroup.Use(middleware.PaginationMiddleware()).GET("/capps/:cappName/pods", GetPods())
-			}
-		}
-	}
 	return engine
 }
 

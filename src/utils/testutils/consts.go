@@ -3,11 +3,13 @@ package testutils
 import "time"
 
 const (
-	Domain       = "dana-team.io"
-	Hostname     = "custom-capp"
-	DefaultZone  = "dana-dev.com"
-	ManagedLabel = "rcs.dana.io/managed"
-	cappAPIGroup = "rcs.dana.io"
+	Domain         = "dana-team.io"
+	Hostname       = "custom-capp"
+	DefaultZone    = "dana-dev.com"
+	ManagedLabel   = "rcs.dana.io/managed"
+	ManagedByLabel = "rcs.dana.io/managed-by"
+	Rcs            = "rcs"
+	cappAPIGroup   = "rcs.dana.io"
 )
 
 const (
@@ -51,13 +53,19 @@ const (
 )
 
 const (
-	LabelSelectorKey     = "labelSelector"
-	LabelKey             = "key"
-	LabelValue           = "value"
-	InvalidLabelSelector = ":--"
-	LabelCappName        = "rcs.dana.io/cappName"
-	ParentCappLabel      = cappAPIGroup + "/parent-capp"
-	ParentCappNSLabel    = cappAPIGroup + "/parent-capp-ns"
+	LabelSelectorKey                = "labelSelector"
+	LabelKey                        = "key"
+	LabelValue                      = "value"
+	InvalidLabelSelector            = ":--"
+	LabelCappName                   = "rcs.dana.io/cappName"
+	ParentCappLabel                 = cappAPIGroup + "/parent-capp"
+	ParentCappNSLabel               = cappAPIGroup + "/parent-capp-ns"
+	LastUpdatedCappLabel            = cappAPIGroup + "/last-updated-by"
+	HasPlacementLabel               = cappAPIGroup + "/has-placement"
+	System                          = "system"
+	ServiceAccount                  = "serviceaccount"
+	RcsDeployerSystem               = "rcs-deployer-system"
+	RcsOcmDeployerControllerManager = "rcs-ocm-deployer-controller-manager"
 )
 
 const (

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
+	"github.com/dana-team/platform-backend/src/utils/testutils"
 	. "github.com/onsi/gomega"
 	configv1 "github.com/openshift/api/config/v1"
 	userv1 "github.com/openshift/api/user/v1"
@@ -61,32 +62,23 @@ func compareResponses(response, expectedResponse map[string]interface{}) {
 	err = json.Unmarshal(expectedResponseJSON, &expectedResponseNormalized)
 	Expect(err).ShouldNot(HaveOccurred())
 
-	for key, expectedValue := range expectedResponseNormalized {
-		compareValue(response, key, expectedValue)
-	}
+	compareError(expectedResponseNormalized, response)
+	Expect(response).Should(BeComparableTo(expectedResponseNormalized))
 }
 
-// compareValue checks if a given key-value pair is present in the map and if the value matches the expected value.
-func compareValue(response map[string]interface{}, key string, expectedValue interface{}) {
-	value, exists := response[key]
-	if !exists {
-		Expect(key).NotTo(BeEmpty(), "Missing key in response")
+// compareError compares two errors and asserts that the response contains the expected response.
+func compareError(expectedResponse, response map[string]interface{}) {
+	expectedError, expectedResponseHasError := expectedResponse[testutils.ErrorKey]
+	responseError, responseHasError := response[testutils.ErrorKey]
+
+	if !expectedResponseHasError {
+		Expect(responseHasError).Should(Equal(false), fmt.Sprintf("unexpected error: %s", responseError))
 		return
 	}
 
-	if expectedStr, ok1 := expectedValue.(string); ok1 {
-		if responseStr, ok2 := value.(string); ok2 {
-			Expect(responseStr).To(ContainSubstring(expectedStr), "Value for key '%s' does not contain expected substring", key)
-			return
-		}
-	}
-
-	if expectedValue == nil {
-		Expect(value).To(BeNil())
-		return
-	}
-
-	Expect(value).To(Equal(expectedValue), "Value for key '%s' does not match expected value", key)
+	Expect(responseError).To(ContainSubstring(expectedError.(string)), "error %q does not contain expected error %q", responseError, expectedError)
+	delete(response, "error")
+	delete(expectedResponse, "error")
 }
 
 // prepareAuthorizedHTTPRequest prepares an HTTP request.
@@ -123,6 +115,7 @@ func performHTTPRequest(httpClient http.Client, body io.Reader, httpMethod, base
 	Expect(err).ShouldNot(HaveOccurred())
 
 	var jsonResponse map[string]interface{}
+
 	err = json.Unmarshal(responseBody, &jsonResponse)
 	Expect(err).NotTo(HaveOccurred())
 

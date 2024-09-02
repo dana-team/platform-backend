@@ -1,8 +1,6 @@
 name: tests
 on:
   pull_request:
-    branches:
-      - main
     types: [opened, reopened, synchronize]
 
 jobs:
@@ -81,7 +79,7 @@ jobs:
         run: | 
           make setup-hub \
           PLACEMENT_NAME=test-ci \
-          PLACEMENT_NAMESPACES=test-ci-ns \
+          PLACEMENTS_NAMESPACE=test-ci-ns \
           MANAGED_CLUSTER_NAME=${{ secrets.BACKEND_CI_CLUSTER_NAME }}
 
       - name: Await rcs addons to be ready
@@ -109,7 +107,7 @@ jobs:
         run: |
           make cleanup-hub \
           PLACEMENT_NAME=test-ci \
-          PLACEMENT_NAMESPACES=test-ci-ns \
+          PLACEMENTS_NAMESPACE=test-ci-ns \
           MANAGED_CLUSTER_NAME=${{ secrets.BACKEND_CI_CLUSTER_NAME }}
         if: always()
 

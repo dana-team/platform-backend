@@ -2,9 +2,10 @@ package v1
 
 import (
 	"github.com/dana-team/platform-backend/src/customerrors"
+	"github.com/dana-team/platform-backend/src/middleware"
+	"github.com/dana-team/platform-backend/src/routes"
 
 	"github.com/dana-team/platform-backend/src/controllers"
-	"github.com/dana-team/platform-backend/src/routes"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -13,21 +14,21 @@ import (
 // containerHandler wraps a handler function with context setup for ContainerController.
 func containerHandler(handler func(controller controllers.ContainerController, c *gin.Context) (interface{}, error)) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		kubeClient, err := routes.GetKubeClient(c)
-		if routes.AddErrorToContext(c, err) {
+		kubeClient, err := middleware.GetKubeClient(c)
+		if middleware.AddErrorToContext(c, err) {
 			return
 		}
 
-		logger, err := routes.GetLogger(c)
-		if routes.AddErrorToContext(c, err) {
+		logger, err := middleware.GetLogger(c)
+		if middleware.AddErrorToContext(c, err) {
 			return
 		}
 
-		context := c.Request.Context()
+		context := routes.GetContext(c)
 		containerController := controllers.NewContainerController(kubeClient, context, logger)
 
 		result, err := handler(containerController, c)
-		if routes.AddErrorToContext(c, err) {
+		if middleware.AddErrorToContext(c, err) {
 			return
 		}
 
@@ -35,12 +36,12 @@ func containerHandler(handler func(controller controllers.ContainerController, c
 	}
 }
 
-// GetContainers returns a Gin handler function for retrieving containers information.
-func GetContainers() gin.HandlerFunc {
+// GetPodsContainers returns a Gin handler function for retrieving containers information.
+func GetPodsContainers() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var request types.ContainerRequestUri
 		if err := c.BindUri(&request); err != nil {
-			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
+			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 

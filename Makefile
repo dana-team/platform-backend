@@ -15,11 +15,14 @@ CONTAINER_TOOL ?= docker
 PLATFORM_URL ?=
 ENV_FILE ?= .env
 CAPP_REPO ?= https://github.com/dana-team/container-app-operator
-CAPP_RELEASE ?= v0.3.0
+CAPP_RELEASE ?= v0.3.1
 RCS_RELEASE ?= v0.3.1
 ADDONS_RELEASE ?= v0.2.1
 CERT_MANAGER_RELEASE ?= v1.15.3
-PREREQ_HELMFILE ?= $(shell pwd)/charts/platform_prereq_hub_helmfile.yaml
+PREREQ_HELMFILE ?= $(shell pwd)/charts/platform_hub_prereq_helmfile.yaml
+CLUSTER_PROXY_RBAC ?= $(shell pwd)/hack/managed-cluster-setup/cluster-proxy-rbac.yaml
+CLUSTER_GATEWAY_RBAC ?= $(shell pwd)/hack/managed-cluster-setup/cluster-gateway-rbac.yaml
+CNAME_RECORD_CRD ?= https://raw.githubusercontent.com/dana-team/provider-dns/main/package/crds/record.dns.crossplane.io_cnamerecords.yaml
 
 ##@ Development
 
@@ -32,7 +35,7 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 .PHONY: test
-test:  fmt vet ## Run tests.
+test: fmt vet ## Run tests.
 	go test -v $$(go list ./... | grep -v /e2e_tests) -coverprofile cover.out
 
 .PHONY: test-e2e
@@ -88,7 +91,7 @@ deploy: helm ## Deploy to the K8s cluster specified in ~/.kube/config.
 		--set config.cluster.domain=$(CLUSTER_DOMAIN)
 
 .PHONY: undeploy
-undeploy: helm ## Deploy to the K8s cluster specified in ~/.kube/config.
+undeploy: helm ## Uninstall from the K8s cluster specified in ~/.kube/config.
 	$(HELM) uninstall $(NAME) -n $(NAMESPACE)
 	$(KUBECTL) delete ns $(NAMESPACE)
 
@@ -112,10 +115,26 @@ env-file:
 	rm $(ENV_FILE)_tmp
 
 .PHONY: install-prereq
-install-prereq: deploy-capp
+install-prereq: deploy-capp install-cluster-proxy-role install-cluster-gateway-role
 
 .PHONY: uninstall-prereq
-uninstall-prereq: undeploy-capp
+uninstall-prereq: undeploy-capp uninstall-cluster-proxy-role uninstall-cluster-gateway-role
+
+.PHONY: install-cluster-proxy-role
+install-cluster-proxy-role:
+	kubectl apply -f $(CLUSTER_PROXY_RBAC)
+
+.PHONY: uninstall-cluster-proxy-role
+uninstall-cluster-proxy-role:
+	kubectl delete -f $(CLUSTER_PROXY_RBAC)
+
+.PHONY: install-cluster-gateway-role
+install-cluster-gateway-role:
+	kubectl apply -f $(CLUSTER_GATEWAY_RBAC)
+
+.PHONY: uninstall-cluster-gateway-role
+uninstall-cluster-gateway-role:
+	kubectl delete -f $(CLUSTER_GATEWAY_RBAC)
 
 .PHONY: deploy-capp
 deploy-capp: helm helm-plugins
@@ -146,7 +165,7 @@ deploy-capp: helm helm-plugins
 
 	$(HELM) upgrade --install container-app-operator container-app-operator/charts/container-app-operator \
       --wait --create-namespace --namespace capp-operator-system \
-      --set image.manager.tag=$(CAPP_RELEASE) --set image.pullPolicy=$(IMG_PULL_POLICY)
+      --set image.manager.tag=$(CAPP_RELEASE) --set image.manager.pullPolicy=$(IMG_PULL_POLICY)
 
 	rm -rf container-app-operator/
 
@@ -154,11 +173,19 @@ deploy-capp: helm helm-plugins
 undeploy-capp: helm helm-plugins
 	[ -d "container-app-operator" ] || git clone $(CAPP_REPO)
 	make -C container-app-operator uninstall-prereq-openshift
-	$(HELM) uninstall capp-operator --namespace capp-operator-system
+	$(HELM) uninstall container-app-operator --namespace capp-operator-system
 	rm -rf container-app-operator/
 
+.PHONY: install-cnamerecord-crd
+install-cnamerecord-crd:
+	kubectl apply -f $(CNAME_RECORD_CRD)
+
+.PHONY: uninstall-cnamerecord-crd
+uninstall-cnamerecord-crd:
+	kubectl delete -f $(CNAME_RECORD_CRD)
+
 .PHONY: setup-hub
-setup-hub: helmfile install-capp-crds clusteradm ## setup hub cluster with RCS
+setup-hub: helmfile install-capp-crds clusteradm ## Setup hub cluster with RCS
 	REQUIRED_VARS="\
 		PLACEMENTS_NAMESPACE \
 		PLACEMENT_NAME \
@@ -181,6 +208,7 @@ setup-hub: helmfile install-capp-crds clusteradm ## setup hub cluster with RCS
 	--state-values-set placementName=${PLACEMENT_NAME} \
 	--state-values-set placementsNamespace=${PLACEMENTS_NAMESPACE}
 	rm -rf container-app-operator/
+	$(MAKE) install-cnamerecord-crd
 
 .PHONY: cleanup-hub
 cleanup-hub: helmfile  ## cleanup hub cluster.
@@ -200,6 +228,7 @@ cleanup-hub: helmfile  ## cleanup hub cluster.
 	$(CLUSTERADM) clusterset unbind ${MANAGED_CLUSTER_NAME} --namespace ${PLACEMENTS_NAMESPACE}
 	$(CLUSTERADM) delete clusterset ${MANAGED_CLUSTER_NAME}
 	kubectl delete ns ${PLACEMENTS_NAMESPACE} --ignore-not-found
+	$(MAKE) uninstall-cnamerecord-crd
 
 .PHONY: doc-chart
 doc-chart: helm-docs helm
@@ -297,7 +326,7 @@ $(HELMFILE): $(LOCALBIN)
 .PHONY: clusteradm
 clusteradm: $(CLUSTERADM) ## Download clusteradm locally if necessary.
 $(CLUSTERADM): $(LOCALBIN)
-	test -s $(LOCALBIN)/clusteradm || curl -L $(CLUSTERADM_URL) | sed  's|/usr/local/bin|$(LOCALBIN)|g' | bash
+	test -s $(LOCALBIN)/clusteradm || curl -L $(CLUSTERADM_URL) | sed 's|/usr/local/bin|$(LOCALBIN)|g' | bash
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
 # $1 - target path with name of binary (ideally with version)

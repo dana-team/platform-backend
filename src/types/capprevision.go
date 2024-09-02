@@ -18,7 +18,9 @@ type CappRevisionList struct {
 }
 
 type CappRevisionNamespaceUri struct {
+	ClusterName   string `uri:"clusterName"`
 	NamespaceName string `uri:"namespaceName" binding:"required"`
+	CappName      string `uri:"cappName"`
 }
 
 type CappRevisionUri struct {

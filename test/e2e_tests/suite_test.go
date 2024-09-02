@@ -5,11 +5,11 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
+	"github.com/dana-team/platform-backend/src/utils/testutils"
+	multicluster "github.com/oam-dev/cluster-gateway/pkg/apis/cluster/transport"
 	"net/http"
-	"strings"
 	"testing"
 
-	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	configv1 "github.com/openshift/api/config/v1"
 
@@ -108,6 +108,7 @@ func initKubeClient() {
 	cfg, err := config.GetConfig()
 	Expect(err).NotTo(HaveOccurred())
 
+	cfg.Wrap(multicluster.NewClusterGatewayRoundTripper)
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
@@ -200,15 +201,9 @@ func getTokenFromLogin() {
 
 // getClusterIngressDomain returns the ingress domain of an OpenShift cluster.
 func getClusterIngressDomain() {
-	if platformURL == "" {
-		ingress := &configv1.Ingress{}
-		getClusterResource(k8sClient, ingress, clusterIngressName)
-		clusterDomain = ingress.Spec.Domain
-		return
-	}
-
-	urlSplit := strings.Split(platformURL, ".")
-	clusterDomain = strings.Join(urlSplit[1:], ".")
+	ingress := &configv1.Ingress{}
+	getClusterResource(k8sClient, ingress, clusterIngressName)
+	clusterDomain = ingress.Spec.Domain
 }
 
 // cleanUpTestNamespaces deletes test namespaces.

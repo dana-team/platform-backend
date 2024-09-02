@@ -2,7 +2,7 @@ package v1
 
 import (
 	"github.com/dana-team/platform-backend/src/customerrors"
-	"github.com/dana-team/platform-backend/src/routes"
+	"github.com/dana-team/platform-backend/src/middleware"
 	"github.com/dana-team/platform-backend/src/utils/pagination"
 	"net/http"
 
@@ -14,13 +14,13 @@ import (
 // secretHandler handles the request of the client to the Kubernetes cluster.
 func secretHandler(handler func(controller controllers.SecretController, c *gin.Context) (interface{}, error)) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		kubeClient, err := routes.GetKubeClient(c)
-		if routes.AddErrorToContext(c, err) {
+		kubeClient, err := middleware.GetKubeClient(c)
+		if middleware.AddErrorToContext(c, err) {
 			return
 		}
 
-		logger, err := routes.GetLogger(c)
-		if routes.AddErrorToContext(c, err) {
+		logger, err := middleware.GetLogger(c)
+		if middleware.AddErrorToContext(c, err) {
 			return
 		}
 
@@ -28,7 +28,7 @@ func secretHandler(handler func(controller controllers.SecretController, c *gin.
 		secretController := controllers.NewSecretController(kubeClient, context, logger)
 
 		result, err := handler(secretController, c)
-		if routes.AddErrorToContext(c, err) {
+		if middleware.AddErrorToContext(c, err) {
 			return
 		}
 
@@ -41,12 +41,12 @@ func CreateSecret() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var uriRequest types.SecretNamespaceUriRequest
 		if err := c.BindUri(&uriRequest); err != nil {
-			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
+			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 		var request types.CreateSecretRequest
 		if err := c.BindJSON(&request); err != nil {
-			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
+			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
@@ -61,13 +61,13 @@ func GetSecrets() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var request types.SecretNamespaceUriRequest
 		if err := c.BindUri(&request); err != nil {
-			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
+			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
 		limit, page, err := pagination.ExtractPaginationParamsFromCtx(c)
 		if err != nil {
-			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
+			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
@@ -82,7 +82,7 @@ func GetSecret() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var request types.SecretUriRequest
 		if err := c.BindUri(&request); err != nil {
-			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
+			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
@@ -97,12 +97,12 @@ func UpdateSecret() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var uriRequest types.SecretUriRequest
 		if err := c.BindUri(&uriRequest); err != nil {
-			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
+			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 		var request types.UpdateSecretRequest
 		if err := c.BindJSON(&request); err != nil {
-			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
+			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
@@ -117,7 +117,7 @@ func DeleteSecret() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var request types.SecretUriRequest
 		if err := c.BindUri(&request); err != nil {
-			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
+			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
