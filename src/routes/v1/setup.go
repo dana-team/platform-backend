@@ -96,4 +96,10 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider, scheme *r
 	{
 		podsGroup.Use(middleware.PaginationMiddleware()).GET("/capps/:cappName/pods", GetPods())
 	}
+
+	serviceAccountsGroup := namespacesGroup.Group("/:namespaceName/serviceaccounts")
+	serviceAccountsGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
+	{
+		serviceAccountsGroup.GET("/:serviceAccountName/token", GetToken())
+	}
 }

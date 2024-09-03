@@ -158,6 +158,34 @@ func getRoleBinding(k8sClient client.Client, name string, namespace string) *rba
 	return roleBinding
 }
 
+// getServiceAccount fetches and returns an existing instance of a ServiceAccount.
+func getServiceAccount(k8sClient client.Client, name string, namespace string) *corev1.ServiceAccount {
+	serviceAccount := &corev1.ServiceAccount{}
+	getResource(k8sClient, serviceAccount, name, namespace)
+	return serviceAccount
+}
+
+// getServiceAccountTokenSecret fetches and returns an existing instance of a ServiceAccount's token secret.
+func getServiceAccountTokenSecret(k8sClient client.Client, name string, namespace string) *corev1.Secret {
+	serviceAccount := getServiceAccount(k8sClient, name, namespace)
+
+	for _, ref := range serviceAccount.Secrets {
+		secret := getSecret(k8sClient, ref.Name, namespace)
+
+		if secret.Type == corev1.SecretTypeDockercfg {
+			for _, ownerRef := range secret.OwnerReferences {
+				tokenSecret := getSecret(k8sClient, ownerRef.Name, namespace)
+
+				if tokenSecret.Type == corev1.SecretTypeServiceAccountToken {
+					return tokenSecret
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
 // createTestNamespace creates a test Namespace object.
 func createTestNamespace(k8sClient client.Client, name string) {
 	namespace := mocks.PrepareNamespace(name, map[string]string{e2eLabelKey: e2eLabelValue})
@@ -198,4 +226,13 @@ func createTestSecret(k8sClient client.Client, name, namespace string) {
 func createTestUser(k8sClient client.Client, name, namespace string) {
 	oneSecret := mocks.PrepareRoleBinding(name, namespace, testutils.AdminKey)
 	createResource(k8sClient, &oneSecret)
+}
+
+// CreateTestServiceAccount creates a test ServiceAccount object.
+func CreateTestServiceAccount(k8sClient client.Client, name, namespace, tokenSecretName, tokenValue, dockerCfgSecretName string) {
+	tokenSecret := mocks.PrepareTokenSecret(tokenSecretName, namespace, tokenValue, name)
+	createResource(k8sClient, &tokenSecret)
+
+	serviceAccount := mocks.PrepareServiceAccount(name, namespace, "")
+	createResource(k8sClient, serviceAccount)
 }

@@ -41,6 +41,14 @@ const (
 )
 
 const (
+	ServiceAccountsKey = "serviceaccounts"
+	TokenKey           = "token"
+	Secret             = "Secret"
+	V1 = "v1"
+	Value = "value"
+)
+
+const (
 	RoleKey              = "role"
 	AdminKey             = "admin"
 	ViewerKey            = "viewer"
@@ -108,6 +116,11 @@ const (
 
 const (
 	CappResourceKey = "rcs.dana.io/parent-capp"
+)
+
+const (
+	ServiceAccountName       = TestName + "-serviceAccount"
+	ServiceAccountAnnotation = "kubernetes.io/service-account.name"
 )
 
 const (

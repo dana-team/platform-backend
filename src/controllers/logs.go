@@ -60,7 +60,7 @@ func FetchCappLogs(ctx context.Context, client kubernetes.Interface, namespace, 
 }
 
 // FetchCappPodName returns the validated pod name from the provided list of pods.
-// If cappName is empty, it returns the name of the first pod in the list.
+// If name is empty, it returns the name of the first pod in the list.
 // It also returns a boolean indicating if the pod name was found in the list.
 func FetchCappPodName(podName string, pods *corev1.PodList) (string, bool) {
 	if podName == "" {
