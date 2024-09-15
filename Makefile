@@ -71,17 +71,6 @@ docker-push: ## Push docker image with the manager.
 
 .PHONY: deploy
 deploy: helm ## Deploy to the K8s cluster specified in ~/.kube/config.
-	REQUIRED_VARS="\
-		CLUSTER_NAME \
-		CLUSTER_DOMAIN \
-	"
-	for var in $${REQUIRED_VARS}; do \
-		if [ -z "$${!var}" ]; then \
-			echo "Error: Variable $$var is not set."; \
-			exit 1; \
-		fi; \
-	done
-
 	$(HELM) upgrade $(NAME) -n $(NAMESPACE) charts/$(NAME) --install --create-namespace \
 		-f charts/$(NAME)/values.yaml \
 		--set image.repository=$(IMG_REPO) \
@@ -97,17 +86,6 @@ undeploy: helm ## Uninstall from the K8s cluster specified in ~/.kube/config.
 
 .PHONY: env-file
 env-file:
-	REQUIRED_VARS="\
-		CLUSTER_NAME \
-		CLUSTER_DOMAIN \
-	"
-	for var in $${REQUIRED_VARS}; do \
-		if [ -z "$${!var}" ]; then \
-			echo "Error: Variable $$var is not set."; \
-			exit 1; \
-		fi; \
-	done
-
 	$(HELM) template -s templates/configmap.yaml charts/$(NAME) \
 	--set config.cluster.name=${CLUSTER_NAME} \
 	--set config.cluster.domain=${CLUSTER_DOMAIN} > $(ENV_FILE)_tmp
@@ -138,21 +116,6 @@ uninstall-cluster-gateway-role:
 
 .PHONY: deploy-capp
 deploy-capp: helm helm-plugins
-	REQUIRED_VARS="\
-		PROVIDER_DNS_REALM \
-		PROVIDER_DNS_KDC \
-		PROVIDER_DNS_POLICY \
-		PROVIDER_DNS_NAMESERVER \
-		PROVIDER_DNS_USERNAME \
-		PROVIDER_DNS_PASSWORD \
-	"
-	for var in $${REQUIRED_VARS}; do \
-		if [ -z "$${!var}" ]; then \
-			echo "Error: Variable $$var is not set."; \
-			exit 1; \
-		fi; \
-	done
-
 	[ -d "container-app-operator" ] || git clone $(CAPP_REPO)
 
 	make -C container-app-operator prereq-openshift \
@@ -186,18 +149,6 @@ uninstall-cnamerecord-crd:
 
 .PHONY: setup-hub
 setup-hub: helmfile install-capp-crds clusteradm ## Setup hub cluster with RCS
-	REQUIRED_VARS="\
-		PLACEMENTS_NAMESPACE \
-		PLACEMENT_NAME \
-		MANAGED_CLUSTER_NAME \
-	"
-	for var in $${REQUIRED_VARS}; do \
-		if [ -z "$${!var}" ]; then \
-			echo "Error: Variable $$var is not set."; \
-			exit 1; \
-		fi; \
-	done
-
 	kubectl get namespace ${PLACEMENTS_NAMESPACE} || kubectl create namespace ${PLACEMENTS_NAMESPACE}
 	$(CLUSTERADM) create clusterset ${MANAGED_CLUSTER_NAME}
 	$(CLUSTERADM) clusterset set ${MANAGED_CLUSTER_NAME} --clusters ${MANAGED_CLUSTER_NAME}
@@ -212,17 +163,6 @@ setup-hub: helmfile install-capp-crds clusteradm ## Setup hub cluster with RCS
 
 .PHONY: cleanup-hub
 cleanup-hub: helmfile  ## cleanup hub cluster.
-	REQUIRED_VARS="\
-		PLACEMENTS_NAMESPACE \
-		PLACEMENT_NAME \
-		MANAGED_CLUSTER_NAME \
-	"
-	for var in $${REQUIRED_VARS}; do \
-		if [ -z "$${!var}" ]; then \
-			echo "Error: Variable $$var is not set."; \
-			exit 1; \
-		fi; \
-	done
 	$(HELMFILE) -f $(PREREQ_HELMFILE) destroy
 	kubectl delete placements ${PLACEMENT_NAME} --namespace ${PLACEMENTS_NAMESPACE} --ignore-not-found
 	$(CLUSTERADM) clusterset unbind ${MANAGED_CLUSTER_NAME} --namespace ${PLACEMENTS_NAMESPACE}

@@ -83,7 +83,9 @@ jobs:
           MANAGED_CLUSTER_NAME=${{ secrets.BACKEND_CI_CLUSTER_NAME }}
 
       - name: Await rcs addons to be ready
-        run: until kubectl get mca rcs-score -n ${{ secrets.BACKEND_CI_CLUSTER_NAME }} -o jsonpath='{.status.conditions[?(@.type=="Available")].status}' | grep -q "True"; do echo "Waiting for rcs addons to be ready..."; sleep 5; done; echo "rcs addons is ready"
+        run: |
+          until kubectl get mca rcs-score -n ${{ secrets.BACKEND_CI_CLUSTER_NAME }} -o jsonpath='{.status.conditions[?(@.type=="Available")].status}' | grep -q "True"; do echo "Waiting for rcs addons to be ready..."; sleep 5; done; echo "rcs addons is ready"
+          until kubectl get mca capp-status-addon -n ${{ secrets.BACKEND_CI_CLUSTER_NAME }} -o jsonpath='{.status.conditions[?(@.type=="Available")].status}' | grep -q "True"; do echo "Waiting for rcs addons to be ready..."; sleep 5; done; echo "rcs addons is ready"
 
       - name: Deploy backend
         run: | 
