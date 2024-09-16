@@ -2,6 +2,7 @@ package v1
 
 import (
 	"github.com/dana-team/platform-backend/src/customerrors"
+	"github.com/dana-team/platform-backend/src/middleware"
 	"github.com/dana-team/platform-backend/src/routes"
 	"github.com/dana-team/platform-backend/src/utils/pagination"
 	"net/http"
@@ -13,21 +14,21 @@ import (
 
 func cappHandler(handler func(controller controllers.CappController, c *gin.Context) (interface{}, error)) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		kubeClient, err := routes.GetDynClient(c)
-		if routes.AddErrorToContext(c, err) {
+		kubeClient, err := middleware.GetDynClient(c)
+		if middleware.AddErrorToContext(c, err) {
 			return
 		}
 
-		logger, err := routes.GetLogger(c)
-		if routes.AddErrorToContext(c, err) {
+		logger, err := middleware.GetLogger(c)
+		if middleware.AddErrorToContext(c, err) {
 			return
 		}
 
-		context := c.Request.Context()
+		context := routes.GetContext(c)
 		cappController := controllers.NewCappController(kubeClient, context, logger)
 
 		result, err := handler(cappController, c)
-		if routes.AddErrorToContext(c, err) {
+		if middleware.AddErrorToContext(c, err) {
 			return
 		}
 
@@ -39,19 +40,19 @@ func GetCapps() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cappUri types.CappNamespaceUri
 		if err := c.BindUri(&cappUri); err != nil {
-			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
+			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
 		var cappQuery types.CappQuery
 		if err := c.BindQuery(&cappQuery); err != nil {
-			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
+			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
 		limit, page, err := pagination.ExtractPaginationParamsFromCtx(c)
 		if err != nil {
-			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
+			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
@@ -65,7 +66,7 @@ func GetCapp() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cappUri types.CappUri
 		if err := c.BindUri(&cappUri); err != nil {
-			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
+			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
@@ -79,12 +80,12 @@ func CreateCapp() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cappUri types.CappNamespaceUri
 		if err := c.BindUri(&cappUri); err != nil {
-			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
+			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 		var capp types.CreateCapp
 		if err := c.BindJSON(&capp); err != nil {
-			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
+			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
@@ -98,12 +99,12 @@ func UpdateCapp() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cappUri types.CappUri
 		if err := c.BindUri(&cappUri); err != nil {
-			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
+			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 		var capp types.UpdateCapp
 		if err := c.BindJSON(&capp); err != nil {
-			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
+			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
@@ -117,12 +118,12 @@ func EditCappState() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cappUri types.CappUri
 		if err := c.BindUri(&cappUri); err != nil {
-			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
+			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 		var state types.CappState
 		if err := c.BindJSON(&state); err != nil {
-			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
+			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
@@ -136,7 +137,7 @@ func GetCappState() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cappUri types.CappUri
 		if err := c.BindUri(&cappUri); err != nil {
-			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
+			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
@@ -150,7 +151,7 @@ func GetCappDNS() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cappUri types.CappUri
 		if err := c.BindUri(&cappUri); err != nil {
-			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
+			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
@@ -164,7 +165,7 @@ func DeleteCapp() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cappUri types.CappUri
 		if err := c.BindUri(&cappUri); err != nil {
-			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
+			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 

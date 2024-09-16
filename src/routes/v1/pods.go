@@ -2,9 +2,10 @@ package v1
 
 import (
 	"github.com/dana-team/platform-backend/src/customerrors"
+	"github.com/dana-team/platform-backend/src/middleware"
+	"github.com/dana-team/platform-backend/src/routes"
 
 	"github.com/dana-team/platform-backend/src/controllers"
-	"github.com/dana-team/platform-backend/src/routes"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/dana-team/platform-backend/src/utils/pagination"
 	"github.com/gin-gonic/gin"
@@ -14,21 +15,21 @@ import (
 // podHandler wraps a handler function with context setup for PodController.
 func podHandler(handler func(controller controllers.PodController, c *gin.Context) (interface{}, error)) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		kubeClient, err := routes.GetKubeClient(c)
-		if routes.AddErrorToContext(c, err) {
+		kubeClient, err := middleware.GetKubeClient(c)
+		if middleware.AddErrorToContext(c, err) {
 			return
 		}
 
-		logger, err := routes.GetLogger(c)
-		if routes.AddErrorToContext(c, err) {
+		logger, err := middleware.GetLogger(c)
+		if middleware.AddErrorToContext(c, err) {
 			return
 		}
 
-		context := c.Request.Context()
+		context := routes.GetContext(c)
 		podController := controllers.NewPodController(kubeClient, context, logger)
 
 		result, err := handler(podController, c)
-		if routes.AddErrorToContext(c, err) {
+		if middleware.AddErrorToContext(c, err) {
 			return
 		}
 
@@ -41,13 +42,13 @@ func GetPods() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var request types.PodRequestUri
 		if err := c.BindUri(&request); err != nil {
-			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
+			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 
 		limit, page, err := pagination.ExtractPaginationParamsFromCtx(c)
 		if err != nil {
-			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
+			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 

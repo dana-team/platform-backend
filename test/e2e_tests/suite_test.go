@@ -6,12 +6,15 @@ import (
 	"flag"
 	"fmt"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
+	multicluster "github.com/oam-dev/cluster-gateway/pkg/apis/cluster/transport"
+	"net/http"
+	"testing"
+
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	configv1 "github.com/openshift/api/config/v1"
-	"net/http"
+
 	ctrl "sigs.k8s.io/controller-runtime"
 	zapctrl "sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -105,6 +108,7 @@ func initKubeClient() {
 	cfg, err := config.GetConfig()
 	Expect(err).NotTo(HaveOccurred())
 
+	cfg.Wrap(multicluster.NewClusterGatewayRoundTripper)
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
@@ -192,7 +196,6 @@ func getTokenFromLogin() {
 
 		userToken, ok = token.(string)
 		return ok
-
 	}, testutils.Timeout, testutils.Interval).Should(Equal(true))
 }
 

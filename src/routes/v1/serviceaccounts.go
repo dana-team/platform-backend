@@ -3,7 +3,7 @@ package v1
 import (
 	"github.com/dana-team/platform-backend/src/controllers"
 	"github.com/dana-team/platform-backend/src/customerrors"
-	"github.com/dana-team/platform-backend/src/routes"
+	"github.com/dana-team/platform-backend/src/middleware"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -12,13 +12,13 @@ import (
 // serviceAccountHandler wraps a handler function with context setup for serviceAccountController.
 func serviceAccountHandler(handler func(controller controllers.ServiceAccountController, c *gin.Context) (interface{}, error)) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		kubeClient, err := routes.GetKubeClient(c)
-		if routes.AddErrorToContext(c, err) {
+		kubeClient, err := middleware.GetKubeClient(c)
+		if middleware.AddErrorToContext(c, err) {
 			return
 		}
 
-		logger, err := routes.GetLogger(c)
-		if routes.AddErrorToContext(c, err) {
+		logger, err := middleware.GetLogger(c)
+		if middleware.AddErrorToContext(c, err) {
 			return
 		}
 
@@ -26,7 +26,7 @@ func serviceAccountHandler(handler func(controller controllers.ServiceAccountCon
 		serviceAccountController := controllers.NewServiceAccountController(kubeClient, context, logger)
 
 		result, err := handler(serviceAccountController, c)
-		if routes.AddErrorToContext(c, err) {
+		if middleware.AddErrorToContext(c, err) {
 			return
 		}
 
@@ -39,7 +39,7 @@ func GetToken() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var request types.ServiceAccountRequestUri
 		if err := c.BindUri(&request); err != nil {
-			routes.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
+			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
 

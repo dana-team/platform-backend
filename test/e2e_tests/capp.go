@@ -4,21 +4,27 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
-	"github.com/dana-team/platform-backend/src/controllers"
-	"github.com/dana-team/platform-backend/src/types"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
-	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	"net/http"
 	"net/url"
+
+	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
+	"github.com/dana-team/platform-backend/src/controllers"
+	"github.com/dana-team/platform-backend/src/types"
+	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
+
+func getCappClusterDomain(site string) string {
+	return fmt.Sprintf("apps.%s.os-pub.com", site)
+}
 
 var _ = Describe("Validate Capp routes and functionality", func() {
 	var namespaceName, oneCappName, secondCappName string
 	var oneLabelKey, oneLabelValue, secondLabelKey, secondLabelValue string
+	var oneCappSite, secondCappSite string
 
 	BeforeEach(func() {
 		namespaceName = generateName(e2eNamespace)
@@ -27,12 +33,14 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 		oneCappName = generateName("a-" + testCappName)
 		oneLabelKey = generateName(e2eLabelKey)
 		oneLabelValue = generateName(e2eLabelValue)
-		createTestCapp(k8sClient, oneCappName, namespaceName, map[string]string{oneLabelKey: oneLabelValue}, nil)
+		oneCapp := createTestCapp(k8sClient, oneCappName, namespaceName, map[string]string{oneLabelKey: oneLabelValue}, nil)
+		oneCappSite = oneCapp.Status.ApplicationLinks.Site
 
 		secondCappName = generateName("b-" + testCappName)
 		secondLabelKey = generateName(e2eLabelKey)
 		secondLabelValue = generateName(e2eLabelValue)
-		createTestCapp(k8sClient, secondCappName, namespaceName, map[string]string{secondLabelKey: secondLabelValue}, nil)
+		secondCapp := createTestCapp(k8sClient, secondCappName, namespaceName, map[string]string{secondLabelKey: secondLabelValue}, nil)
+		secondCappSite = secondCapp.Status.ApplicationLinks.Site
 	})
 
 	Context("Validate get Capps route", func() {
@@ -42,8 +50,8 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 
 			expectedResponse := map[string]interface{}{
 				testutils.CappsKey: []types.CappSummary{
-					{Name: oneCappName, Images: []string{CappImageName}, URL: fmt.Sprintf("https://%s-%s.%s", oneCappName, namespaceName, clusterDomain)},
-					{Name: secondCappName, Images: []string{CappImageName}, URL: fmt.Sprintf("https://%s-%s.%s", secondCappName, namespaceName, clusterDomain)},
+					{Name: oneCappName, Images: []string{CappImageName}, URL: fmt.Sprintf("https://%s-%s.%s", oneCappName, namespaceName, getCappClusterDomain(oneCappSite))},
+					{Name: secondCappName, Images: []string{CappImageName}, URL: fmt.Sprintf("https://%s-%s.%s", secondCappName, namespaceName, getCappClusterDomain(secondCappSite))},
 				},
 				testutils.CountKey: 2,
 			}
@@ -61,8 +69,8 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 
 			expectedResponse := map[string]interface{}{
 				testutils.CappsKey: []types.CappSummary{
-					{Name: oneCappName, Images: []string{CappImageName}, URL: fmt.Sprintf("https://%s-%s.%s", oneCappName, namespaceName, clusterDomain)},
-					{Name: secondCappName, Images: []string{CappImageName}, URL: fmt.Sprintf("https://%s-%s.%s", secondCappName, namespaceName, clusterDomain)},
+					{Name: oneCappName, Images: []string{CappImageName}, URL: fmt.Sprintf("https://%s-%s.%s", oneCappName, namespaceName, getCappClusterDomain(oneCappSite))},
+					{Name: secondCappName, Images: []string{CappImageName}, URL: fmt.Sprintf("https://%s-%s.%s", secondCappName, namespaceName, getCappClusterDomain(secondCappSite))},
 				},
 				testutils.CountKey: 2,
 			}
@@ -80,7 +88,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 
 			expectedResponse := map[string]interface{}{
 				testutils.CappsKey: []types.CappSummary{
-					{Name: oneCappName, Images: []string{CappImageName}, URL: fmt.Sprintf("https://%s-%s.%s", oneCappName, namespaceName, clusterDomain)},
+					{Name: oneCappName, Images: []string{CappImageName}, URL: fmt.Sprintf("https://%s-%s.%s", oneCappName, namespaceName, getCappClusterDomain(oneCappSite))},
 				},
 				testutils.CountKey: 1,
 			}
@@ -98,7 +106,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 
 			expectedResponse := map[string]interface{}{
 				testutils.CappsKey: []types.CappSummary{
-					{Name: secondCappName, Images: []string{CappImageName}, URL: fmt.Sprintf("https://%s-%s.%s", secondCappName, namespaceName, clusterDomain)},
+					{Name: secondCappName, Images: []string{CappImageName}, URL: fmt.Sprintf("https://%s-%s.%s", secondCappName, namespaceName, getCappClusterDomain(secondCappSite))},
 				},
 				testutils.CountKey: 1,
 			}
@@ -132,7 +140,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 
 			expectedResponse := map[string]interface{}{
 				testutils.CappsKey: []types.CappSummary{
-					{Name: secondCappName, Images: []string{CappImageName}, URL: fmt.Sprintf("https://%s-%s.%s", secondCappName, namespaceName, clusterDomain)},
+					{Name: secondCappName, Images: []string{CappImageName}, URL: fmt.Sprintf("https://%s-%s.%s", secondCappName, namespaceName, getCappClusterDomain(secondCappSite))},
 				},
 				testutils.CountKey: 1,
 			}
@@ -235,7 +243,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 			expectedResponse := map[string]interface{}{
 				testutils.MetadataKey:    types.Metadata{Name: newCappName, Namespace: namespaceName},
 				testutils.LabelsKey:      []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}},
-				testutils.AnnotationsKey: nil,
+				testutils.AnnotationsKey: []types.KeyValue{{Key: testutils.LastUpdatedCappLabel, Value: e2eUser}},
 				testutils.SpecKey:        mocks.PrepareCappSpec(),
 				testutils.StatusKey:      cappv1alpha1.CappStatus{},
 			}
@@ -537,7 +545,8 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 
 			expectedResponse := map[string]interface{}{
 				testutils.RecordsKey: []types.DNS{
-					{Status: corev1.ConditionTrue, Name: fmt.Sprintf("%s.%s", hostname, domain)}},
+					{Status: corev1.ConditionTrue, Name: fmt.Sprintf("%s.%s", hostname, domain)},
+				},
 			}
 			Expect(status).Should(Equal(http.StatusOK))
 			Expect(response[testutils.RecordsKey], expectedResponse[testutils.RecordsKey])

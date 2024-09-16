@@ -42,6 +42,7 @@ func TestTokenAuthMiddleware(t *testing.T) {
 		c.Next()
 	})
 
+	router.Use(ErrorHandlingMiddleware())
 	router.Use(TokenAuthMiddleware(MockTokenProvider{Token: "valid_token", Username: "user", Err: nil}, newScheme()))
 	router.GET("/ping", func(c *gin.Context) {
 		_, ok := c.Get("kubeClient")
