@@ -122,6 +122,11 @@ func setupNamespaceRoutes(v1 *gin.RouterGroup, tokenProvider auth.TokenProvider,
 		logsGroup.GET("/pod/:podName/logs", GetPodLogs())
 		logsGroup.GET("/capp/:cappName/logs", GetCappLogs()).Use(middleware.ClusterMiddleware())
 	}
+
+	serviceAccountsGroup := namespacesGroup.Group("/:namespaceName/serviceaccounts")
+	{
+		serviceAccountsGroup.GET("/:serviceAccountName/token", GetToken())
+	}
 }
 
 // setupClustersRoutes defines routes related to clusters and their namespaces.
@@ -159,11 +164,5 @@ func setupClustersRoutes(v1 *gin.RouterGroup, tokenProvider auth.TokenProvider, 
 		{
 			podsGroup.GET("", GetPods()).Use(middleware.PaginationMiddleware())
 		}
-	}
-
-	serviceAccountsGroup := namespacesGroup.Group("/:namespaceName/serviceaccounts")
-	serviceAccountsGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
-	{
-		serviceAccountsGroup.GET("/:serviceAccountName/token", GetToken())
 	}
 }
