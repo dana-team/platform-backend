@@ -22,11 +22,11 @@ var _ = Describe("Validate CappRevision routes and functionality", func() {
 		createTestNamespace(k8sClient, namespaceName)
 
 		oneCappName = generateName("a-" + testCappRevisionName)
-		oneCapp := createTestCapp(k8sClient, oneCappName, namespaceName, nil, nil)
+		oneCapp := createTestCapp(k8sClient, oneCappName, namespaceName, placementName, nil, nil)
 		oneCappRevisionNames = getCappRevisionNames(k8sClient, oneCappName, namespaceName, oneCapp.Status.ApplicationLinks.Site)
 
 		secondCappName = generateName("b-" + testCappRevisionName)
-		secondCapp := createTestCapp(k8sClient, secondCappName, namespaceName, nil, nil)
+		secondCapp := createTestCapp(k8sClient, secondCappName, namespaceName, placementName, nil, nil)
 		secondCappRevisionNames = getCappRevisionNames(k8sClient, secondCappName, namespaceName, secondCapp.Status.ApplicationLinks.Site)
 
 		site = oneCapp.Status.ApplicationLinks.Site
@@ -141,6 +141,7 @@ var _ = Describe("Validate CappRevision routes and functionality", func() {
 				testutils.AnnotationsKey: annotations,
 				testutils.LabelsKey:      []types.KeyValue{{Key: testutils.LabelCappName, Value: oneCappName}},
 				testutils.SpecKey: mocks.PrepareCappRevisionSpec(
+					placementName,
 					mocks.ConvertKeyValueSliceToMap([]types.KeyValue{{Key: testutils.ManagedByLabel, Value: testutils.Rcs}}),
 					mocks.ConvertKeyValueSliceToMap(annotations)),
 				testutils.StatusKey: mocks.PrepareCappRevisionStatus(),
@@ -162,7 +163,7 @@ var _ = Describe("Validate CappRevision routes and functionality", func() {
 				testutils.ReasonKey: testutils.ReasonNotFound,
 			}
 
-			cappRevision := mocks.PrepareCappRevision(oneCappName+testutils.NonExistentSuffix, namespaceName, nil, nil)
+			cappRevision := mocks.PrepareCappRevision(site, oneCappName+testutils.NonExistentSuffix, namespaceName, nil, nil)
 			Expect(doesResourceExist(k8sClient, &cappRevision)).To(BeFalse())
 			Expect(status).Should(Equal(http.StatusNotFound))
 			compareResponses(response, expectedResponse)
@@ -177,7 +178,7 @@ var _ = Describe("Validate CappRevision routes and functionality", func() {
 				testutils.ReasonKey: testutils.ReasonNotFound,
 			}
 
-			cappRevision := mocks.PrepareCappRevision(oneCappName, namespaceName+testutils.NonExistentSuffix, nil, nil)
+			cappRevision := mocks.PrepareCappRevision(site, oneCappName, namespaceName+testutils.NonExistentSuffix, nil, nil)
 			Expect(doesResourceExist(k8sClient, &cappRevision)).To(BeFalse())
 			Expect(status).Should(Equal(http.StatusNotFound))
 			compareResponses(response, expectedResponse)
@@ -276,6 +277,7 @@ var _ = Describe("Validate CappRevision routes and functionality", func() {
 				testutils.AnnotationsKey: annotations,
 				testutils.LabelsKey:      []types.KeyValue{{Key: testutils.LabelCappName, Value: oneCappName}},
 				testutils.SpecKey: mocks.PrepareCappRevisionSpec(
+					placementName,
 					mocks.ConvertKeyValueSliceToMap([]types.KeyValue{{Key: testutils.ManagedByLabel, Value: testutils.Rcs}}),
 					mocks.ConvertKeyValueSliceToMap(annotations)),
 				testutils.StatusKey: mocks.PrepareCappRevisionStatus(),
@@ -297,7 +299,7 @@ var _ = Describe("Validate CappRevision routes and functionality", func() {
 				testutils.ReasonKey: testutils.ReasonNotFound,
 			}
 
-			cappRevision := mocks.PrepareCappRevision(oneCappName+testutils.NonExistentSuffix, namespaceName, nil, nil)
+			cappRevision := mocks.PrepareCappRevision(site, oneCappName+testutils.NonExistentSuffix, namespaceName, nil, nil)
 			Expect(doesResourceExist(k8sClient, &cappRevision)).To(BeFalse())
 			Expect(status).Should(Equal(http.StatusNotFound))
 			compareResponses(response, expectedResponse)
@@ -312,7 +314,7 @@ var _ = Describe("Validate CappRevision routes and functionality", func() {
 				testutils.ReasonKey: testutils.ReasonNotFound,
 			}
 
-			cappRevision := mocks.PrepareCappRevision(oneCappName, namespaceName+testutils.NonExistentSuffix, nil, nil)
+			cappRevision := mocks.PrepareCappRevision(site, oneCappName, namespaceName+testutils.NonExistentSuffix, nil, nil)
 			Expect(doesResourceExist(k8sClient, &cappRevision)).To(BeFalse())
 			Expect(status).Should(Equal(http.StatusNotFound))
 			compareResponses(response, expectedResponse)

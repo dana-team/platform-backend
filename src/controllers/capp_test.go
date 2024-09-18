@@ -40,7 +40,7 @@ func TestGetCapp(t *testing.T) {
 			want: want{
 				capp: types.Capp{
 					Metadata: mocks.PrepareCappMetadata(testutils.CappName+"-1", namespaceName),
-					Spec:     mocks.PrepareCappSpec(),
+					Spec:     mocks.PrepareCappSpec(testutils.SiteName),
 					Status:   mocks.PrepareCappStatus(testutils.CappName+"-1", namespaceName, testutils.Domain),
 					Labels:   []types.KeyValue{{Key: testutils.LabelKey + "-1", Value: testutils.LabelValue + "-1"}},
 				},
@@ -71,7 +71,7 @@ func TestGetCapp(t *testing.T) {
 	setup()
 	cappController := NewCappController(dynClient, mocks.GinContext(), logger)
 	createTestNamespace(namespaceName, map[string]string{})
-	mocks.CreateTestCapp(dynClient, testutils.CappName+"-1", namespaceName, testutils.Domain, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{})
+	mocks.CreateTestCapp(dynClient, testutils.CappName+"-1", namespaceName, testutils.Domain, testutils.SiteName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{})
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
 			response, err := cappController.GetCapp(test.requestParams.namespace, test.requestParams.name)
@@ -159,9 +159,9 @@ func TestGetCappState(t *testing.T) {
 
 	createTestNamespace(namespaceName, map[string]string{})
 	mocks.CreateTestCappWithState(dynClient, fmt.Sprintf("%s-%s", testutils.CappName, testutils.EnabledState),
-		namespaceName, testutils.EnabledState, map[string]string{}, map[string]string{})
+		namespaceName, testutils.EnabledState, testutils.SiteName, map[string]string{}, map[string]string{})
 	mocks.CreateTestCappWithState(dynClient, fmt.Sprintf("%s-%s", testutils.CappName, testutils.DisabledState),
-		namespaceName, testutils.DisabledState, map[string]string{}, map[string]string{})
+		namespaceName, testutils.DisabledState, testutils.SiteName, map[string]string{}, map[string]string{})
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -311,7 +311,7 @@ func TestGetCappDNS(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 
 			if test.cappName != "" {
-				mocks.CreateTestCapp(dynClient, test.cappName, namespaceName, testutils.Domain, map[string]string{}, map[string]string{})
+				mocks.CreateTestCapp(dynClient, test.cappName, namespaceName, testutils.Domain, testutils.SiteName, map[string]string{}, map[string]string{})
 			}
 
 			for i, dns := range test.records {
@@ -341,7 +341,7 @@ func TestGetCapps(t *testing.T) {
 	namespaceName := testutils.CappNamespace + "-getmany"
 
 	type requestParams struct {
-		cappQuery types.CappQuery
+		cappQuery types.GetCappQuery
 		namespace string
 		limit     int
 		page      int
@@ -359,7 +359,7 @@ func TestGetCapps(t *testing.T) {
 		"ShouldSucceedGettingAllCappRevisions": {
 			requestParams: requestParams{
 				namespace: namespaceName,
-				cappQuery: types.CappQuery{},
+				cappQuery: types.GetCappQuery{},
 			},
 			want: want{
 				errorStatus: metav1.StatusSuccess,
@@ -374,7 +374,7 @@ func TestGetCapps(t *testing.T) {
 		"ShouldSucceedGettingCappByLabels": {
 			requestParams: requestParams{
 				namespace: namespaceName,
-				cappQuery: types.CappQuery{LabelSelector: fmt.Sprintf("%s-2=%s-2", testutils.LabelKey, testutils.LabelValue)},
+				cappQuery: types.GetCappQuery{LabelSelector: fmt.Sprintf("%s-2=%s-2", testutils.LabelKey, testutils.LabelValue)},
 			},
 			want: want{
 				cappList: types.CappList{ListMetadata: types.ListMetadata{Count: 1}, Capps: []types.CappSummary{
@@ -387,7 +387,7 @@ func TestGetCapps(t *testing.T) {
 		"ShouldFailGettingCappsWithInvalidSelector": {
 			requestParams: requestParams{
 				namespace: namespaceName,
-				cappQuery: types.CappQuery{LabelSelector: testutils.InvalidLabelSelector},
+				cappQuery: types.GetCappQuery{LabelSelector: testutils.InvalidLabelSelector},
 			},
 			want: want{
 				cappList:    types.CappList{},
@@ -397,7 +397,7 @@ func TestGetCapps(t *testing.T) {
 		"ShouldFailGettingNonExistingNamespace": {
 			requestParams: requestParams{
 				namespace: namespaceName + testutils.NonExistentSuffix,
-				cappQuery: types.CappQuery{},
+				cappQuery: types.GetCappQuery{},
 			},
 			want: want{
 				cappList:    types.CappList{},
@@ -408,8 +408,8 @@ func TestGetCapps(t *testing.T) {
 	setup()
 
 	createTestNamespace(namespaceName, map[string]string{})
-	mocks.CreateTestCapp(dynClient, testutils.CappName+"-1", namespaceName, testutils.Domain, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{})
-	mocks.CreateTestCapp(dynClient, testutils.CappName+"-2", namespaceName, testutils.Domain, map[string]string{testutils.LabelKey + "-2": testutils.LabelValue + "-2"}, map[string]string{})
+	mocks.CreateTestCapp(dynClient, testutils.CappName+"-1", namespaceName, testutils.Domain, testutils.SiteName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{})
+	mocks.CreateTestCapp(dynClient, testutils.CappName+"-2", namespaceName, testutils.Domain, testutils.SiteName, map[string]string{testutils.LabelKey + "-2": testutils.LabelValue + "-2"}, map[string]string{})
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
 			c := mocks.GinContext()
@@ -434,6 +434,7 @@ func TestCreateCapp(t *testing.T) {
 	namespaceName := testutils.CappNamespace + "-create"
 	type requestParams struct {
 		capp      types.CreateCapp
+		query     types.CreateCappQuery
 		namespace string
 	}
 
@@ -445,25 +446,126 @@ func TestCreateCapp(t *testing.T) {
 		requestParams requestParams
 		want          want
 	}{
-		"ShouldSucceedCreatingCapp": {
+		"ShouldSucceedCreatingCappWithSite": {
 			requestParams: requestParams{
 				namespace: namespaceName,
-				capp:      mocks.PrepareCreateCappType(testutils.CappName+"-2", []types.KeyValue{{Key: testutils.LabelKey + "-2", Value: testutils.LabelValue + "-2"}}, nil),
+				capp:      mocks.PrepareCreateCappType(testutils.CappName+"-2", testutils.SiteName, []types.KeyValue{{Key: testutils.LabelKey + "-2", Value: testutils.LabelValue + "-2"}}, nil),
 			},
 			want: want{
 				response: types.Capp{
 					Metadata: mocks.PrepareCappMetadata(testutils.CappName+"-2", namespaceName),
-					Spec:     mocks.PrepareCappSpec(),
+					Spec:     mocks.PrepareCappSpec(testutils.SiteName),
 					Status:   cappv1alpha1.CappStatus{},
 					Labels:   []types.KeyValue{{Key: testutils.LabelKey + "-2", Value: testutils.LabelValue + "-2"}},
 				},
 				errorStatus: metav1.StatusSuccess,
 			},
 		},
+		"ShouldSucceedCreatingCappWithPlacementRegionAndEnvironment": {
+			requestParams: requestParams{
+				namespace: namespaceName,
+				capp:      mocks.PrepareCreateCappType(testutils.CappName+"-3", "", []types.KeyValue{{Key: testutils.LabelKey + "-3", Value: testutils.LabelValue + "-3"}}, nil),
+				query:     types.CreateCappQuery{Environment: testutils.EnvironmentName + "-1", Region: testutils.RegionName + "-1"},
+			},
+			want: want{
+				response: types.Capp{
+					Metadata: mocks.PrepareCappMetadata(testutils.CappName+"-3", namespaceName),
+					Spec:     mocks.PrepareCappSpec(testutils.PlacementName + "-1"),
+					Status:   cappv1alpha1.CappStatus{},
+					Labels:   []types.KeyValue{{Key: testutils.LabelKey + "-3", Value: testutils.LabelValue + "-3"}},
+				},
+				errorStatus: metav1.StatusSuccess,
+			},
+		},
+		"ShouldSucceedCreatingCappWithOnlyPlacementRegion": {
+			requestParams: requestParams{
+				namespace: namespaceName,
+				capp:      mocks.PrepareCreateCappType(testutils.CappName+"-4", "", []types.KeyValue{{Key: testutils.LabelKey + "-4", Value: testutils.LabelValue + "-4"}}, nil),
+				query:     types.CreateCappQuery{Region: testutils.RegionName + "-2"},
+			},
+			want: want{
+				response: types.Capp{
+					Metadata: mocks.PrepareCappMetadata(testutils.CappName+"-4", namespaceName),
+					Spec:     mocks.PrepareCappSpec(testutils.PlacementName + "-2"),
+					Status:   cappv1alpha1.CappStatus{},
+					Labels:   []types.KeyValue{{Key: testutils.LabelKey + "-4", Value: testutils.LabelValue + "-4"}},
+				},
+				errorStatus: metav1.StatusSuccess,
+			},
+		},
+		"ShouldSucceedCreatingCappWithOnlyPlacementEnvironment": {
+			requestParams: requestParams{
+				namespace: namespaceName,
+				capp:      mocks.PrepareCreateCappType(testutils.CappName+"-5", "", []types.KeyValue{{Key: testutils.LabelKey + "-5", Value: testutils.LabelValue + "-5"}}, nil),
+				query:     types.CreateCappQuery{Environment: testutils.EnvironmentName + "-3"},
+			},
+			want: want{
+				response: types.Capp{
+					Metadata: mocks.PrepareCappMetadata(testutils.CappName+"-5", namespaceName),
+					Spec:     mocks.PrepareCappSpec(testutils.PlacementName + "-3"),
+					Status:   cappv1alpha1.CappStatus{},
+					Labels:   []types.KeyValue{{Key: testutils.LabelKey + "-5", Value: testutils.LabelValue + "-5"}},
+				},
+				errorStatus: metav1.StatusSuccess,
+			},
+		},
+		"ShouldSucceedCreatingCappWithFirstMatchingPlacement": {
+			requestParams: requestParams{
+				namespace: namespaceName,
+				capp:      mocks.PrepareCreateCappType(testutils.CappName+"-6", "", []types.KeyValue{{Key: testutils.LabelKey + "-6", Value: testutils.LabelValue + "-6"}}, nil),
+				query:     types.CreateCappQuery{Environment: testutils.EnvironmentName + "-4", Region: testutils.RegionName + "-4"},
+			},
+			want: want{
+				response: types.Capp{
+					Metadata: mocks.PrepareCappMetadata(testutils.CappName+"-6", namespaceName),
+					Spec:     mocks.PrepareCappSpec(testutils.PlacementName + "-4"),
+					Status:   cappv1alpha1.CappStatus{},
+					Labels:   []types.KeyValue{{Key: testutils.LabelKey + "-6", Value: testutils.LabelValue + "-6"}},
+				},
+				errorStatus: metav1.StatusSuccess,
+			},
+		},
+		"ShouldSucceedCreatingCappWithSiteEvenIfPlacementQueryIsSet": {
+			requestParams: requestParams{
+				namespace: namespaceName,
+				capp:      mocks.PrepareCreateCappType(testutils.CappName+"-7", testutils.SiteName, []types.KeyValue{{Key: testutils.LabelKey + "-7", Value: testutils.LabelValue + "-7"}}, nil),
+				query:     types.CreateCappQuery{Environment: testutils.EnvironmentName + "-5", Region: testutils.RegionName + "-5"},
+			},
+			want: want{
+				response: types.Capp{
+					Metadata: mocks.PrepareCappMetadata(testutils.CappName+"-7", namespaceName),
+					Spec:     mocks.PrepareCappSpec(testutils.SiteName),
+					Status:   cappv1alpha1.CappStatus{},
+					Labels:   []types.KeyValue{{Key: testutils.LabelKey + "-7", Value: testutils.LabelValue + "-7"}},
+				},
+				errorStatus: metav1.StatusSuccess,
+			},
+		},
+		"ShouldFailCreatingCappWithoutSiteAndWithoutMatchingPlacement": {
+			requestParams: requestParams{
+				namespace: namespaceName,
+				capp:      mocks.PrepareCreateCappType(testutils.CappName+"-8", "", []types.KeyValue{{Key: testutils.LabelKey + "-8", Value: testutils.LabelValue + "-8"}}, nil),
+				query:     types.CreateCappQuery{Environment: testutils.EnvironmentName + testutils.NonExistentSuffix, Region: testutils.RegionName + testutils.NonExistentSuffix},
+			},
+			want: want{
+				response:    types.Capp{},
+				errorStatus: metav1.StatusReasonBadRequest,
+			},
+		},
+		"ShouldFailCreatingCappWithoutSetAndWithoutQuery": {
+			requestParams: requestParams{
+				namespace: namespaceName,
+				capp:      mocks.PrepareCreateCappType(testutils.CappName+"-9", "", []types.KeyValue{{Key: testutils.LabelKey + "-9", Value: testutils.LabelValue + "-9"}}, nil),
+			},
+			want: want{
+				response:    types.Capp{},
+				errorStatus: metav1.StatusReasonBadRequest,
+			},
+		},
 		"ShouldFailCreatingExistingCapp": {
 			requestParams: requestParams{
 				namespace: namespaceName,
-				capp:      mocks.PrepareCreateCappType(testutils.CappName+"-1", []types.KeyValue{{Key: testutils.LabelKey + "-1", Value: testutils.LabelValue + "-1"}}, nil),
+				capp:      mocks.PrepareCreateCappType(testutils.CappName+"-1", testutils.SiteName, []types.KeyValue{{Key: testutils.LabelKey + "-1", Value: testutils.LabelValue + "-1"}}, nil),
 			},
 			want: want{
 				response:    types.Capp{},
@@ -474,11 +576,17 @@ func TestCreateCapp(t *testing.T) {
 	setup()
 	cappController := NewCappController(dynClient, mocks.GinContext(), logger)
 	createTestNamespace(namespaceName, map[string]string{})
-	mocks.CreateTestCapp(dynClient, testutils.CappName+"-1", namespaceName, testutils.Domain, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{})
+	mocks.CreateTestPlacement(dynClient, testutils.PlacementName+"-1", namespaceName, map[string]string{testutils.PlacementRegionLabelKey: testutils.RegionName + "-1", testutils.PlacementEnvironmentLabelKey: testutils.EnvironmentName + "-1"})
+	mocks.CreateTestPlacement(dynClient, testutils.PlacementName+"-2", namespaceName, map[string]string{testutils.PlacementRegionLabelKey: testutils.RegionName + "-2"})
+	mocks.CreateTestPlacement(dynClient, testutils.PlacementName+"-3", namespaceName, map[string]string{testutils.PlacementEnvironmentLabelKey: testutils.EnvironmentName + "-3"})
+	mocks.CreateTestPlacement(dynClient, testutils.PlacementName+"-4", namespaceName, map[string]string{testutils.PlacementRegionLabelKey: testutils.RegionName + "-4", testutils.PlacementEnvironmentLabelKey: testutils.EnvironmentName + "-4"})
+	mocks.CreateTestPlacement(dynClient, testutils.PlacementName+"-5", namespaceName, map[string]string{testutils.PlacementRegionLabelKey: testutils.RegionName + "-4", testutils.PlacementEnvironmentLabelKey: testutils.EnvironmentName + "-4"})
+
+	mocks.CreateTestCapp(dynClient, testutils.CappName+"-1", namespaceName, testutils.Domain, testutils.SiteName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{})
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
-			response, err := cappController.CreateCapp(test.requestParams.namespace, test.requestParams.capp)
+			response, err := cappController.CreateCapp(test.requestParams.namespace, test.requestParams.capp, test.requestParams.query)
 			if test.want.errorStatus != metav1.StatusSuccess {
 				reason := err.(customerrors.ErrorWithStatusCode).StatusReason()
 
@@ -511,12 +619,12 @@ func TestUpdateCapp(t *testing.T) {
 			requestParams: requestParams{
 				namespace: namespaceName,
 				name:      testutils.CappName + "-1",
-				capp:      mocks.PrepareUpdateCappType([]types.KeyValue{{Key: testutils.LabelKey + "-3", Value: testutils.LabelValue + "-3"}}, nil),
+				capp:      mocks.PrepareUpdateCappType(testutils.SiteName, []types.KeyValue{{Key: testutils.LabelKey + "-3", Value: testutils.LabelValue + "-3"}}, nil),
 			},
 			want: want{
 				response: types.Capp{
 					Metadata: mocks.PrepareCappMetadata(testutils.CappName+"-1", namespaceName),
-					Spec:     mocks.PrepareCappSpec(),
+					Spec:     mocks.PrepareCappSpec(testutils.SiteName),
 					Status:   mocks.PrepareCappStatus(testutils.CappName+"-1", namespaceName, testutils.Domain),
 					Labels:   []types.KeyValue{{Key: testutils.LabelKey + "-3", Value: testutils.LabelValue + "-3"}},
 				},
@@ -527,7 +635,7 @@ func TestUpdateCapp(t *testing.T) {
 			requestParams: requestParams{
 				namespace: namespaceName,
 				name:      testutils.CappName + testutils.NonExistentSuffix,
-				capp:      mocks.PrepareUpdateCappType([]types.KeyValue{{Key: testutils.LabelKey + "-3", Value: testutils.LabelValue + "-3"}}, nil),
+				capp:      mocks.PrepareUpdateCappType(testutils.SiteName, []types.KeyValue{{Key: testutils.LabelKey + "-3", Value: testutils.LabelValue + "-3"}}, nil),
 			},
 			want: want{
 				response:    types.Capp{},
@@ -538,7 +646,7 @@ func TestUpdateCapp(t *testing.T) {
 	setup()
 	cappController := NewCappController(dynClient, mocks.GinContext(), logger)
 	createTestNamespace(namespaceName, map[string]string{})
-	mocks.CreateTestCapp(dynClient, testutils.CappName+"-1", namespaceName, testutils.Domain, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{})
+	mocks.CreateTestCapp(dynClient, testutils.CappName+"-1", namespaceName, testutils.Domain, testutils.SiteName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{})
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -564,7 +672,7 @@ func TestEditCapp(t *testing.T) {
 	}
 
 	type want struct {
-		response    types.CappStateReponse
+		response    types.CappStateResponse
 		errorStatus metav1.StatusReason
 	}
 	cases := map[string]struct {
@@ -578,7 +686,7 @@ func TestEditCapp(t *testing.T) {
 				state:     testutils.DisabledState,
 			},
 			want: want{
-				response: types.CappStateReponse{
+				response: types.CappStateResponse{
 					State: testutils.DisabledState,
 					Name:  testutils.CappName + "-1",
 				},
@@ -592,7 +700,7 @@ func TestEditCapp(t *testing.T) {
 				state:     testutils.DisabledState,
 			},
 			want: want{
-				response:    types.CappStateReponse{},
+				response:    types.CappStateResponse{},
 				errorStatus: metav1.StatusReasonNotFound,
 			},
 		},
@@ -600,7 +708,7 @@ func TestEditCapp(t *testing.T) {
 	setup()
 	cappController := NewCappController(dynClient, mocks.GinContext(), logger)
 	createTestNamespace(namespaceName, map[string]string{})
-	mocks.CreateTestCapp(dynClient, testutils.CappName+"-1", namespaceName, testutils.Domain, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{})
+	mocks.CreateTestCapp(dynClient, testutils.CappName+"-1", namespaceName, testutils.Domain, testutils.SiteName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{})
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -657,7 +765,7 @@ func TestDeleteCapp(t *testing.T) {
 	setup()
 	cappController := NewCappController(dynClient, mocks.GinContext(), logger)
 	createTestNamespace(namespaceName, map[string]string{})
-	mocks.CreateTestCapp(dynClient, testutils.CappName+"-1", namespaceName, testutils.Domain, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{})
+	mocks.CreateTestCapp(dynClient, testutils.CappName+"-1", namespaceName, testutils.Domain, testutils.SiteName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, map[string]string{})
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {

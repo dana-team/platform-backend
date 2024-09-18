@@ -13,6 +13,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"log"
+	clusterv1beta1 "open-cluster-management.io/api/cluster/v1beta1"
 )
 
 func main() {
@@ -61,6 +62,7 @@ func newScheme() *runtime.Scheme {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(cappv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(dnsrecordv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(clusterv1beta1.AddToScheme(scheme))
 
 	return scheme
 }

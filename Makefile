@@ -43,7 +43,7 @@ test-e2e: ginkgo
 	@test -n "${KUBECONFIG}" -o -r ${HOME}/.kube/config || (echo "Failed to find kubeconfig in ~/.kube/config or no KUBECONFIG set"; exit 1)
 	echo "Running e2e tests"
 	go clean -testcache
-	$(LOCALBIN)/ginkgo -p --vv ./test/e2e_tests/... -coverprofile cover.out -timeout -- -platformUrl=$(PLATFORM_URL)
+	$(LOCALBIN)/ginkgo -p --vv ./test/e2e_tests/... -coverprofile cover.out -timeout -- -platformURL=$(PLATFORM_URL) -clusterDomain=$(CLUSTER_DOMAIN)
 
 .PHONY: lint
 lint: golangci-lint ## Run golangci-lint linter & yamllint
@@ -85,7 +85,7 @@ undeploy: helm ## Uninstall from the K8s cluster specified in ~/.kube/config.
 	$(KUBECTL) delete ns $(NAMESPACE)
 
 .PHONY: env-file
-env-file:
+env-file: yq
 	$(HELM) template -s templates/configmap.yaml charts/$(NAME) \
 	--set config.cluster.name=${CLUSTER_NAME} \
 	--set config.cluster.domain=${CLUSTER_DOMAIN} > $(ENV_FILE)_tmp
@@ -204,7 +204,7 @@ CLUSTERADM_URL ?= https://raw.githubusercontent.com/open-cluster-management-io/c
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.3.0
-GOLANGCI_LINT_VERSION ?= v1.60.1
+GOLANGCI_LINT_VERSION ?= v1.60.3
 HELM_DOCS_VERSION ?= v1.14.2
 HELMFILE_VERSION ?= 0.167.1
 

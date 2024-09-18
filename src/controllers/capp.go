@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+
 	"github.com/dana-team/platform-backend/src/customerrors"
 	"github.com/dana-team/platform-backend/src/utils"
 	"github.com/dana-team/platform-backend/src/utils/pagination"
@@ -12,6 +13,7 @@ import (
 
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/types"
+	clusterv1beta1 "open-cluster-management.io/api/cluster/v1beta1"
 
 	dnsrecordv1alpha1 "github.com/dana-team/provider-dns/apis/record/v1alpha1"
 	"go.uber.org/zap"
@@ -25,25 +27,28 @@ import (
 const (
 	disabledState = "disabled"
 	noRevision    = "No revision available"
-	dnsLimit      = 10
+	listLimit     = 10
 )
 
 const (
-	ErrCouldNotListCapps    = "Could not list capps"
-	ErrCouldNotCreateCapp   = "Could not create capp %q in namespace %q"
-	ErrCouldNotGetCapp      = "Could not get capp %q in namespace %q"
-	ErrCouldNotGetDns       = "Could not get dns related to capp %q in namespace %q"
-	ErrCouldNotUpdateCapp   = "Could not get capp %q in namespace %q"
-	ErrCouldNotDeleteCapp   = "Could not delete capp %q in namespace %q"
-	ErrParsingLabelSelector = "Could not parse labelSelector"
+	ErrCouldNotListCapps             = "Could not list capps"
+	ErrCouldNotCreateCapp            = "Could not create capp %q in namespace %q"
+	ErrCouldNotGetCapp               = "Could not get capp %q in namespace %q"
+	ErrCouldNotGetDNS                = "Could not get dns related to capp %q in namespace %q"
+	ErrCouldNotUpdateCapp            = "Could not get capp %q in namespace %q"
+	ErrCouldNotDeleteCapp            = "Could not delete capp %q in namespace %q"
+	ErrParsingLabelSelector          = "Could not parse labelSelector"
+	ErrCouldNotGetPlacements         = "Could not get Placements with %q=%q and %q=%q"
+	ErrNoPlacementsFound             = "No matching Placements found"
+	ErrUnsetPlacementQueryParameters = "%q and/or %q query parameters must be set when Site is unspecified in request body"
 )
 
 type CappController interface {
 	// CreateCapp creates a new Capp in the specified namespace.
-	CreateCapp(namespace string, capp types.CreateCapp) (types.Capp, error)
+	CreateCapp(namespace string, capp types.CreateCapp, cappQuery types.CreateCappQuery) (types.Capp, error)
 
 	// GetCapps gets all Capps from a specific namespace.
-	GetCapps(namespace string, limit, page int, cappQuery types.CappQuery) (types.CappList, error)
+	GetCapps(namespace string, limit, page int, cappQuery types.GetCappQuery) (types.CappList, error)
 
 	// GetCapp gets a specific Capp from the specified namespace.
 	GetCapp(namespace, name string) (types.Capp, error)
@@ -55,7 +60,7 @@ type CappController interface {
 	DeleteCapp(namespace, name string) (types.CappError, error)
 
 	// EditCappState edits the state of a specific Capp in the specified namespace.
-	EditCappState(namespace string, cappName string, state string) (types.CappStateReponse, error)
+	EditCappState(namespace string, cappName string, state string) (types.CappStateResponse, error)
 
 	// GetCappState gets the state of a specific Capp from the specified namespace.
 	GetCappState(namespace, name string) (types.GetCappStateResponse, error)
@@ -83,19 +88,91 @@ type CappPaginator struct {
 	pagination.GenericPaginator
 	namespace string
 	client    client.Client
-	cappQuery types.CappQuery
+	cappQuery types.GetCappQuery
 }
 
-func (c *cappController) CreateCapp(namespace string, capp types.CreateCapp) (types.Capp, error) {
+func (c *cappController) CreateCapp(namespace string, capp types.CreateCapp, cappQuery types.CreateCappQuery) (types.Capp, error) {
 	c.logger.Debug(fmt.Sprintf("Trying to create capp in namespace: %q", namespace))
 
-	newCapp := createCappFromType(namespace, capp)
+	var err error
+	placement := capp.Spec.Site
+	if isSiteUnset(placement) {
+		environment := cappQuery.Environment
+		region := cappQuery.Region
+
+		if isEnvironmentUnset(environment) && isRegionUnset(region) {
+			return types.Capp{}, customerrors.NewValidationError(fmt.Sprintf(ErrUnsetPlacementQueryParameters, utils.PlacementEnvironmentKey, utils.PlacementRegionKey))
+		}
+
+		placement, err = getPlacementFromEnvironmentAndRegion(c.ctx, c.client, environment, region)
+		if err != nil {
+			c.logger.Error(fmt.Sprintf("%v with error: %v", fmt.Sprintf(ErrCouldNotGetPlacements, utils.PlacementEnvironmentKey, cappQuery.Environment, utils.PlacementRegionKey, cappQuery.Region), err.Error()))
+			return types.Capp{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotGetPlacements, utils.PlacementEnvironmentKey, cappQuery.Environment, utils.PlacementRegionKey, cappQuery.Region), err)
+		}
+	}
+
+	newCapp := createCappFromType(namespace, placement, capp)
 	if err := c.client.Create(c.ctx, &newCapp); err != nil {
 		c.logger.Error(fmt.Sprintf("%v with error: %v", fmt.Sprintf(ErrCouldNotCreateCapp, capp.Metadata.Name, namespace), err.Error()))
 		return types.Capp{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotCreateCapp, capp.Metadata.Name, namespace), err)
 	}
 
 	return createCappFromV1Capp(newCapp), nil
+}
+
+// isRegionUnset returns a boolean indicating whether a region variable is unset.
+func isRegionUnset(environment string) bool {
+	return environment == ""
+}
+
+// isEnvironmentUnset returns a boolean indicating whether an environment variable is unset.
+func isEnvironmentUnset(environment string) bool {
+	return environment == ""
+}
+
+// isSiteUnset returns a boolean indicating whether a site variable is unset.
+func isSiteUnset(site string) bool {
+	return site == ""
+}
+
+// getPlacementFromEnvironmentAndRegion returns the first returned placement which
+// answers a certain criteria based on environment and region variables.
+func getPlacementFromEnvironmentAndRegion(ctx context.Context, k8sClient client.Client, environment, region string) (string, error) {
+	placements := clusterv1beta1.PlacementList{}
+
+	listOptions := preparePlacementListOptions(environment, region)
+	err := k8sClient.List(ctx, &placements, listOptions)
+	if err != nil {
+		return "", err
+	}
+
+	if len(placements.Items) == 0 {
+		return "", customerrors.NewValidationError(ErrNoPlacementsFound)
+	}
+
+	return placements.Items[0].Name, nil
+}
+
+// preparePlacementListOptions prepares a list options for querying.
+func preparePlacementListOptions(environment, region string) *client.ListOptions {
+	labelSet := map[string]string{}
+
+	if !isEnvironmentUnset(environment) && !isRegionUnset(region) {
+		labelSet = map[string]string{utils.PlacementEnvironmentLabel: environment, utils.PlacementRegionLabel: region}
+	} else if !isEnvironmentUnset(environment) {
+		labelSet = map[string]string{utils.PlacementEnvironmentLabel: environment}
+	} else if !isRegionUnset(region) {
+		labelSet = map[string]string{utils.PlacementRegionLabel: region}
+	}
+
+	labelSelector := labels.SelectorFromSet(labelSet)
+
+	listOptions := &client.ListOptions{
+		LabelSelector: labelSelector,
+		Limit:         listLimit,
+	}
+
+	return listOptions
 }
 
 func createCappFromV1Capp(capp cappv1alpha1.Capp) types.Capp {
@@ -128,7 +205,7 @@ func createCappFromV1Capp(capp cappv1alpha1.Capp) types.Capp {
 	}
 }
 
-func (c *cappController) GetCapps(namespace string, limit, page int, cappQuery types.CappQuery) (types.CappList, error) {
+func (c *cappController) GetCapps(namespace string, limit, page int, cappQuery types.GetCappQuery) (types.CappList, error) {
 	c.logger.Debug(fmt.Sprintf("Trying to fetch all capps in namespace: %q", namespace))
 
 	cappPaginator := &CappPaginator{
@@ -208,8 +285,8 @@ func (c *cappController) GetCappDNS(namespace, name string) (types.GetDNSRespons
 
 	err := c.client.List(c.ctx, dnsRecords, listOptions)
 	if err != nil {
-		c.logger.Error(fmt.Sprintf("%v with error: %v", fmt.Sprintf(ErrCouldNotGetDns, name, namespace), err.Error()))
-		return types.GetDNSResponse{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotGetDns, name, namespace), err)
+		c.logger.Error(fmt.Sprintf("%v with error: %v", fmt.Sprintf(ErrCouldNotGetDNS, name, namespace), err.Error()))
+		return types.GetDNSResponse{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotGetDNS, name, namespace), err)
 	}
 
 	if len(dnsRecords.Items) == 0 {
@@ -255,7 +332,7 @@ func prepareDNSListOptions(namespace, name string) *client.ListOptions {
 
 	listOptions := &client.ListOptions{
 		LabelSelector: labelSelector,
-		Limit:         dnsLimit,
+		Limit:         listLimit,
 	}
 
 	return listOptions
@@ -283,23 +360,23 @@ func (c *cappController) UpdateCapp(namespace, name string, newCapp types.Update
 	return convertCappToType(*capp), nil
 }
 
-func (c *cappController) EditCappState(namespace string, cappName string, state string) (types.CappStateReponse, error) {
+func (c *cappController) EditCappState(namespace string, cappName string, state string) (types.CappStateResponse, error) {
 	c.logger.Debug(fmt.Sprintf("Trying to update capp %q in namespace %q", cappName, namespace))
 
 	capp := &cappv1alpha1.Capp{}
 	err := c.client.Get(c.ctx, client.ObjectKey{Namespace: namespace, Name: cappName}, capp)
 	if err != nil {
 		c.logger.Error(fmt.Sprintf("%v with error: %v", fmt.Sprintf(ErrCouldNotGetCapp, cappName, namespace), err.Error()))
-		return types.CappStateReponse{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotGetCapp, cappName, namespace), err)
+		return types.CappStateResponse{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotGetCapp, cappName, namespace), err)
 	}
 
 	capp.Spec.State = state
 	if err := c.client.Update(c.ctx, capp); err != nil {
 		c.logger.Error(fmt.Sprintf("%v with error: %v", fmt.Sprintf(ErrCouldNotUpdateCapp, cappName, namespace), err.Error()))
-		return types.CappStateReponse{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotUpdateCapp, cappName, namespace), err)
+		return types.CappStateResponse{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotUpdateCapp, cappName, namespace), err)
 	}
 
-	return types.CappStateReponse{Name: capp.Name, State: capp.Spec.State}, nil
+	return types.CappStateResponse{Name: capp.Name, State: capp.Spec.State}, nil
 }
 
 func (c *cappController) DeleteCapp(namespace, name string) (types.CappError, error) {
@@ -344,7 +421,7 @@ func (p *CappPaginator) FetchList(listOptions metav1.ListOptions) (*types.List[c
 	return (*types.List[cappv1alpha1.Capp])(cappList), nil
 }
 
-func createCappFromType(namespace string, capp types.CreateCapp) cappv1alpha1.Capp {
+func createCappFromType(namespace, placement string, capp types.CreateCapp) cappv1alpha1.Capp {
 	return cappv1alpha1.Capp{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        capp.Metadata.Name,
@@ -354,7 +431,7 @@ func createCappFromType(namespace string, capp types.CreateCapp) cappv1alpha1.Ca
 		},
 		Spec: cappv1alpha1.CappSpec{
 			ScaleMetric:       capp.Spec.ScaleMetric,
-			Site:              capp.Spec.Site,
+			Site:              placement,
 			State:             capp.Spec.State,
 			ConfigurationSpec: capp.Spec.ConfigurationSpec,
 			RouteSpec:         capp.Spec.RouteSpec,

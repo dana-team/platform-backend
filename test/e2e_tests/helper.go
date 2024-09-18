@@ -5,6 +5,7 @@ import (
 	"fmt"
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
+	rcsv1alpha1 "github.com/dana-team/rcs-ocm-deployer/api/v1alpha1"
 	. "github.com/onsi/gomega"
 	configv1 "github.com/openshift/api/config/v1"
 	userv1 "github.com/openshift/api/user/v1"
@@ -13,6 +14,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"net/http"
+	clusterv1beta1 "open-cluster-management.io/api/cluster/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -28,6 +30,12 @@ const (
 	testServiceAccountName = "e2e-serviceaccount"
 	testSecretName         = "e2e-secret"
 	testUserName           = "e2e-user"
+	testEnvironment        = "e2e-environment"
+	testRegionName         = "e2e-region"
+	testPlacementName      = "e2e-placement"
+
+	rcsConfigName      = "rcs-config"
+	rcsConfigNamespace = "rcs-deployer-system"
 )
 
 const (
@@ -44,6 +52,8 @@ var (
 	clusterDomain string
 	platformURL   string
 	userToken     string
+	placementName string
+	placementNS   string
 )
 
 // newScheme initializes a new scheme by adding the necessary schemes to it.
@@ -52,6 +62,8 @@ func newScheme() {
 	utilruntime.Must(cappv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(configv1.AddToScheme(scheme))
 	utilruntime.Must(userv1.AddToScheme(scheme))
+	utilruntime.Must(clusterv1beta1.AddToScheme(scheme))
+	utilruntime.Must(rcsv1alpha1.AddToScheme(scheme))
 }
 
 // compareResponses compares two responses and asserts that they are equal.

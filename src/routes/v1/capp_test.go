@@ -138,9 +138,9 @@ func TestGetCapps(t *testing.T) {
 
 	setup()
 	mocks.CreateTestNamespace(fakeClient, testNamespaceName)
-	mocks.CreateTestCapp(dynClient, testutils.CappName+"-1", testNamespaceName, testutils.Domain,
+	mocks.CreateTestCapp(dynClient, testutils.CappName+"-1", testNamespaceName, testutils.Domain, testutils.SiteName,
 		map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, nil)
-	mocks.CreateTestCapp(dynClient, testutils.CappName+"-2", testNamespaceName, testutils.Domain,
+	mocks.CreateTestCapp(dynClient, testutils.CappName+"-2", testNamespaceName, testutils.Domain, testutils.SiteName,
 		map[string]string{testutils.LabelKey + "-2": testutils.LabelValue + "-2"}, nil)
 	mocks.CreateTestCappWithHostname(dynClient, testutils.CappName+"-3", testNamespaceName, testutils.Hostname, testutils.Domain,
 		map[string]string{testutils.LabelKey + "-3": testutils.LabelValue + "-3"}, nil)
@@ -212,7 +212,7 @@ func TestGetCapp(t *testing.T) {
 					testutils.MetadataKey:    types.Metadata{Name: testutils.CappName, Namespace: testNamespaceName},
 					testutils.LabelsKey:      []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}},
 					testutils.AnnotationsKey: nil,
-					testutils.SpecKey:        mocks.PrepareCappSpec(),
+					testutils.SpecKey:        mocks.PrepareCappSpec(testutils.SiteName),
 					testutils.StatusKey:      mocks.PrepareCappStatus(testutils.CappName, testNamespaceName, testutils.Domain),
 				},
 			},
@@ -253,7 +253,7 @@ func TestGetCapp(t *testing.T) {
 
 	setup()
 	mocks.CreateTestNamespace(fakeClient, testNamespaceName)
-	mocks.CreateTestCapp(dynClient, testutils.CappName, testNamespaceName, testutils.Domain, map[string]string{testutils.LabelKey: testutils.LabelValue}, nil)
+	mocks.CreateTestCapp(dynClient, testutils.CappName, testNamespaceName, testutils.Domain, testutils.SiteName, map[string]string{testutils.LabelKey: testutils.LabelValue}, nil)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -360,9 +360,9 @@ func TestGetCappState(t *testing.T) {
 	setup()
 	mocks.CreateTestNamespace(fakeClient, testNamespaceName)
 	mocks.CreateTestCappWithState(dynClient, fmt.Sprintf("%s-%s", testutils.CappName, testutils.EnabledState),
-		testNamespaceName, testutils.EnabledState, map[string]string{}, map[string]string{})
+		testNamespaceName, testutils.EnabledState, testutils.SiteName, map[string]string{}, map[string]string{})
 	mocks.CreateTestCappWithState(dynClient, fmt.Sprintf("%s-%s", testutils.CappName, testutils.DisabledState),
-		testNamespaceName, testutils.DisabledState, map[string]string{}, map[string]string{})
+		testNamespaceName, testutils.DisabledState, testutils.SiteName, map[string]string{}, map[string]string{})
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -461,7 +461,7 @@ func TestGetCappDNS(t *testing.T) {
 		"ShouldSucceedUnavailableDNS": {
 			requestURI: requestURI{
 				namespace: testNamespaceName,
-				name:      fmt.Sprintf("%s-%s", testutils.CappName, testutils.UnAvailable),
+				name:      fmt.Sprintf("%s-%s", testutils.CappName, testutils.Unavailable),
 			},
 			want: want{
 				statusCode: http.StatusOK,
@@ -475,7 +475,7 @@ func TestGetCappDNS(t *testing.T) {
 					hostname: fmt.Sprintf("%s.%s", testutils.Hostname+"-1", testutils.DefaultZone)},
 			},
 
-			cappName: fmt.Sprintf("%s-%s", testutils.CappName, testutils.UnAvailable),
+			cappName: fmt.Sprintf("%s-%s", testutils.CappName, testutils.Unavailable),
 		},
 		"ShouldSucceedAvailableDNS": {
 			requestURI: requestURI{
@@ -530,7 +530,7 @@ func TestGetCappDNS(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 
 			if test.cappName != "" {
-				mocks.CreateTestCapp(dynClient, test.cappName, testNamespaceName, testutils.Domain, map[string]string{}, map[string]string{})
+				mocks.CreateTestCapp(dynClient, test.cappName, testNamespaceName, testutils.Domain, testutils.SiteName, map[string]string{}, map[string]string{})
 			}
 
 			for i, dns := range test.records {
@@ -568,7 +568,13 @@ func TestGetCappDNS(t *testing.T) {
 func TestCreateCapp(t *testing.T) {
 	testNamespaceName := testutils.CappNamespace + "-create"
 
+	type queryParams struct {
+		keys   []string
+		values []string
+	}
+
 	type requestURI struct {
+		query     queryParams
 		namespace string
 	}
 
@@ -582,7 +588,7 @@ func TestCreateCapp(t *testing.T) {
 		want        want
 		requestData interface{}
 	}{
-		"ShouldSucceedCreatingCapp": {
+		"ShouldSucceedCreatingCappWithSite": {
 			requestURI: requestURI{
 				namespace: testNamespaceName,
 			},
@@ -592,11 +598,123 @@ func TestCreateCapp(t *testing.T) {
 					testutils.MetadataKey:    types.Metadata{Name: testutils.CappName, Namespace: testNamespaceName},
 					testutils.LabelsKey:      []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}},
 					testutils.AnnotationsKey: nil,
-					testutils.SpecKey:        mocks.PrepareCappSpec(),
+					testutils.SpecKey:        mocks.PrepareCappSpec(testutils.SiteName),
 					testutils.StatusKey:      cappv1alpha1.CappStatus{},
 				},
 			},
-			requestData: mocks.PrepareCreateCappType(testutils.CappName, []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}}, nil),
+			requestData: mocks.PrepareCreateCappType(testutils.CappName, testutils.SiteName, []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}}, nil),
+		},
+		"ShouldSucceedCreatingCappWithPlacementRegionAndEnvironment": {
+			requestURI: requestURI{
+				namespace: testNamespaceName,
+				query:     queryParams{keys: []string{testutils.PlacementEnvironmentKey, testutils.PlacementRegionKey}, values: []string{testutils.EnvironmentName + "-1", testutils.RegionName + "-1"}},
+			},
+			want: want{
+				statusCode: http.StatusOK,
+				response: map[string]interface{}{
+					testutils.MetadataKey:    types.Metadata{Name: testutils.CappName + "-2", Namespace: testNamespaceName},
+					testutils.LabelsKey:      []types.KeyValue{{Key: testutils.LabelKey + "-2", Value: testutils.LabelValue + "-2"}},
+					testutils.AnnotationsKey: nil,
+					testutils.SpecKey:        mocks.PrepareCappSpec(testutils.PlacementName + "-1"),
+					testutils.StatusKey:      cappv1alpha1.CappStatus{},
+				},
+			},
+			requestData: mocks.PrepareCreateCappType(testutils.CappName+"-2", "", []types.KeyValue{{Key: testutils.LabelKey + "-2", Value: testutils.LabelValue + "-2"}}, nil),
+		},
+		"ShouldSucceedCreatingCappWithOnlyPlacementRegion": {
+			requestURI: requestURI{
+				namespace: testNamespaceName,
+				query:     queryParams{keys: []string{testutils.PlacementRegionKey}, values: []string{testutils.RegionName + "-2"}},
+			},
+			want: want{
+				statusCode: http.StatusOK,
+				response: map[string]interface{}{
+					testutils.MetadataKey:    types.Metadata{Name: testutils.CappName + "-3", Namespace: testNamespaceName},
+					testutils.LabelsKey:      []types.KeyValue{{Key: testutils.LabelKey + "-3", Value: testutils.LabelValue + "-3"}},
+					testutils.AnnotationsKey: nil,
+					testutils.SpecKey:        mocks.PrepareCappSpec(testutils.PlacementName + "-2"),
+					testutils.StatusKey:      cappv1alpha1.CappStatus{},
+				},
+			},
+			requestData: mocks.PrepareCreateCappType(testutils.CappName+"-3", "", []types.KeyValue{{Key: testutils.LabelKey + "-3", Value: testutils.LabelValue + "-3"}}, nil),
+		},
+		"ShouldSucceedCreatingCappWithOnlyPlacementEnvironment": {
+			requestURI: requestURI{
+				namespace: testNamespaceName,
+				query:     queryParams{keys: []string{testutils.PlacementEnvironmentKey}, values: []string{testutils.EnvironmentName + "-3"}},
+			},
+			want: want{
+				statusCode: http.StatusOK,
+				response: map[string]interface{}{
+					testutils.MetadataKey:    types.Metadata{Name: testutils.CappName + "-4", Namespace: testNamespaceName},
+					testutils.LabelsKey:      []types.KeyValue{{Key: testutils.LabelKey + "-4", Value: testutils.LabelValue + "-4"}},
+					testutils.AnnotationsKey: nil,
+					testutils.SpecKey:        mocks.PrepareCappSpec(testutils.PlacementName + "-3"),
+					testutils.StatusKey:      cappv1alpha1.CappStatus{},
+				},
+			},
+			requestData: mocks.PrepareCreateCappType(testutils.CappName+"-4", "", []types.KeyValue{{Key: testutils.LabelKey + "-4", Value: testutils.LabelValue + "-4"}}, nil),
+		},
+		"ShouldSucceedCreatingCappWithFirstMatchingPlacement": {
+			requestURI: requestURI{
+				namespace: testNamespaceName,
+				query:     queryParams{keys: []string{testutils.PlacementEnvironmentKey, testutils.PlacementEnvironmentKey}, values: []string{testutils.EnvironmentName + "-4", testutils.RegionName + "-4"}},
+			},
+			want: want{
+				statusCode: http.StatusOK,
+				response: map[string]interface{}{
+					testutils.MetadataKey:    types.Metadata{Name: testutils.CappName + "-5", Namespace: testNamespaceName},
+					testutils.LabelsKey:      []types.KeyValue{{Key: testutils.LabelKey + "-5", Value: testutils.LabelValue + "-5"}},
+					testutils.AnnotationsKey: nil,
+					testutils.SpecKey:        mocks.PrepareCappSpec(testutils.PlacementName + "-4"),
+					testutils.StatusKey:      cappv1alpha1.CappStatus{},
+				},
+			},
+			requestData: mocks.PrepareCreateCappType(testutils.CappName+"-5", "", []types.KeyValue{{Key: testutils.LabelKey + "-5", Value: testutils.LabelValue + "-5"}}, nil),
+		},
+		"ShouldSucceedCreatingCappWithSiteEvenIfPlacementQueryIsSet": {
+			requestURI: requestURI{
+				namespace: testNamespaceName,
+				query:     queryParams{keys: []string{testutils.PlacementEnvironmentKey, testutils.PlacementEnvironmentKey}, values: []string{testutils.EnvironmentName + "-5", testutils.RegionName + "-5"}},
+			},
+			want: want{
+				statusCode: http.StatusOK,
+				response: map[string]interface{}{
+					testutils.MetadataKey:    types.Metadata{Name: testutils.CappName + "-6", Namespace: testNamespaceName},
+					testutils.LabelsKey:      []types.KeyValue{{Key: testutils.LabelKey + "-6", Value: testutils.LabelValue + "-6"}},
+					testutils.AnnotationsKey: nil,
+					testutils.SpecKey:        mocks.PrepareCappSpec(testutils.SiteName),
+					testutils.StatusKey:      cappv1alpha1.CappStatus{},
+				},
+			},
+			requestData: mocks.PrepareCreateCappType(testutils.CappName+"-6", testutils.SiteName, []types.KeyValue{{Key: testutils.LabelKey + "-6", Value: testutils.LabelValue + "-6"}}, nil),
+		},
+		"ShouldFailCreatingCappWithoutSiteAndWithoutMatchingPlacement": {
+			requestURI: requestURI{
+				namespace: testNamespaceName,
+				query:     queryParams{keys: []string{testutils.PlacementEnvironmentKey, testutils.PlacementEnvironmentKey}, values: []string{testutils.EnvironmentName + testutils.NonExistentSuffix, testutils.RegionName + testutils.NonExistentSuffix}},
+			},
+			want: want{
+				statusCode: http.StatusBadRequest,
+				response: map[string]interface{}{
+					testutils.ErrorKey:  "No matching Placements found",
+					testutils.ReasonKey: metav1.StatusReasonBadRequest,
+				},
+			},
+			requestData: mocks.PrepareCreateCappType(testutils.CappName+"-7", "", []types.KeyValue{{Key: testutils.LabelKey + "-7", Value: testutils.LabelValue + "-7"}}, nil),
+		},
+		"ShouldFailCreatingCappWithoutSetAndWithoutQuery": {
+			requestURI: requestURI{
+				namespace: testNamespaceName,
+			},
+			want: want{
+				statusCode: http.StatusBadRequest,
+				response: map[string]interface{}{
+					testutils.ErrorKey:  fmt.Sprintf("%q and/or %q query parameters must be set when Site is unspecified in request body", testutils.PlacementEnvironmentKey, testutils.PlacementRegionKey),
+					testutils.ReasonKey: metav1.StatusReasonBadRequest,
+				},
+			},
+			requestData: mocks.PrepareCreateCappType(testutils.CappName+"-8", "", []types.KeyValue{{Key: testutils.LabelKey + "-8", Value: testutils.LabelValue + "-8"}}, nil),
 		},
 		"ShouldFailWithBadRequestBody": {
 			requestURI: requestURI{
@@ -609,7 +727,7 @@ func TestCreateCapp(t *testing.T) {
 					testutils.ReasonKey: metav1.StatusReasonBadRequest,
 				},
 			},
-			requestData: mocks.PrepareCreateCappType("", []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}}, nil),
+			requestData: mocks.PrepareCreateCappType("", testutils.SiteName, []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}}, nil),
 		},
 		"ShouldHandleAlreadyExists": {
 			requestURI: requestURI{
@@ -624,21 +742,31 @@ func TestCreateCapp(t *testing.T) {
 					testutils.ReasonKey: metav1.StatusReasonAlreadyExists,
 				},
 			},
-			requestData: mocks.PrepareCreateCappType(testutils.CappName+"-1", []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}}, nil),
+			requestData: mocks.PrepareCreateCappType(testutils.CappName+"-1", testutils.SiteName, []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}}, nil),
 		},
 	}
 
 	setup()
 	mocks.CreateTestNamespace(fakeClient, testNamespaceName)
-	mocks.CreateTestCapp(dynClient, testutils.CappName+"-1", testNamespaceName, testutils.Domain, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, nil)
+	mocks.CreateTestPlacement(dynClient, testutils.PlacementName+"-1", testNamespaceName, map[string]string{testutils.PlacementRegionLabelKey: testutils.RegionName + "-1", testutils.PlacementEnvironmentLabelKey: testutils.EnvironmentName + "-1"})
+	mocks.CreateTestPlacement(dynClient, testutils.PlacementName+"-2", testNamespaceName, map[string]string{testutils.PlacementRegionLabelKey: testutils.RegionName + "-2"})
+	mocks.CreateTestPlacement(dynClient, testutils.PlacementName+"-3", testNamespaceName, map[string]string{testutils.PlacementEnvironmentLabelKey: testutils.EnvironmentName + "-3"})
+	mocks.CreateTestPlacement(dynClient, testutils.PlacementName+"-4", testNamespaceName, map[string]string{testutils.PlacementRegionLabelKey: testutils.RegionName + "-4", testutils.PlacementEnvironmentLabelKey: testutils.EnvironmentName + "-4"})
+	mocks.CreateTestPlacement(dynClient, testutils.PlacementName+"-5", testNamespaceName, map[string]string{testutils.PlacementRegionLabelKey: testutils.RegionName + "-4", testutils.PlacementEnvironmentLabelKey: testutils.EnvironmentName + "-4"})
+	mocks.CreateTestCapp(dynClient, testutils.CappName+"-1", testNamespaceName, testutils.Domain, testutils.SiteName, map[string]string{testutils.LabelKey + "-1": testutils.LabelValue + "-1"}, nil)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
+			params := url.Values{}
+			for i, key := range test.requestURI.query.keys {
+				params.Add(key, test.requestURI.query.values[i])
+			}
+
 			payload, err := json.Marshal(test.requestData)
 			assert.NoError(t, err)
 
 			baseURI := fmt.Sprintf("/v1/namespaces/%s/capps", test.requestURI.namespace)
-			request, err := http.NewRequest(http.MethodPost, baseURI, bytes.NewBuffer(payload))
+			request, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s?%s", baseURI, params.Encode()), bytes.NewBuffer(payload))
 			assert.NoError(t, err)
 			request.Header.Set(testutils.ContentType, testutils.ApplicationJson)
 
@@ -690,11 +818,11 @@ func TestUpdateCapp(t *testing.T) {
 					testutils.MetadataKey:    types.Metadata{Name: testutils.CappName, Namespace: testNamespaceName},
 					testutils.LabelsKey:      []types.KeyValue{{Key: testutils.LabelKey + "-updated", Value: testutils.LabelValue + "-updated"}},
 					testutils.AnnotationsKey: nil,
-					testutils.SpecKey:        mocks.PrepareCappSpec(),
+					testutils.SpecKey:        mocks.PrepareCappSpec(testutils.SiteName),
 					testutils.StatusKey:      mocks.PrepareCappStatus(testutils.CappName, testNamespaceName, testutils.Domain),
 				},
 			},
-			requestData: mocks.PrepareUpdateCappType([]types.KeyValue{{Key: testutils.LabelKey + "-updated", Value: testutils.LabelValue + "-updated"}}, nil),
+			requestData: mocks.PrepareUpdateCappType(testutils.SiteName, []types.KeyValue{{Key: testutils.LabelKey + "-updated", Value: testutils.LabelValue + "-updated"}}, nil),
 		},
 		"ShouldHandleNotFoundCapp": {
 			requestURI: requestURI{
@@ -710,7 +838,7 @@ func TestUpdateCapp(t *testing.T) {
 					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},
-			requestData: mocks.PrepareUpdateCappType([]types.KeyValue{{Key: testutils.LabelKey + "-updated", Value: testutils.LabelValue + "-updated"}}, nil),
+			requestData: mocks.PrepareUpdateCappType(testutils.SiteName, []types.KeyValue{{Key: testutils.LabelKey + "-updated", Value: testutils.LabelValue + "-updated"}}, nil),
 		},
 		"ShouldHandleNotFoundNamespace": {
 			requestURI: requestURI{
@@ -726,12 +854,12 @@ func TestUpdateCapp(t *testing.T) {
 					testutils.ReasonKey: metav1.StatusReasonNotFound,
 				},
 			},
-			requestData: mocks.PrepareUpdateCappType([]types.KeyValue{{Key: testutils.LabelKey + "-updated", Value: testutils.LabelValue + "-updated"}}, nil),
+			requestData: mocks.PrepareUpdateCappType(testutils.SiteName, []types.KeyValue{{Key: testutils.LabelKey + "-updated", Value: testutils.LabelValue + "-updated"}}, nil),
 		},
 	}
 
 	setup()
-	mocks.CreateTestCapp(dynClient, testutils.CappName, testNamespaceName, testutils.Domain, map[string]string{testutils.LabelKey: testutils.LabelValue}, nil)
+	mocks.CreateTestCapp(dynClient, testutils.CappName, testNamespaceName, testutils.Domain, testutils.SiteName, map[string]string{testutils.LabelKey: testutils.LabelValue}, nil)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -843,7 +971,7 @@ func TestEditCappState(t *testing.T) {
 	}
 
 	setup()
-	mocks.CreateTestCapp(dynClient, testutils.CappName, testNamespaceName, testutils.Domain, map[string]string{testutils.LabelKey: testutils.LabelValue}, nil)
+	mocks.CreateTestCapp(dynClient, testutils.CappName, testNamespaceName, testutils.Domain, testutils.SiteName, map[string]string{testutils.LabelKey: testutils.LabelValue}, nil)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -936,7 +1064,7 @@ func TestDeleteCapp(t *testing.T) {
 	}
 
 	setup()
-	mocks.CreateTestCapp(dynClient, testutils.CappName, testNamespaceName, testutils.Domain, map[string]string{testutils.LabelKey: testutils.LabelValue}, nil)
+	mocks.CreateTestCapp(dynClient, testutils.CappName, testNamespaceName, testutils.Domain, testutils.SiteName, map[string]string{testutils.LabelKey: testutils.LabelValue}, nil)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {

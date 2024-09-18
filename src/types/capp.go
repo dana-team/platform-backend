@@ -30,8 +30,13 @@ type UpdateCapp struct {
 	Spec        cappv1alpha1.CappSpec `json:"spec"`
 }
 
-type CappQuery struct {
+type GetCappQuery struct {
 	LabelSelector string `form:"labelSelector"`
+}
+
+type CreateCappQuery struct {
+	Environment string `form:"environment"`
+	Region      string `form:"region"`
 }
 
 type CappList struct {
@@ -45,7 +50,7 @@ type CappSummary struct {
 	Images []string `json:"images"`
 }
 
-type CappStateReponse struct {
+type CappStateResponse struct {
 	Name  string `json:"name"`
 	State string `json:"state" binding:"oneof=enabled disabled"`
 }
