@@ -1,15 +1,21 @@
 package testutils
 
-import "time"
+import (
+	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
+	"time"
+)
+
+var (
+	cappAPIGroup   = cappv1alpha1.GroupVersion.Group
+	ManagedLabel   = cappAPIGroup + "/managed"
+	ManagedByLabel = cappAPIGroup + "/managed-by"
+)
 
 const (
-	Domain         = "dana-team.io"
-	Hostname       = "custom-capp"
-	DefaultZone    = "dana-dev.com"
-	ManagedLabel   = "rcs.dana.io/managed"
-	ManagedByLabel = "rcs.dana.io/managed-by"
-	Rcs            = "rcs"
-	cappAPIGroup   = "rcs.dana.io"
+	Domain      = "dana-team.io"
+	Hostname    = "custom-capp"
+	DefaultZone = "dana-dev.com"
+	Rcs         = "rcs"
 )
 
 const (
@@ -46,8 +52,8 @@ const (
 	ServiceAccountsKey = "serviceaccounts"
 	TokenKey           = "token"
 	Secret             = "Secret"
-	V1 = "v1"
-	Value = "value"
+	V1                 = "v1"
+	Value              = "value"
 )
 
 const (
@@ -60,16 +66,19 @@ const (
 	CappUserPrefix       = "capp-user-"
 )
 
+var (
+	ParentCappLabel      = cappAPIGroup + "/parent-capp"
+	ParentCappNSLabel    = cappAPIGroup + "/parent-capp-ns"
+	LastUpdatedCappLabel = cappAPIGroup + "/last-updated-by"
+	HasPlacementLabel    = cappAPIGroup + "/has-placement"
+	LabelCappName        = cappAPIGroup + "/cappName"
+)
+
 const (
 	LabelSelectorKey                = "labelSelector"
 	LabelKey                        = "key"
 	LabelValue                      = "value"
 	InvalidLabelSelector            = ":--"
-	LabelCappName                   = "rcs.dana.io/cappName"
-	ParentCappLabel                 = cappAPIGroup + "/parent-capp"
-	ParentCappNSLabel               = cappAPIGroup + "/parent-capp-ns"
-	LastUpdatedCappLabel            = cappAPIGroup + "/last-updated-by"
-	HasPlacementLabel               = cappAPIGroup + "/has-placement"
 	System                          = "system"
 	ServiceAccount                  = "serviceaccount"
 	RcsDeployerSystem               = "rcs-deployer-system"
@@ -81,7 +90,6 @@ const (
 	NamespaceKey     = "namespaces"
 	NamespaceNameKey = "namespaceName"
 	IdKey            = "id"
-	InvalidRequest   = "Invalid request"
 	ReasonKey        = "reason"
 	ErrorKey         = "error"
 	MessageKey       = "message"
@@ -104,26 +112,33 @@ const (
 	ApplicationJson = "application/json"
 )
 
-const (
-	CappName            = TestName + "-capp"
-	CappsKey            = "capps"
-	RecordsKey          = "records"
-	CappNamespace       = TestNamespace + "-" + CappsKey
-	CappImage           = "ghcr.io/dana-team/capp-gin-app:v0.2.0"
-	ContainerName       = "capp-container"
-	StateKey            = "state"
-	DisabledState       = "disabled"
-	EnabledState        = "enabled"
-	LastCreatedRevision = "lastCreatedRevision"
-	LastReadyRevision   = "lastReadyRevision"
-	NoRevision          = "No revision available"
-	Available           = "available"
-	Unknown             = "unknown"
-	UnAvailable         = "unavailable"
+var (
+	PlacementRegionLabelKey      = cappAPIGroup + "/region"
+	PlacementEnvironmentLabelKey = cappAPIGroup + "/environment"
 )
 
 const (
-	CappResourceKey = "rcs.dana.io/parent-capp"
+	CappName                = TestName + "-capp"
+	EnvironmentName         = TestName + "-environment"
+	RegionName              = TestName + "-region"
+	PlacementName           = TestName + "-placement"
+	SiteName                = TestName + "-site"
+	PlacementEnvironmentKey = "environment"
+	PlacementRegionKey      = "region"
+	CappsKey                = "capps"
+	RecordsKey              = "records"
+	CappNamespace           = TestNamespace + "-" + CappsKey
+	CappImage               = "ghcr.io/dana-team/capp-gin-app:v0.2.0"
+	ContainerName           = "capp-container"
+	StateKey                = "state"
+	DisabledState           = "disabled"
+	EnabledState            = "enabled"
+	LastCreatedRevision     = "lastCreatedRevision"
+	LastReadyRevision       = "lastReadyRevision"
+	NoRevision              = "No revision available"
+	Available               = "available"
+	Unknown                 = "unknown"
+	Unavailable             = "unavailable"
 )
 
 const (
@@ -145,7 +160,7 @@ const (
 )
 
 const (
-	Timeout           = 300 * time.Second
+	Timeout           = 360 * time.Second
 	Interval          = 10 * time.Second
 	DefaultEventually = 2 * time.Second
 )

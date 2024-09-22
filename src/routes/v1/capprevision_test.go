@@ -105,10 +105,10 @@ func TestGetCappRevisions(t *testing.T) {
 
 	setup()
 	mocks.CreateTestNamespace(fakeClient, testNamespaceName)
-	mocks.CreateTestCapp(dynClient, testutils.CappName+"-1", testNamespaceName, testutils.Domain, map[string]string{}, map[string]string{})
-	mocks.CreateTestCappRevision(dynClient, cappRevisionName+"-1", testNamespaceName, map[string]string{testutils.LabelCappName: testutils.CappName + "-1"}, nil)
-	mocks.CreateTestCappRevision(dynClient, cappRevisionName+"-2", testNamespaceName, map[string]string{testutils.LabelCappName: testutils.CappName + "-1"}, nil)
-	mocks.CreateTestCappRevision(dynClient, cappRevisionName+"-3", testNamespaceName, map[string]string{testutils.LabelCappName: testutils.CappName + "-2"}, nil)
+	mocks.CreateTestCapp(dynClient, testutils.CappName+"-1", testNamespaceName, testutils.Domain, testutils.SiteName, map[string]string{}, map[string]string{})
+	mocks.CreateTestCappRevision(dynClient, cappRevisionName+"-1", testNamespaceName, testutils.SiteName, map[string]string{testutils.LabelCappName: testutils.CappName + "-1"}, nil)
+	mocks.CreateTestCappRevision(dynClient, cappRevisionName+"-2", testNamespaceName, testutils.SiteName, map[string]string{testutils.LabelCappName: testutils.CappName + "-1"}, nil)
+	mocks.CreateTestCappRevision(dynClient, cappRevisionName+"-3", testNamespaceName, testutils.SiteName, map[string]string{testutils.LabelCappName: testutils.CappName + "-2"}, nil)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -180,7 +180,7 @@ func TestGetCappRevision(t *testing.T) {
 					testutils.MetadataKey:    types.Metadata{Name: cappRevisionName, Namespace: testNamespaceName},
 					testutils.LabelsKey:      labels,
 					testutils.AnnotationsKey: nil,
-					testutils.SpecKey:        mocks.PrepareCappRevisionSpec(mocks.ConvertKeyValueSliceToMap(labels), map[string]string{}),
+					testutils.SpecKey:        mocks.PrepareCappRevisionSpec(testutils.SiteName, mocks.ConvertKeyValueSliceToMap(labels), map[string]string{}),
 					testutils.StatusKey:      mocks.PrepareCappRevisionStatus(),
 				},
 			},
@@ -219,8 +219,8 @@ func TestGetCappRevision(t *testing.T) {
 
 	setup()
 	mocks.CreateTestNamespace(fakeClient, testNamespaceName)
-	mocks.CreateTestCapp(dynClient, testutils.CappName+"2", testNamespaceName, testutils.Domain, map[string]string{}, map[string]string{})
-	mocks.CreateTestCappRevision(dynClient, cappRevisionName, testNamespaceName, map[string]string{testutils.LabelCappName: testutils.CappName + "-2"}, nil)
+	mocks.CreateTestCapp(dynClient, testutils.CappName+"2", testNamespaceName, testutils.Domain, testutils.SiteName, map[string]string{}, map[string]string{})
+	mocks.CreateTestCappRevision(dynClient, cappRevisionName, testNamespaceName, testutils.SiteName, map[string]string{testutils.LabelCappName: testutils.CappName + "-2"}, nil)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {

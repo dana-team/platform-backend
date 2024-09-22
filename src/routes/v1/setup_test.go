@@ -7,8 +7,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
+	clusterv1beta1 "open-cluster-management.io/api/cluster/v1beta1"
 	"os"
 	runtimeClient "sigs.k8s.io/controller-runtime/pkg/client"
 	runtimeFake "sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -60,7 +62,8 @@ func setupRouter(logger *zap.Logger) *gin.Engine {
 
 func setupScheme() *runtime.Scheme {
 	schema := scheme.Scheme
-	_ = cappv1alpha1.AddToScheme(schema)
-	_ = dnsrecordv1alpha1.AddToScheme(schema)
+	utilruntime.Must(cappv1alpha1.AddToScheme(schema))
+	utilruntime.Must(dnsrecordv1alpha1.AddToScheme(schema))
+	utilruntime.Must(clusterv1beta1.AddToScheme(schema))
 	return schema
 }

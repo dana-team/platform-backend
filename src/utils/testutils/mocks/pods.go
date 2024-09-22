@@ -18,7 +18,7 @@ func PreparePod(namespace, podName, cappName string, isMultipleContainers bool) 
 
 	if cappName != "" {
 		labels = map[string]string{
-			testutils.CappResourceKey: cappName,
+			testutils.ParentCappLabel: cappName,
 		}
 
 		if isMultipleContainers {

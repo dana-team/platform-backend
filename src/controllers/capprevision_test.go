@@ -15,7 +15,7 @@ import (
 
 // createTestCappRevision creates a test CappRevision object.
 func createTestCappRevision(name, namespace string, labels, annotations map[string]string) {
-	cappRevision := mocks.PrepareCappRevision(name, namespace, labels, annotations)
+	cappRevision := mocks.PrepareCappRevision(name, namespace, testutils.SiteName, labels, annotations)
 	err := dynClient.Create(context.TODO(), &cappRevision)
 	if err != nil {
 		panic(err)
@@ -51,7 +51,7 @@ func TestGetCappRevision(t *testing.T) {
 					Labels:   labels,
 					Spec: cappv1alpha1.CappRevisionSpec{
 						RevisionNumber: 1,
-						CappTemplate:   cappv1alpha1.CappTemplate{Spec: mocks.PrepareCappSpec(), Labels: mocks.ConvertKeyValueSliceToMap(labels)},
+						CappTemplate:   cappv1alpha1.CappTemplate{Spec: mocks.PrepareCappSpec(testutils.SiteName), Labels: mocks.ConvertKeyValueSliceToMap(labels)},
 					},
 					Status: cappv1alpha1.CappRevisionStatus{},
 				},

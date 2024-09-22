@@ -5,6 +5,7 @@ import (
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
+	rcsv1alpha1 "github.com/dana-team/rcs-ocm-deployer/api/v1alpha1"
 	multicluster "github.com/oam-dev/cluster-gateway/pkg/apis/cluster/transport"
 	. "github.com/onsi/gomega"
 	configv1 "github.com/openshift/api/config/v1"
@@ -12,6 +13,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"math/rand"
+	clusterv1beta1 "open-cluster-management.io/api/cluster/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
 )
@@ -87,7 +89,7 @@ func createCapp(k8sClient client.Client, capp *cappv1alpha1.Capp) *cappv1alpha1.
 	return newCapp
 }
 
-// createDisabledCapp disabledCapp a new Capp instance with a unique name and returns it.
+// createDisabledCapp creates new Disabled Capp instance with a unique name and returns it.
 func createDisabledCapp(k8sClient client.Client, capp *cappv1alpha1.Capp) *cappv1alpha1.Capp {
 	if capp.Spec.State != testutils.DisabledState {
 		panic("Capp must be disabled")
@@ -137,6 +139,15 @@ func listNamespaces(k8sClient client.Client, labelKey, labelValue string) corev1
 	return namespaces
 }
 
+// listPlacements returns a list of placemements.
+func listPlacements(k8sClient client.Client, labelKey, labelValue string) clusterv1beta1.PlacementList {
+	placements := clusterv1beta1.PlacementList{}
+	labelSelector := client.MatchingLabels{labelKey: labelValue}
+	Expect(k8sClient.List(context.TODO(), &placements, labelSelector)).To(Succeed())
+
+	return placements
+}
+
 // getOAuth fetches and returns an existing instance of an OAuth.
 func getOAuth(k8sClient client.Client, name string) *configv1.OAuth {
 	oauth := &configv1.OAuth{}
@@ -148,17 +159,35 @@ func getOAuth(k8sClient client.Client, name string) *configv1.OAuth {
 func updateOAuth(k8sClient client.Client, oauth *configv1.OAuth) {
 	Eventually(func() error {
 		return k8sClient.Update(context.Background(), oauth)
-	}, testutils.Timeout, testutils.Interval).Should(Succeed(), "Should update OAuth")
+	}, testutils.Timeout, testutils.Interval).Should(Succeed())
 }
 
-// getSecret fetches and returns an existing instance of a Capp.
+// getSecret fetches and returns an existing instance of a RCSConfig.
+func getRCSConfig(k8sClient client.Client, name, namespace string) *rcsv1alpha1.RCSConfig {
+	rcsConfig := &rcsv1alpha1.RCSConfig{}
+	getResource(k8sClient, rcsConfig, name, namespace)
+	return rcsConfig
+}
+
+// updateRCSConfig updates an existing RCSConfig instance.
+func updateRCSConfig(k8sClient client.Client, rcsConfig *rcsv1alpha1.RCSConfig) error {
+	return k8sClient.Update(context.Background(), rcsConfig)
+}
+
+// createPlacement creates a new Placement resource.
+func createPlacement(k8sClient client.Client, name string, namespace string, labels map[string]string) {
+	placement := mocks.PreparePlacement(name, namespace, labels)
+	createResource(k8sClient, &placement)
+}
+
+// getSecret fetches and returns an existing instance of a Secret.
 func getSecret(k8sClient client.Client, name string, namespace string) *corev1.Secret {
 	secret := &corev1.Secret{}
 	getResource(k8sClient, secret, name, namespace)
 	return secret
 }
 
-// getRoleBinding fetches and returns an existing instance of a Capp.
+// getRoleBinding fetches and returns an existing instance of a RoleBinding.
 func getRoleBinding(k8sClient client.Client, name string, namespace string) *rbacv1.RoleBinding {
 	roleBinding := &rbacv1.RoleBinding{}
 	getResource(k8sClient, roleBinding, name, namespace)
@@ -200,14 +229,14 @@ func createTestNamespace(k8sClient client.Client, name string) {
 }
 
 // createTestCapp creates a test Capp object.
-func createTestCapp(k8sClient client.Client, name, namespace string, labels, annotations map[string]string) *cappv1alpha1.Capp {
-	capp := mocks.PrepareCapp(name, namespace, clusterDomain, labels, annotations)
+func createTestCapp(k8sClient client.Client, name, namespace, site string, labels, annotations map[string]string) *cappv1alpha1.Capp {
+	capp := mocks.PrepareCapp(name, namespace, clusterDomain, site, labels, annotations)
 	return createCapp(k8sClient, &capp)
 }
 
 // createTestCapp creates a test Capp object.
-func createTestDisabledCapp(k8sClient client.Client, name, namespace string, labels, annotations map[string]string) {
-	capp := mocks.PrepareCappWithState(name, namespace, testutils.DisabledState, labels, annotations)
+func createTestDisabledCapp(k8sClient client.Client, name, namespace, site string, labels, annotations map[string]string) {
+	capp := mocks.PrepareCappWithState(name, namespace, testutils.DisabledState, site, labels, annotations)
 	createDisabledCapp(k8sClient, &capp)
 }
 

@@ -19,7 +19,7 @@ const (
 )
 
 // PrepareCapp returns a mock Capp object.
-func PrepareCapp(name, namespace, domain string, labels, annotations map[string]string) cappv1alpha1.Capp {
+func PrepareCapp(name, namespace, domain, site string, labels, annotations map[string]string) cappv1alpha1.Capp {
 	return cappv1alpha1.Capp{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
@@ -27,13 +27,13 @@ func PrepareCapp(name, namespace, domain string, labels, annotations map[string]
 			Annotations: annotations,
 			Labels:      labels,
 		},
-		Spec:   PrepareCappSpec(),
+		Spec:   PrepareCappSpec(site),
 		Status: PrepareCappStatus(name, namespace, domain),
 	}
 }
 
 // PrepareCappWithState returns a mock Capp object with given state.
-func PrepareCappWithState(name, namespace, state string, labels, annotations map[string]string) cappv1alpha1.Capp {
+func PrepareCappWithState(name, namespace, state, site string, labels, annotations map[string]string) cappv1alpha1.Capp {
 	return cappv1alpha1.Capp{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
@@ -41,7 +41,7 @@ func PrepareCappWithState(name, namespace, state string, labels, annotations map
 			Annotations: annotations,
 			Labels:      labels,
 		},
-		Spec: PrepareCappSpecWithState(state),
+		Spec: PrepareCappSpecWithState(state, site),
 	}
 }
 
@@ -60,7 +60,7 @@ func PrepareCappWithHostname(name, namespace, hostname, domain string, labels, a
 }
 
 // PrepareCappWithKnativeObject returns a mock Capp object with knative object status.
-func PrepareCappWithKnativeObject(name, namespace, state string, labels, annotations map[string]string) cappv1alpha1.Capp {
+func PrepareCappWithKnativeObject(name, namespace, state, site string, labels, annotations map[string]string) cappv1alpha1.Capp {
 	return cappv1alpha1.Capp{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
@@ -68,16 +68,17 @@ func PrepareCappWithKnativeObject(name, namespace, state string, labels, annotat
 			Annotations: annotations,
 			Labels:      labels,
 		},
-		Spec:   PrepareCappSpec(),
+		Spec:   PrepareCappSpec(site),
 		Status: PrepareCappStatusWithKnativeObject(name, state),
 	}
 }
 
 // PrepareCappSpec returns a mock Capp spec.
-func PrepareCappSpec() cappv1alpha1.CappSpec {
+func PrepareCappSpec(site string) cappv1alpha1.CappSpec {
 	return cappv1alpha1.CappSpec{
 		ScaleMetric: concurrencyKey,
 		State:       enabledKey,
+		Site:        site,
 		ConfigurationSpec: knativev1.ConfigurationSpec{
 			Template: knativev1.RevisionTemplateSpec{
 				Spec: knativev1.RevisionSpec{
@@ -96,10 +97,11 @@ func PrepareCappSpec() cappv1alpha1.CappSpec {
 }
 
 // PrepareCappSpecWithState returns a mock Capp spec witg given state.
-func PrepareCappSpecWithState(state string) cappv1alpha1.CappSpec {
+func PrepareCappSpecWithState(state, site string) cappv1alpha1.CappSpec {
 	return cappv1alpha1.CappSpec{
 		ScaleMetric: concurrencyKey,
 		State:       state,
+		Site:        site,
 		ConfigurationSpec: knativev1.ConfigurationSpec{
 			Template: knativev1.RevisionTemplateSpec{
 				Spec: knativev1.RevisionSpec{
@@ -180,23 +182,23 @@ func PrepareCappStatusWithKnativeObject(name string, state string) cappv1alpha1.
 }
 
 // PrepareUpdateCappType returns an UpdateCappType object.
-func PrepareUpdateCappType(labels, annotations []types.KeyValue) types.UpdateCapp {
+func PrepareUpdateCappType(site string, labels, annotations []types.KeyValue) types.UpdateCapp {
 	return types.UpdateCapp{
 		Annotations: annotations,
 		Labels:      labels,
-		Spec:        PrepareCappSpec(),
+		Spec:        PrepareCappSpec(site),
 	}
 }
 
 // PrepareCreateCappType returns a CreateCapp object.
-func PrepareCreateCappType(name string, labels, annotations []types.KeyValue) types.CreateCapp {
+func PrepareCreateCappType(name, site string, labels, annotations []types.KeyValue) types.CreateCapp {
 	return types.CreateCapp{
 		Metadata: types.CreateMetadata{
 			Name: name,
 		},
 		Annotations: annotations,
 		Labels:      labels,
-		Spec:        PrepareCappSpec(),
+		Spec:        PrepareCappSpec(site),
 	}
 }
 

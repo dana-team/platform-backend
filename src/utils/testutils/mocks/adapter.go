@@ -29,8 +29,8 @@ func CreateTestSecret(fakeClient *fake.Clientset, name, namespace string) {
 }
 
 // CreateTestCapp creates a test Capp object.
-func CreateTestCapp(dynClient runtimeClient.WithWatch, name, namespace, domain string, labels, annotations map[string]string) {
-	cappRevision := PrepareCapp(name, namespace, domain, labels, annotations)
+func CreateTestCapp(dynClient runtimeClient.WithWatch, name, namespace, domain, site string, labels, annotations map[string]string) {
+	cappRevision := PrepareCapp(name, namespace, domain, site, labels, annotations)
 	err := dynClient.Create(context.TODO(), &cappRevision)
 	if err != nil {
 		panic(err)
@@ -38,8 +38,8 @@ func CreateTestCapp(dynClient runtimeClient.WithWatch, name, namespace, domain s
 }
 
 // CreateTestCappWithState creates a test Capp object with given state.
-func CreateTestCappWithState(dynClient runtimeClient.WithWatch, name, namespace, state string, labels, annotations map[string]string) {
-	cappRevision := PrepareCappWithKnativeObject(name, namespace, state, labels, annotations)
+func CreateTestCappWithState(dynClient runtimeClient.WithWatch, name, namespace, state, site string, labels, annotations map[string]string) {
+	cappRevision := PrepareCappWithKnativeObject(name, namespace, state, site, labels, annotations)
 	err := dynClient.Create(context.TODO(), &cappRevision)
 	if err != nil {
 		panic(err)
@@ -56,8 +56,8 @@ func CreateTestCappWithHostname(dynClient runtimeClient.WithWatch, name, namespa
 }
 
 // CreateTestCappRevision creates a test CappRevision object.
-func CreateTestCappRevision(dynClient runtimeClient.WithWatch, name, namespace string, labels, annotations map[string]string) {
-	cappRevision := PrepareCappRevision(name, namespace, labels, annotations)
+func CreateTestCappRevision(dynClient runtimeClient.WithWatch, name, namespace, site string, labels, annotations map[string]string) {
+	cappRevision := PrepareCappRevision(name, namespace, site, labels, annotations)
 	err := dynClient.Create(context.TODO(), &cappRevision)
 	if err != nil {
 		panic(err)
@@ -133,6 +133,15 @@ func CreateTestServiceAccountWithToken(fakeClient *fake.Clientset, namespace, se
 // createTestSecret receives a secret and creates it.
 func createTestSecret(fakeClient *fake.Clientset, secret corev1.Secret) {
 	_, err := fakeClient.CoreV1().Secrets(secret.Namespace).Create(context.TODO(), &secret, metav1.CreateOptions{})
+	if err != nil {
+		panic(err)
+	}
+}
+
+// CreateTestPlacement creates a test Placement object.
+func CreateTestPlacement(dynClient runtimeClient.WithWatch, name, namespace string, labels map[string]string) {
+	placement := PreparePlacement(name, namespace, labels)
+	err := dynClient.Create(context.TODO(), &placement)
 	if err != nil {
 		panic(err)
 	}

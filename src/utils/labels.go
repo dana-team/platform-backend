@@ -15,6 +15,11 @@ var (
 	ParentCappNSLabel       = cappAPIGroup + "/parent-capp-ns"
 	ParentCappLabelSelector = ParentCappLabel + "=%s"
 
+	PlacementEnvironmentKey   = "environment"
+	PlacementRegionKey        = "region"
+	PlacementEnvironmentLabel = cappAPIGroup + "/" + PlacementEnvironmentKey
+	PlacementRegionLabel      = cappAPIGroup + "/" + PlacementRegionKey
+
 	CappNameLabel         = cappAPIGroup + "/cappName"
 	CappNameLabelSelector = CappNameLabel + "=%s"
 )

@@ -8,8 +8,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
+	clusterv1beta1 "open-cluster-management.io/api/cluster/v1beta1"
 	"os"
 	runtimeClient "sigs.k8s.io/controller-runtime/pkg/client"
 	runtimeFake "sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -66,7 +68,9 @@ func createTestSecret(secretName string, namespace string, labels map[string]str
 
 func setupScheme() *runtime.Scheme {
 	schema := scheme.Scheme
-	_ = cappv1alpha1.AddToScheme(schema)
-	_ = dnsrecordv1alpha1.AddToScheme(schema)
+	utilruntime.Must(cappv1alpha1.AddToScheme(schema))
+	utilruntime.Must(dnsrecordv1alpha1.AddToScheme(schema))
+	utilruntime.Must(clusterv1beta1.AddToScheme(schema))
+
 	return schema
 }

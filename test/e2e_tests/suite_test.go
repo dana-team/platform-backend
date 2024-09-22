@@ -8,6 +8,7 @@ import (
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	multicluster "github.com/oam-dev/cluster-gateway/pkg/apis/cluster/transport"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
@@ -25,7 +26,8 @@ import (
 const (
 	platformBackendCappName      = "platform-backend"
 	platformBackendCappNamespace = platformBackendCappName + "-system"
-	platformURLFlag              = "platformUrl"
+	platformURLFlag              = "platformURL"
+	clusterDomainFlag            = "clusterDomain"
 
 	htpassEncoded = e2eUser + ":$apr1$D3cCCeru$cuVKr.hn1cbKrhg5NSaT20"
 	oauthName     = "cluster"
@@ -44,6 +46,7 @@ const (
 
 func init() {
 	flag.StringVar(&platformURL, platformURLFlag, "", "URL of the platform backend")
+	flag.StringVar(&clusterDomain, clusterDomainFlag, "", "domain of the OpenShift cluster")
 }
 
 func TestE2E(t *testing.T) {
@@ -61,17 +64,21 @@ var _ = SynchronizedBeforeSuite(func() {
 	if platformURL == "" {
 		getURLFromCapp()
 	}
+	if clusterDomain == "" {
+		getClusterIngressDomain()
+	}
 	getTokenFromLogin()
-	getClusterIngressDomain()
+	resetRCSConfig()
+	getPlacementFromRCSConfig()
 }, func() {
 	newScheme()
 	initClients()
 	if platformURL == "" {
 		getURLFromCapp()
 	}
-
 	getTokenFromLogin()
 	getClusterIngressDomain()
+	getPlacementFromRCSConfig()
 })
 
 var _ = SynchronizedAfterSuite(func() {}, func() {
@@ -80,6 +87,7 @@ var _ = SynchronizedAfterSuite(func() {}, func() {
 
 // cleanup deletes all the resources which were created for the e2e testing.
 func cleanup() {
+	cleanUpTestPlacements()
 	cleanUpTestNamespaces()
 	removeHTPasswdProviderFromOAuth()
 	removeUserIdentity()
@@ -206,6 +214,33 @@ func getClusterIngressDomain() {
 	clusterDomain = ingress.Spec.Domain
 }
 
+// getPlacementFromRCSConfig returns a non-test Placement from a RCSConfig object.
+func getPlacementFromRCSConfig() {
+	rcsConfig := getRCSConfig(k8sClient, rcsConfigName, rcsConfigNamespace)
+
+	placementNS = rcsConfig.Spec.PlacementsNamespace
+	for _, placement := range rcsConfig.Spec.Placements {
+		if !strings.HasPrefix(placement, testPlacementName) {
+			placementName = placement
+			return
+		}
+	}
+}
+
+// resetRCSConfig removes all test placements from a RCSConfig object.
+func resetRCSConfig() {
+	var placements []string
+	rcsConfig := getRCSConfig(k8sClient, rcsConfigName, rcsConfigNamespace)
+	for _, placement := range rcsConfig.Spec.Placements {
+		if !strings.HasPrefix(placement, testPlacementName) {
+			placements = append(placements, placement)
+		}
+	}
+
+	rcsConfig.Spec.Placements = placements
+	Expect(updateRCSConfig(k8sClient, rcsConfig)).Should(Not(HaveOccurred()))
+}
+
 // cleanUpTestNamespaces deletes test namespaces.
 func cleanUpTestNamespaces() {
 	namespaces := listNamespaces(k8sClient, e2eLabelKey, e2eLabelValue)
@@ -216,5 +251,18 @@ func cleanUpTestNamespaces() {
 	Eventually(func() bool {
 		namespaces = listNamespaces(k8sClient, e2eLabelKey, e2eLabelValue)
 		return len(namespaces.Items) == 0
+	}, testutils.Timeout, testutils.Interval).Should(Equal(true))
+}
+
+// cleanUpTestPlacements deletes test placements.
+func cleanUpTestPlacements() {
+	placements := listPlacements(k8sClient, e2eLabelKey, e2eLabelValue)
+	for _, namespace := range placements.Items {
+		Expect(k8sClient.Delete(context.Background(), &namespace)).To(Succeed())
+	}
+
+	Eventually(func() bool {
+		placements = listPlacements(k8sClient, e2eLabelKey, e2eLabelValue)
+		return len(placements.Items) == 0
 	}, testutils.Timeout, testutils.Interval).Should(Equal(true))
 }

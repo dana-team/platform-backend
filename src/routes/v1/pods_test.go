@@ -105,7 +105,7 @@ func TestGetPods(t *testing.T) {
 
 	setup()
 	mocks.CreateTestNamespace(fakeClient, testNamespaceName)
-	mocks.CreateTestCapp(dynClient, testutils.CappName, testNamespaceName, testutils.Domain, map[string]string{}, map[string]string{})
+	mocks.CreateTestCapp(dynClient, testutils.CappName, testNamespaceName, testutils.Domain, testutils.SiteName, map[string]string{}, map[string]string{})
 	mocks.CreateTestPod(fakeClient, testNamespaceName, pod1, testutils.CappName, false)
 	mocks.CreateTestPod(fakeClient, testNamespaceName, pod2, testutils.CappName, true)
 	mocks.CreateTestPod(fakeClient, testNamespaceName, pod3, "", false)

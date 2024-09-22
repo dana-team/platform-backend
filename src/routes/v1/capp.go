@@ -44,7 +44,7 @@ func GetCapps() gin.HandlerFunc {
 			return
 		}
 
-		var cappQuery types.CappQuery
+		var cappQuery types.GetCappQuery
 		if err := c.BindQuery(&cappQuery); err != nil {
 			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
@@ -83,6 +83,13 @@ func CreateCapp() gin.HandlerFunc {
 			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
 			return
 		}
+
+		var cappQuery types.CreateCappQuery
+		if err := c.BindQuery(&cappQuery); err != nil {
+			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
+			return
+		}
+
 		var capp types.CreateCapp
 		if err := c.BindJSON(&capp); err != nil {
 			middleware.AddErrorToContext(c, customerrors.NewValidationError(err.Error()))
@@ -90,7 +97,7 @@ func CreateCapp() gin.HandlerFunc {
 		}
 
 		cappHandler(func(controller controllers.CappController, c *gin.Context) (interface{}, error) {
-			return controller.CreateCapp(cappUri.NamespaceName, capp)
+			return controller.CreateCapp(cappUri.NamespaceName, capp, cappQuery)
 		})(c)
 	}
 }

@@ -7,7 +7,7 @@ import (
 )
 
 // PrepareCappRevision returns a mock CappRevision object.
-func PrepareCappRevision(name, namespace string, labels, annotations map[string]string) cappv1alpha1.CappRevision {
+func PrepareCappRevision(name, namespace, site string, labels, annotations map[string]string) cappv1alpha1.CappRevision {
 	cappRevision := cappv1alpha1.CappRevision{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
@@ -15,7 +15,7 @@ func PrepareCappRevision(name, namespace string, labels, annotations map[string]
 			Annotations: annotations,
 			Labels:      labels,
 		},
-		Spec:   PrepareCappRevisionSpec(labels, annotations),
+		Spec:   PrepareCappRevisionSpec(site, labels, annotations),
 		Status: PrepareCappRevisionStatus(),
 	}
 
@@ -23,11 +23,11 @@ func PrepareCappRevision(name, namespace string, labels, annotations map[string]
 }
 
 // PrepareCappRevisionSpec returns a mock CappRevision Spec object.
-func PrepareCappRevisionSpec(labels, annotations map[string]string) cappv1alpha1.CappRevisionSpec {
+func PrepareCappRevisionSpec(site string, labels, annotations map[string]string) cappv1alpha1.CappRevisionSpec {
 	cappRevisionSpec := cappv1alpha1.CappRevisionSpec{
 		RevisionNumber: 1,
 		CappTemplate: cappv1alpha1.CappTemplate{
-			Spec: PrepareCappSpec(),
+			Spec: PrepareCappSpec(site),
 		},
 	}
 

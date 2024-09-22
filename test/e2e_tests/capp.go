@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/util/retry"
 	"net/http"
 	"net/url"
+	"strings"
 
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/controllers"
@@ -18,7 +20,43 @@ import (
 )
 
 func getCappClusterDomain(site string) string {
-	return fmt.Sprintf("apps.%s.os-pub.com", site)
+	var domain string
+	parts := strings.Split(clusterDomain, ".")
+	if len(parts) > 2 {
+		domain = strings.Join(parts[len(parts)-2:], ".")
+	}
+
+	return fmt.Sprintf("apps.%s.%s", site, domain)
+}
+
+func addPlacementToRCSConfig(newPlacementName, regionName, environmentName string) {
+	labels := map[string]string{}
+	if regionName != "" && environmentName != "" {
+		labels = map[string]string{
+			e2eLabelKey:                            e2eLabelValue,
+			testutils.PlacementRegionLabelKey:      regionName,
+			testutils.PlacementEnvironmentLabelKey: environmentName,
+		}
+	} else if regionName != "" {
+		labels = map[string]string{
+			e2eLabelKey:                       e2eLabelValue,
+			testutils.PlacementRegionLabelKey: regionName,
+		}
+	} else if environmentName != "" {
+		labels = map[string]string{
+			e2eLabelKey:                            e2eLabelValue,
+			testutils.PlacementEnvironmentLabelKey: environmentName,
+		}
+	}
+
+	createPlacement(k8sClient, newPlacementName, placementNS, labels)
+
+	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		rcsConfig := getRCSConfig(k8sClient, rcsConfigName, rcsConfigNamespace)
+		rcsConfig.Spec.Placements = append(rcsConfig.Spec.Placements, newPlacementName)
+		return updateRCSConfig(k8sClient, rcsConfig)
+	})
+	Expect(err).Should(Not(HaveOccurred()))
 }
 
 var _ = Describe("Validate Capp routes and functionality", func() {
@@ -33,13 +71,13 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 		oneCappName = generateName("a-" + testCappName)
 		oneLabelKey = generateName(e2eLabelKey)
 		oneLabelValue = generateName(e2eLabelValue)
-		oneCapp := createTestCapp(k8sClient, oneCappName, namespaceName, map[string]string{oneLabelKey: oneLabelValue}, nil)
+		oneCapp := createTestCapp(k8sClient, oneCappName, namespaceName, placementName, map[string]string{oneLabelKey: oneLabelValue}, nil)
 		oneCappSite = oneCapp.Status.ApplicationLinks.Site
 
 		secondCappName = generateName("b-" + testCappName)
 		secondLabelKey = generateName(e2eLabelKey)
 		secondLabelValue = generateName(e2eLabelValue)
-		secondCapp := createTestCapp(k8sClient, secondCappName, namespaceName, map[string]string{secondLabelKey: secondLabelValue}, nil)
+		secondCapp := createTestCapp(k8sClient, secondCappName, namespaceName, placementName, map[string]string{secondLabelKey: secondLabelValue}, nil)
 		secondCappSite = secondCapp.Status.ApplicationLinks.Site
 	})
 
@@ -190,7 +228,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 			expectedResponse := map[string]interface{}{
 				testutils.MetadataKey: types.Metadata{Name: oneCappName, Namespace: namespaceName},
 				testutils.LabelsKey:   []types.KeyValue{{Key: oneLabelKey, Value: oneLabelValue}},
-				testutils.SpecKey:     mocks.PrepareCappSpec(),
+				testutils.SpecKey:     mocks.PrepareCappSpec(placementName),
 			}
 
 			Expect(status).Should(Equal(http.StatusOK))
@@ -208,7 +246,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 				testutils.ReasonKey: testutils.ReasonNotFound,
 			}
 
-			capp := mocks.PrepareCapp(oneCappName+testutils.NonExistentSuffix, namespaceName, clusterDomain, nil, nil)
+			capp := mocks.PrepareCapp(oneCappName+testutils.NonExistentSuffix, namespaceName, clusterDomain, placementName, nil, nil)
 			Expect(doesResourceExist(k8sClient, &capp)).To(BeFalse())
 			Expect(status).Should(Equal(http.StatusNotFound))
 			compareResponses(response, expectedResponse)
@@ -223,7 +261,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 				testutils.ReasonKey: testutils.ReasonNotFound,
 			}
 
-			capp := mocks.PrepareCapp(oneCappName, namespaceName+testutils.NonExistentSuffix, clusterDomain, nil, nil)
+			capp := mocks.PrepareCapp(oneCappName, namespaceName+testutils.NonExistentSuffix, clusterDomain, placementName, nil, nil)
 			Expect(doesResourceExist(k8sClient, &capp)).To(BeFalse())
 			Expect(status).Should(Equal(http.StatusNotFound))
 			compareResponses(response, expectedResponse)
@@ -231,11 +269,11 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 	})
 
 	Context("Validate create Capp route", func() {
-		It("Should create Capp in a namespace", func() {
+		It("Should create Capp in a namespace with a given site", func() {
 			newCappName := generateName(testCappName)
 
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s", platformURL, namespaceName, testutils.CappsKey)
-			requestData := mocks.PrepareCreateCappType(newCappName, []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}}, nil)
+			requestData := mocks.PrepareCreateCappType(newCappName, placementName, []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}}, nil)
 			payload, err := json.Marshal(requestData)
 			Expect(err).Should(Not(HaveOccurred()))
 
@@ -244,22 +282,241 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 				testutils.MetadataKey:    types.Metadata{Name: newCappName, Namespace: namespaceName},
 				testutils.LabelsKey:      []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}},
 				testutils.AnnotationsKey: []types.KeyValue{{Key: testutils.LastUpdatedCappLabel, Value: e2eUser}},
-				testutils.SpecKey:        mocks.PrepareCappSpec(),
+				testutils.SpecKey:        mocks.PrepareCappSpec(placementName),
 				testutils.StatusKey:      cappv1alpha1.CappStatus{},
 			}
 
 			Expect(status).Should(Equal(http.StatusOK))
 			compareResponses(response, expectedResponse)
 
-			capp := mocks.PrepareCapp(oneCappName, namespaceName, clusterDomain, nil, nil)
+			capp := mocks.PrepareCapp(oneCappName, namespaceName, clusterDomain, placementName, nil, nil)
 			Eventually(func() bool {
 				return doesResourceExist(k8sClient, &capp)
 			}, testutils.Timeout, testutils.Interval).Should(BeTrue())
 		})
 
+		It("Should create Capp in a namespace with the site being determined using region and environment parameters", func() {
+			newCappName := generateName(testCappName)
+
+			baseURI := fmt.Sprintf("%s/v1/namespaces/%s/%s", platformURL, namespaceName, testutils.CappsKey)
+			requestData := mocks.PrepareCreateCappType(newCappName, "", []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}}, nil)
+			payload, err := json.Marshal(requestData)
+			Expect(err).Should(Not(HaveOccurred()))
+
+			newPlacementName := generateName(testPlacementName)
+			regionName := generateName(testRegionName)
+			environmentName := generateName(testEnvironment)
+			addPlacementToRCSConfig(newPlacementName, regionName, environmentName)
+
+			params := url.Values{}
+			params.Add(testutils.PlacementRegionKey, regionName)
+			params.Add(testutils.PlacementEnvironmentKey, environmentName)
+
+			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, fmt.Sprintf("%s?%s", baseURI, params.Encode()), "", "", userToken)
+			expectedResponse := map[string]interface{}{
+				testutils.MetadataKey:    types.Metadata{Name: newCappName, Namespace: namespaceName},
+				testutils.LabelsKey:      []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}},
+				testutils.AnnotationsKey: []types.KeyValue{{Key: testutils.LastUpdatedCappLabel, Value: e2eUser}},
+				testutils.SpecKey:        mocks.PrepareCappSpec(newPlacementName),
+				testutils.StatusKey:      cappv1alpha1.CappStatus{},
+			}
+
+			Expect(status).Should(Equal(http.StatusOK))
+			compareResponses(response, expectedResponse)
+
+			capp := mocks.PrepareCapp(oneCappName, namespaceName, clusterDomain, newPlacementName, nil, nil)
+			Eventually(func() bool {
+				return doesResourceExist(k8sClient, &capp)
+			}, testutils.Timeout, testutils.Interval).Should(BeTrue())
+		})
+
+		It("Should create Capp in a namespace with the site being determined using region parameter", func() {
+			newCappName := generateName(testCappName)
+
+			baseURI := fmt.Sprintf("%s/v1/namespaces/%s/%s", platformURL, namespaceName, testutils.CappsKey)
+			requestData := mocks.PrepareCreateCappType(newCappName, "", []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}}, nil)
+			payload, err := json.Marshal(requestData)
+			Expect(err).Should(Not(HaveOccurred()))
+
+			newPlacementName := generateName(testPlacementName)
+			regionName := generateName(testRegionName)
+			addPlacementToRCSConfig(newPlacementName, regionName, "")
+
+			params := url.Values{}
+			params.Add(testutils.PlacementRegionKey, regionName)
+
+			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, fmt.Sprintf("%s?%s", baseURI, params.Encode()), "", "", userToken)
+			expectedResponse := map[string]interface{}{
+				testutils.MetadataKey:    types.Metadata{Name: newCappName, Namespace: namespaceName},
+				testutils.LabelsKey:      []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}},
+				testutils.AnnotationsKey: []types.KeyValue{{Key: testutils.LastUpdatedCappLabel, Value: e2eUser}},
+				testutils.SpecKey:        mocks.PrepareCappSpec(newPlacementName),
+				testutils.StatusKey:      cappv1alpha1.CappStatus{},
+			}
+
+			Expect(status).Should(Equal(http.StatusOK))
+			compareResponses(response, expectedResponse)
+
+			capp := mocks.PrepareCapp(oneCappName, namespaceName, clusterDomain, newPlacementName, nil, nil)
+			Eventually(func() bool {
+				return doesResourceExist(k8sClient, &capp)
+			}, testutils.Timeout, testutils.Interval).Should(BeTrue())
+		})
+
+		It("Should create Capp in a namespace with the site being determined using environment parameter", func() {
+			newCappName := generateName(testCappName)
+
+			baseURI := fmt.Sprintf("%s/v1/namespaces/%s/%s", platformURL, namespaceName, testutils.CappsKey)
+			requestData := mocks.PrepareCreateCappType(newCappName, "", []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}}, nil)
+			payload, err := json.Marshal(requestData)
+			Expect(err).Should(Not(HaveOccurred()))
+
+			newPlacementName := generateName(testPlacementName)
+			environmentName := generateName(testEnvironment)
+			addPlacementToRCSConfig(newPlacementName, "", environmentName)
+
+			params := url.Values{}
+			params.Add(testutils.PlacementEnvironmentKey, environmentName)
+
+			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, fmt.Sprintf("%s?%s", baseURI, params.Encode()), "", "", userToken)
+			expectedResponse := map[string]interface{}{
+				testutils.MetadataKey:    types.Metadata{Name: newCappName, Namespace: namespaceName},
+				testutils.LabelsKey:      []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}},
+				testutils.AnnotationsKey: []types.KeyValue{{Key: testutils.LastUpdatedCappLabel, Value: e2eUser}},
+				testutils.SpecKey:        mocks.PrepareCappSpec(newPlacementName),
+				testutils.StatusKey:      cappv1alpha1.CappStatus{},
+			}
+
+			Expect(status).Should(Equal(http.StatusOK))
+			compareResponses(response, expectedResponse)
+
+			capp := mocks.PrepareCapp(oneCappName, namespaceName, clusterDomain, newPlacementName, nil, nil)
+			Eventually(func() bool {
+				return doesResourceExist(k8sClient, &capp)
+			}, testutils.Timeout, testutils.Interval).Should(BeTrue())
+		})
+
+		It("Should create Capp in a namespace with the first matching Placement", func() {
+			newCappName := generateName(testCappName)
+
+			baseURI := fmt.Sprintf("%s/v1/namespaces/%s/%s", platformURL, namespaceName, testutils.CappsKey)
+			requestData := mocks.PrepareCreateCappType(newCappName, "", []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}}, nil)
+			payload, err := json.Marshal(requestData)
+			Expect(err).Should(Not(HaveOccurred()))
+
+			oneNewPlacementName := generateName("a-" + testPlacementName)
+			secondNewPlacementName := generateName("b-" + testPlacementName)
+
+			regionName := generateName(testRegionName)
+			environmentName := generateName(testEnvironment)
+			addPlacementToRCSConfig(oneNewPlacementName, regionName, environmentName)
+			addPlacementToRCSConfig(secondNewPlacementName, regionName, environmentName)
+
+			params := url.Values{}
+			params.Add(testutils.PlacementRegionKey, regionName)
+			params.Add(testutils.PlacementEnvironmentKey, environmentName)
+
+			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, fmt.Sprintf("%s?%s", baseURI, params.Encode()), "", "", userToken)
+			expectedResponse := map[string]interface{}{
+				testutils.MetadataKey:    types.Metadata{Name: newCappName, Namespace: namespaceName},
+				testutils.LabelsKey:      []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}},
+				testutils.AnnotationsKey: []types.KeyValue{{Key: testutils.LastUpdatedCappLabel, Value: e2eUser}},
+				testutils.SpecKey:        mocks.PrepareCappSpec(oneNewPlacementName),
+				testutils.StatusKey:      cappv1alpha1.CappStatus{},
+			}
+
+			Expect(status).Should(Equal(http.StatusOK))
+			compareResponses(response, expectedResponse)
+
+			capp := mocks.PrepareCapp(oneCappName, namespaceName, clusterDomain, oneNewPlacementName, nil, nil)
+			Eventually(func() bool {
+				return doesResourceExist(k8sClient, &capp)
+			}, testutils.Timeout, testutils.Interval).Should(BeTrue())
+		})
+
+		It("Should create Capp in a namespace with the given site despite using region and environment parameters", func() {
+			newCappName := generateName(testCappName)
+
+			baseURI := fmt.Sprintf("%s/v1/namespaces/%s/%s", platformURL, namespaceName, testutils.CappsKey)
+			requestData := mocks.PrepareCreateCappType(newCappName, placementName, []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}}, nil)
+			payload, err := json.Marshal(requestData)
+			Expect(err).Should(Not(HaveOccurred()))
+
+			newPlacementName := generateName(testPlacementName)
+			regionName := generateName(testRegionName)
+			environmentName := generateName(testEnvironment)
+			addPlacementToRCSConfig(newPlacementName, regionName, environmentName)
+
+			params := url.Values{}
+			params.Add(testutils.PlacementRegionKey, regionName)
+			params.Add(testutils.PlacementEnvironmentKey, environmentName)
+
+			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, fmt.Sprintf("%s?%s", baseURI, params.Encode()), "", "", userToken)
+			expectedResponse := map[string]interface{}{
+				testutils.MetadataKey:    types.Metadata{Name: newCappName, Namespace: namespaceName},
+				testutils.LabelsKey:      []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}},
+				testutils.AnnotationsKey: []types.KeyValue{{Key: testutils.LastUpdatedCappLabel, Value: e2eUser}},
+				testutils.SpecKey:        mocks.PrepareCappSpec(placementName),
+				testutils.StatusKey:      cappv1alpha1.CappStatus{},
+			}
+
+			Expect(status).Should(Equal(http.StatusOK))
+			compareResponses(response, expectedResponse)
+
+			capp := mocks.PrepareCapp(oneCappName, namespaceName, clusterDomain, newPlacementName, nil, nil)
+			Eventually(func() bool {
+				return doesResourceExist(k8sClient, &capp)
+			}, testutils.Timeout, testutils.Interval).Should(BeTrue())
+		})
+
+		It("Should fail in creation of Capp without a given site and without matching placement", func() {
+			newCappName := generateName(testCappName)
+
+			baseURI := fmt.Sprintf("%s/v1/namespaces/%s/%s", platformURL, namespaceName, testutils.CappsKey)
+			requestData := mocks.PrepareCreateCappType(newCappName, "", []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}}, nil)
+			payload, err := json.Marshal(requestData)
+			Expect(err).Should(Not(HaveOccurred()))
+
+			regionName := generateName(testRegionName)
+			environmentName := generateName(testEnvironment)
+
+			params := url.Values{}
+			params.Add(testutils.PlacementRegionKey, regionName)
+			params.Add(testutils.PlacementEnvironmentKey, environmentName)
+
+			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, fmt.Sprintf("%s?%s", baseURI, params.Encode()), "", "", userToken)
+			expectedResponse := map[string]interface{}{
+				testutils.ErrorKey:  "No matching Placements found",
+				testutils.ReasonKey: testutils.ReasonBadRequest,
+			}
+
+			Expect(status).Should(Equal(http.StatusBadRequest))
+			compareResponses(response, expectedResponse)
+		})
+
+		It("Should fail in creation of Capp without a given site and without query parameters", func() {
+			newCappName := generateName(testCappName)
+
+			baseURI := fmt.Sprintf("%s/v1/namespaces/%s/%s", platformURL, namespaceName, testutils.CappsKey)
+			requestData := mocks.PrepareCreateCappType(newCappName, "", []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}}, nil)
+			payload, err := json.Marshal(requestData)
+			Expect(err).Should(Not(HaveOccurred()))
+
+			params := url.Values{}
+
+			status, response := performHTTPRequest(httpClient, bytes.NewBuffer(payload), http.MethodPost, fmt.Sprintf("%s?%s", baseURI, params.Encode()), "", "", userToken)
+			expectedResponse := map[string]interface{}{
+				testutils.ErrorKey:  fmt.Sprintf("%q and/or %q query parameters must be set when Site is unspecified in request body", testutils.PlacementEnvironmentKey, testutils.PlacementRegionKey),
+				testutils.ReasonKey: testutils.ReasonBadRequest,
+			}
+
+			Expect(status).Should(Equal(http.StatusBadRequest))
+			compareResponses(response, expectedResponse)
+		})
+
 		It("Should fail in creation of Capp with bad request body", func() {
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s", platformURL, namespaceName, testutils.CappsKey)
-			requestData := mocks.PrepareCreateCappType("", []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}}, nil)
+			requestData := mocks.PrepareCreateCappType("", placementName, []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}}, nil)
 			payload, err := json.Marshal(requestData)
 			Expect(err).Should(Not(HaveOccurred()))
 
@@ -275,7 +532,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 
 		It("Should handle already existing Capp on creation", func() {
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s", platformURL, namespaceName, testutils.CappsKey)
-			requestData := mocks.PrepareCreateCappType(oneCappName, []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}}, nil)
+			requestData := mocks.PrepareCreateCappType(oneCappName, placementName, []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue}}, nil)
 			payload, err := json.Marshal(requestData)
 			Expect(err).Should(Not(HaveOccurred()))
 
@@ -293,7 +550,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 	Context("Validate update Capp route", func() {
 		It("Should update an existing Capp in a namespace", func() {
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName, testutils.CappsKey, oneCappName)
-			requestData := mocks.PrepareCreateCappType(oneCappName, []types.KeyValue{{Key: oneLabelKey, Value: oneLabelValue + "-updated"}}, nil)
+			requestData := mocks.PrepareCreateCappType(oneCappName, placementName, []types.KeyValue{{Key: oneLabelKey, Value: oneLabelValue + "-updated"}}, nil)
 			payload, err := json.Marshal(requestData)
 			Expect(err).Should(Not(HaveOccurred()))
 
@@ -301,7 +558,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 			expectedResponse := map[string]interface{}{
 				testutils.MetadataKey: types.Metadata{Name: oneCappName, Namespace: namespaceName},
 				testutils.LabelsKey:   []types.KeyValue{{Key: oneLabelKey, Value: oneLabelValue + "-updated"}},
-				testutils.SpecKey:     mocks.PrepareCappSpec(),
+				testutils.SpecKey:     mocks.PrepareCappSpec(placementName),
 			}
 
 			Expect(status).Should(Equal(http.StatusOK))
@@ -317,7 +574,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 
 		It("Should handle update of not found Capp", func() {
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName, testutils.CappsKey, oneCappName+testutils.NonExistentSuffix)
-			requestData := mocks.PrepareCreateCappType(oneCappName+testutils.NonExistentSuffix, []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue + "-updated"}}, nil)
+			requestData := mocks.PrepareCreateCappType(oneCappName+testutils.NonExistentSuffix, placementName, []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue + "-updated"}}, nil)
 			payload, err := json.Marshal(requestData)
 			Expect(err).Should(Not(HaveOccurred()))
 
@@ -327,7 +584,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 				testutils.ReasonKey: testutils.ReasonNotFound,
 			}
 
-			capp := mocks.PrepareCapp(oneCappName+testutils.NonExistentSuffix, namespaceName, clusterDomain, nil, nil)
+			capp := mocks.PrepareCapp(oneCappName+testutils.NonExistentSuffix, namespaceName, clusterDomain, placementName, nil, nil)
 			Expect(doesResourceExist(k8sClient, &capp)).To(BeFalse())
 			Expect(status).Should(Equal(http.StatusNotFound))
 			compareResponses(response, expectedResponse)
@@ -335,7 +592,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 
 		It("Should handle update of not found namespace", func() {
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s", platformURL, namespaceName+testutils.NonExistentSuffix, testutils.CappsKey, oneCappName)
-			requestData := mocks.PrepareCreateCappType(oneCappName, []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue + "-updated"}}, nil)
+			requestData := mocks.PrepareCreateCappType(oneCappName, placementName, []types.KeyValue{{Key: testutils.LabelKey, Value: testutils.LabelValue + "-updated"}}, nil)
 			payload, err := json.Marshal(requestData)
 			Expect(err).Should(Not(HaveOccurred()))
 
@@ -345,7 +602,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 				testutils.ReasonKey: testutils.ReasonNotFound,
 			}
 
-			capp := mocks.PrepareCapp(oneCappName, namespaceName+testutils.NonExistentSuffix, clusterDomain, nil, nil)
+			capp := mocks.PrepareCapp(oneCappName, namespaceName+testutils.NonExistentSuffix, clusterDomain, placementName, nil, nil)
 			Expect(doesResourceExist(k8sClient, &capp)).To(BeFalse())
 			Expect(status).Should(Equal(http.StatusNotFound))
 			compareResponses(response, expectedResponse)
@@ -386,7 +643,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 				testutils.ReasonKey: testutils.ReasonNotFound,
 			}
 
-			capp := mocks.PrepareCapp(oneCappName+testutils.NonExistentSuffix, namespaceName, clusterDomain, nil, nil)
+			capp := mocks.PrepareCapp(oneCappName+testutils.NonExistentSuffix, namespaceName, clusterDomain, placementName, nil, nil)
 			Expect(doesResourceExist(k8sClient, &capp)).To(BeFalse())
 			Expect(status).Should(Equal(http.StatusNotFound))
 			compareResponses(response, expectedResponse)
@@ -394,7 +651,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 
 		It("Should update state of an existing Capp to enabled", func() {
 			disabledCappName := generateName("disabled-" + testCappName)
-			createTestCapp(k8sClient, disabledCappName, namespaceName, map[string]string{}, nil)
+			createTestCapp(k8sClient, disabledCappName, namespaceName, placementName, map[string]string{}, nil)
 
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s/state", platformURL, namespaceName, testutils.CappsKey, disabledCappName)
 			requestData := mocks.PrepareUpdateCappStateType(testutils.EnabledState)
@@ -429,7 +686,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 				testutils.ReasonKey: testutils.ReasonNotFound,
 			}
 
-			capp := mocks.PrepareCapp(oneCappName, namespaceName+testutils.NonExistentSuffix, clusterDomain, nil, nil)
+			capp := mocks.PrepareCapp(oneCappName, namespaceName+testutils.NonExistentSuffix, clusterDomain, placementName, nil, nil)
 			Expect(doesResourceExist(k8sClient, &capp)).To(BeFalse())
 			Expect(status).Should(Equal(http.StatusNotFound))
 			compareResponses(response, expectedResponse)
@@ -467,7 +724,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 				testutils.ReasonKey: testutils.ReasonNotFound,
 			}
 
-			capp := mocks.PrepareCapp(oneCappName+testutils.NonExistentSuffix, namespaceName, clusterDomain, nil, nil)
+			capp := mocks.PrepareCapp(oneCappName+testutils.NonExistentSuffix, namespaceName, clusterDomain, placementName, nil, nil)
 			Expect(doesResourceExist(k8sClient, &capp)).To(BeFalse())
 			Expect(status).Should(Equal(http.StatusNotFound))
 			compareResponses(response, expectedResponse)
@@ -475,7 +732,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 
 		It("Should get state of an existing disabled Capp", func() {
 			disabledCappName := generateName("disabled-" + testCappName)
-			createTestDisabledCapp(k8sClient, disabledCappName, namespaceName, map[string]string{}, nil)
+			createTestDisabledCapp(k8sClient, disabledCappName, namespaceName, placementName, map[string]string{}, nil)
 
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/%s/%s/state", platformURL, namespaceName, testutils.CappsKey, disabledCappName)
 
@@ -508,7 +765,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 				testutils.ReasonKey: testutils.ReasonNotFound,
 			}
 
-			capp := mocks.PrepareCapp(oneCappName, namespaceName+testutils.NonExistentSuffix, clusterDomain, nil, nil)
+			capp := mocks.PrepareCapp(oneCappName, namespaceName+testutils.NonExistentSuffix, clusterDomain, placementName, nil, nil)
 			Expect(doesResourceExist(k8sClient, &capp)).To(BeFalse())
 			Expect(status).Should(Equal(http.StatusNotFound))
 			compareResponses(response, expectedResponse)
@@ -526,7 +783,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 				testutils.ReasonKey: testutils.ReasonNotFound,
 			}
 
-			capp := mocks.PrepareCapp(oneCappName, namespaceName+testutils.NonExistentSuffix, clusterDomain, nil, nil)
+			capp := mocks.PrepareCapp(oneCappName, namespaceName+testutils.NonExistentSuffix, clusterDomain, placementName, nil, nil)
 			Expect(doesResourceExist(k8sClient, &capp)).To(BeFalse())
 			Expect(status).Should(Equal(http.StatusNotFound))
 			compareResponses(response, expectedResponse)
@@ -561,7 +818,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 				testutils.ReasonKey: testutils.ReasonNotFound,
 			}
 
-			capp := mocks.PrepareCapp(oneCappName+testutils.NonExistentSuffix, namespaceName, clusterDomain, nil, nil)
+			capp := mocks.PrepareCapp(oneCappName+testutils.NonExistentSuffix, namespaceName, clusterDomain, placementName, nil, nil)
 			Expect(doesResourceExist(k8sClient, &capp)).To(BeFalse())
 			Expect(status).Should(Equal(http.StatusNotFound))
 			compareResponses(response, expectedResponse)
@@ -577,7 +834,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 				testutils.ReasonKey: testutils.ReasonNotFound,
 			}
 
-			capp := mocks.PrepareCapp(oneCappName, namespaceName+testutils.NonExistentSuffix, clusterDomain, nil, nil)
+			capp := mocks.PrepareCapp(oneCappName, namespaceName+testutils.NonExistentSuffix, clusterDomain, placementName, nil, nil)
 			Expect(doesResourceExist(k8sClient, &capp)).To(BeFalse())
 			Expect(status).Should(Equal(http.StatusNotFound))
 			compareResponses(response, expectedResponse)
@@ -596,7 +853,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 			Expect(status).Should(Equal(http.StatusOK))
 			compareResponses(response, expectedResponse)
 
-			capp := mocks.PrepareCapp(oneCappName, namespaceName, clusterDomain, nil, nil)
+			capp := mocks.PrepareCapp(oneCappName, namespaceName, clusterDomain, placementName, nil, nil)
 			Eventually(func() bool {
 				return doesResourceExist(k8sClient, &capp)
 			}, testutils.Timeout, testutils.Interval).Should(BeFalse())
@@ -611,7 +868,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 				testutils.ReasonKey: testutils.ReasonNotFound,
 			}
 
-			capp := mocks.PrepareCapp(oneCappName+testutils.NonExistentSuffix, namespaceName, clusterDomain, nil, nil)
+			capp := mocks.PrepareCapp(oneCappName+testutils.NonExistentSuffix, namespaceName, clusterDomain, placementName, nil, nil)
 			Expect(doesResourceExist(k8sClient, &capp)).To(BeFalse())
 			Expect(status).Should(Equal(http.StatusNotFound))
 			compareResponses(response, expectedResponse)
@@ -626,7 +883,7 @@ var _ = Describe("Validate Capp routes and functionality", func() {
 				testutils.ReasonKey: testutils.ReasonNotFound,
 			}
 
-			capp := mocks.PrepareCapp(oneCappName, namespaceName+testutils.NonExistentSuffix, clusterDomain, nil, nil)
+			capp := mocks.PrepareCapp(oneCappName, namespaceName+testutils.NonExistentSuffix, clusterDomain, placementName, nil, nil)
 			Expect(doesResourceExist(k8sClient, &capp)).To(BeFalse())
 			Expect(status).Should(Equal(http.StatusNotFound))
 			compareResponses(response, expectedResponse)
