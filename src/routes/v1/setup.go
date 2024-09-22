@@ -120,7 +120,7 @@ func setupNamespaceRoutes(v1 *gin.RouterGroup, tokenProvider auth.TokenProvider,
 	logsGroup := namespacesGroup.Group("/:namespaceName")
 	{
 		logsGroup.GET("/pod/:podName/logs", GetPodLogs())
-		logsGroup.GET("/capp/:cappName/logs", GetCappLogs()).Use(middleware.ClusterMiddleware())
+		logsGroup.Use(middleware.ClusterMiddleware()).GET("/capp/:cappName/logs", GetCappLogs())
 	}
 
 	serviceAccountsGroup := namespacesGroup.Group("/:namespaceName/serviceaccounts")
@@ -162,7 +162,7 @@ func setupClustersRoutes(v1 *gin.RouterGroup, tokenProvider auth.TokenProvider, 
 
 		podsGroup := namespacesGroup.Group("/:namespaceName/capps/:cappName/pods")
 		{
-			podsGroup.GET("", GetPods()).Use(middleware.PaginationMiddleware())
+			podsGroup.Use(middleware.PaginationMiddleware()).GET("", GetPods())
 		}
 	}
 }
