@@ -54,7 +54,7 @@ func Test_GetCappLogs(t *testing.T) {
 				wsUrl: fmt.Sprintf("/v1/namespaces/%s/capp/invalid-capp/logs", testNamespaceGetCappLogs),
 			},
 			want: want{
-				statusCode:    http.StatusSwitchingProtocols,
+				statusCode:    http.StatusNotFound,
 				expectedLines: []string{fmt.Sprintf("error: Error streaming %q logs: no pods found for Capp %q in namespace %q", "Capp", "invalid-capp", testNamespaceGetCappLogs)},
 			},
 		},
@@ -112,6 +112,7 @@ func Test_GetCappLogs(t *testing.T) {
 
 	setup()
 	mocks.CreateTestNamespace(fakeClient, testNamespaceGetCappLogs)
+	mocks.CreateTestCapp(dynClient, testutils.CappName, testNamespaceGetCappLogs, testutils.Domain, testutils.SiteName, map[string]string{}, nil)
 	mocks.CreateTestPod(fakeClient, testNamespaceGetCappLogs, pod1, "", false)
 	mocks.CreateTestPod(fakeClient, testNamespaceGetCappLogs, pod2, testutils.CappName, true)
 
@@ -130,7 +131,7 @@ func Test_GetCappLogs(t *testing.T) {
 
 			conn, resp, err := dialer.Dial(wsURL, headers)
 			assert.Equal(t, tc.want.statusCode, resp.StatusCode)
-			if tc.want.statusCode == http.StatusUnauthorized {
+			if tc.want.statusCode == http.StatusUnauthorized || tc.want.statusCode == http.StatusNotFound {
 				return
 			}
 

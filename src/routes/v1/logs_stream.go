@@ -3,6 +3,7 @@ package v1
 import (
 	"fmt"
 	"github.com/dana-team/platform-backend/src/controllers"
+	"github.com/dana-team/platform-backend/src/customerrors"
 	"github.com/dana-team/platform-backend/src/middleware"
 	"github.com/dana-team/platform-backend/src/routes"
 	websocketpkg "github.com/dana-team/platform-backend/src/websocket"
@@ -10,7 +11,6 @@ import (
 	"github.com/gorilla/websocket"
 	"go.uber.org/zap"
 	"io"
-	"net/http"
 )
 
 const (
@@ -21,6 +21,10 @@ const (
 	trueValue           = "true"
 	trueValueCapital    = "True"
 	podNameQueryParam   = "podName"
+)
+
+const (
+	errWebsocketUpgrade = "failed to upgrade websocket connection"
 )
 
 // GetPodLogs returns a handler function that fetches logs for a specified pod and container.
@@ -37,13 +41,12 @@ func GetCappLogs() gin.HandlerFunc {
 func createLogHandler(streamFunc func(*gin.Context, *zap.Logger) (io.ReadCloser, error), paramKey, logPrefix string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if !websocket.IsWebSocketUpgrade(c.Request) {
-			c.AbortWithStatus(http.StatusBadRequest)
+			middleware.AddErrorToContext(c, customerrors.NewValidationError(errWebsocketUpgrade))
 			return
 		}
 
 		logger, err := middleware.GetLogger(c)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("error getting logger %s", err.Error())})
+		if middleware.AddErrorToContext(c, err) {
 			return
 		}
 
