@@ -15,8 +15,8 @@ type CreateSecretResponse struct {
 }
 
 type SecretUriRequest struct {
-	NamespaceName string `uri:"namespaceName" binding:"required"`
-	SecretName    string `uri:"secretName" binding:"required"`
+	NamespaceName string `uri:"namespaceName" json:"namespaceName" binding:"required"`
+	SecretName    string `uri:"secretName" json:"secretName" binding:"required"`
 }
 
 type SecretNamespaceUriRequest struct {

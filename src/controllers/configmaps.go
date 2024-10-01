@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	ErrCouldNotGetConfigMap = "Could not get config map %q"
+	ErrCouldNotGetConfigMap = "Could not get configmap %q"
 )
 
 type ConfigMapController interface {

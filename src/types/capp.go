@@ -31,12 +31,12 @@ type UpdateCapp struct {
 }
 
 type GetCappQuery struct {
-	LabelSelector string `form:"labelSelector"`
+	LabelSelector string `form:"labelSelector" json:"labelSelector"`
 }
 
 type CreateCappQuery struct {
-	Environment string `form:"environment"`
-	Region      string `form:"region"`
+	Environment string `form:"environment" json:"environment"`
+	Region      string `form:"region" json:"region"`
 }
 
 type CappList struct {

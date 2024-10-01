@@ -18,14 +18,15 @@ type CappRevisionList struct {
 }
 
 type CappRevisionNamespaceUri struct {
-	ClusterName   string `uri:"clusterName"`
-	NamespaceName string `uri:"namespaceName" binding:"required"`
-	CappName      string `uri:"cappName"`
+	ClusterName   string `uri:"clusterName" json:"clusterName"`
+	NamespaceName string `uri:"namespaceName" json:"namespaceName" binding:"required"`
+	CappName      string `uri:"cappName" json:"cappName"`
 }
 
 type CappRevisionUri struct {
 	NamespaceName    string `uri:"namespaceName" binding:"required"`
 	CappRevisionName string `uri:"cappRevisionName" binding:"required"`
+	CappName         string `uri:"cappName" json:"cappName"`
 }
 
 type CappRevisionQuery struct {

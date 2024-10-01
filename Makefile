@@ -82,7 +82,7 @@ undeploy: helm ## Uninstall from the K8s cluster specified in ~/.kube/config.
 	$(KUBECTL) delete ns $(NAMESPACE)
 
 .PHONY: env-file
-env-file: yq
+env-file: helm yq
 	$(HELM) template -s templates/configmap.yaml charts/$(NAME) \
 	--set config.cluster.name=${CLUSTER_NAME} \
 	--set config.cluster.domain=${CLUSTER_DOMAIN} > $(ENV_FILE)_tmp
