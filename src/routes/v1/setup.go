@@ -125,11 +125,6 @@ func setupNamespaceRoutes(v1 *gin.RouterGroup, tokenProvider auth.TokenProvider,
 		logsGroup.Use(middleware.ClusterMiddleware()).GET("/capp/:cappName/logs", GetCappLogs())
 	}
 
-	terminalGroup := namespacesGroup.Group("/:namespaceName")
-	{
-		terminalGroup.POST("/pods/:podName/containers/:containerName/terminal", StartTerminal())
-	}
-
 	serviceAccountsGroup := namespacesGroup.Group("/:namespaceName/serviceaccounts")
 	{
 		serviceAccountsGroup.GET("/:serviceAccountName/token", GetToken())
@@ -139,11 +134,12 @@ func setupNamespaceRoutes(v1 *gin.RouterGroup, tokenProvider auth.TokenProvider,
 // setupClustersRoutes defines routes related to clusters and their namespaces.
 func setupClustersRoutes(v1 *gin.RouterGroup, tokenProvider auth.TokenProvider, scheme *runtime.Scheme) {
 	clustersGroup := v1.Group("/clusters/:clusterName")
-	clustersGroup.Use(middleware.ClusterMiddleware())
 
 	if tokenProvider != nil {
 		clustersGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
 	}
+
+	clustersGroup.Use(middleware.ClusterMiddleware())
 
 	namespacesGroup := clustersGroup.Group("/namespaces")
 	{
@@ -151,6 +147,11 @@ func setupClustersRoutes(v1 *gin.RouterGroup, tokenProvider auth.TokenProvider, 
 		{
 			logsGroup.GET("/pod/:podName/logs", GetPodLogs())
 			logsGroup.GET("/capp/:cappName/logs", GetCappLogs())
+		}
+
+		terminalGroup := namespacesGroup.Group("/:namespaceName")
+		{
+			terminalGroup.POST("/pods/:podName/containers/:containerName/terminal", StartTerminal())
 		}
 
 		cappRevisionGroup := namespacesGroup.Group("/:namespaceName/capprevisions")

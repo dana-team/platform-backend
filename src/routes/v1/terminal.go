@@ -3,6 +3,7 @@ package v1
 import (
 	"github.com/dana-team/platform-backend/src/controllers"
 	"github.com/dana-team/platform-backend/src/middleware"
+	"github.com/dana-team/platform-backend/src/routes"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/dana-team/platform-backend/src/websocket"
 	"github.com/gin-gonic/gin"
@@ -26,7 +27,9 @@ func StartTerminal() gin.HandlerFunc {
 		clientSet, _ := middleware.GetKubeClient(c)
 		logger, _ := middleware.GetLogger(c)
 
-		result, err := controllers.HandleStartTerminal(clientSet, rawConfig, startTerminalUri.NamespaceName, startTerminalUri.PodName,
+		context := routes.GetContext(c)
+
+		result, err := controllers.HandleStartTerminal(context, clientSet, rawConfig, startTerminalUri.ClusterName, startTerminalUri.NamespaceName, startTerminalUri.PodName,
 			startTerminalUri.ContainerName, startTerminalBody.Shell, logger)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Invalid request", "details": err.Error()})
@@ -39,6 +42,7 @@ func StartTerminal() gin.HandlerFunc {
 func ServeTerminal() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		handler := websocket.CreateAttachHandler()
+
 		handler.ServeHTTP(c.Writer, c.Request)
 
 	}

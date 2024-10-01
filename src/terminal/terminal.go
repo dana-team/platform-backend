@@ -21,6 +21,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
+	multicluster "github.com/oam-dev/cluster-gateway/pkg/apis/cluster/transport"
+	"go.uber.org/zap"
 	"io"
 	"log"
 	"sync"
@@ -33,7 +35,12 @@ import (
 	"k8s.io/client-go/tools/remotecommand"
 )
 
-const END_OF_TRANSMISSION = "\u0004"
+const (
+	END_OF_TRANSMISSION = "\u0004"
+	terminalTimeOut     = 600
+	resource            = "pods"
+	operation           = "exec"
+)
 
 // PtyHandler is what remotecommand expects from a pty
 type PtyHandler interface {
@@ -176,12 +183,12 @@ func (sm *SessionMap) Close(sessionId string) {
 }
 
 // startProcess executes cmd in the container and connects it up with the ptyHandler (a session)
-func startProcess(k8sClient kubernetes.Interface, cfg *rest.Config, namespaceName, podName, containerName string, cmd []string, ptyHandler PtyHandler) error {
+func startProcess(k8sClient kubernetes.Interface, cfg *rest.Config, clusterName, namespaceName, podName, containerName string, cmd []string, ptyHandler PtyHandler) error {
 	req := k8sClient.CoreV1().RESTClient().Post().
-		Resource("pods").
+		Resource(resource).
 		Name(podName).
 		Namespace(namespaceName).
-		SubResource("exec")
+		SubResource(operation)
 	req.VersionedParams(&v1.PodExecOptions{
 		Container: containerName,
 		Command:   cmd,
@@ -196,7 +203,8 @@ func startProcess(k8sClient kubernetes.Interface, cfg *rest.Config, namespaceNam
 		return err
 	}
 
-	err = exec.StreamWithContext(context.Background(), remotecommand.StreamOptions{
+	ctx := multicluster.WithMultiClusterContext(context.Background(), clusterName)
+	err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
 		Stdin:             ptyHandler,
 		Stdout:            ptyHandler,
 		Stderr:            ptyHandler,
@@ -210,7 +218,7 @@ func startProcess(k8sClient kubernetes.Interface, cfg *rest.Config, namespaceNam
 	return nil
 }
 
-// GenTerminalSessionId generates a random session ID string. The format is not really interesting.
+// GenTerminalSessionId generates a random session ID string.
 // This ID is used to identify the session when the client opens the WebSocket connection.
 func GenTerminalSessionId() (string, error) {
 	bytes := make([]byte, 16)
@@ -234,7 +242,7 @@ func isValidShell(validShells []string, shell string) bool {
 
 // WaitForTerminal is called from capp controller as a goroutine
 // Waits for the WebSocket connection to be opened by the client the session to be Bound in handleTerminalSession
-func WaitForTerminal(k8sClient kubernetes.Interface, cfg *rest.Config, namespaceName, podName, containerName, shell, sessionId string) {
+func WaitForTerminal(ctx context.Context, k8sClient kubernetes.Interface, cfg *rest.Config, clusterName, namespaceName, podName, containerName, shell, sessionId string, logger *zap.Logger) {
 	select {
 	case <-TerminalSessions.Get(sessionId).Bound:
 		close(TerminalSessions.Get(sessionId).Bound)
@@ -244,19 +252,21 @@ func WaitForTerminal(k8sClient kubernetes.Interface, cfg *rest.Config, namespace
 
 		if isValidShell(validShells, shell) {
 			cmd := []string{shell}
-			err = startProcess(k8sClient, cfg, namespaceName, podName, containerName, cmd, TerminalSessions.Get(sessionId))
+			err = startProcess(k8sClient, cfg, clusterName, namespaceName, podName, containerName, cmd, TerminalSessions.Get(sessionId))
 		} else {
 			// No shell given or it was not valid: try some shells until one succeeds or all fail
 			// FIXME: if the first shell fails then the first keyboard event is lost
 			for _, testShell := range validShells {
 				cmd := []string{testShell}
-				if err = startProcess(k8sClient, cfg, namespaceName, podName, containerName, cmd, TerminalSessions.Get(sessionId)); err == nil {
+				if err = startProcess(k8sClient, cfg, clusterName, namespaceName, podName, containerName, cmd, TerminalSessions.Get(sessionId)); err == nil {
 					break
 				}
 			}
 		}
 
 		if err != nil {
+			logger.Error(fmt.Sprintf("coundn't start terminal for pod %s and container %s in namespace %s on cluster %s with err: %s",
+				podName, containerName, namespaceName, clusterName, err.Error()))
 			// status 2 - error
 			TerminalSessions.Close(sessionId)
 			return
@@ -265,7 +275,7 @@ func WaitForTerminal(k8sClient kubernetes.Interface, cfg *rest.Config, namespace
 		// status 1 - process exited
 		TerminalSessions.Close(sessionId)
 
-	case <-time.After(1000 * time.Second):
+	case <-time.After(terminalTimeOut * time.Second):
 		// Close chan and delete session when sockjs connection was timeout
 		close(TerminalSessions.Get(sessionId).Bound)
 		delete(TerminalSessions.Sessions, sessionId)
