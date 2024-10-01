@@ -18,7 +18,7 @@ releases:
     namespace: rcs-deployer-system
     createNamespace: true
     chart: oci://ghcr.io/dana-team/helm-charts/rcs-ocm-deployer
-    version: v0.3.1
+    version: v0.3.3
     disableValidationOnInstall: true
     set:
       - name: config.placementsNamespace
@@ -32,7 +32,7 @@ releases:
     namespace: open-cluster-management
     createNamespace: true
     chart: oci://ghcr.io/dana-team/helm-charts/rcs-ocm-addons
-    version: v0.2.1
+    version: v0.2.2
     needs:
       - rcs-deployer-system/rcs-ocm-deployer
     set:

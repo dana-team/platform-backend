@@ -18,6 +18,8 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider, scheme *r
 		c.JSON(http.StatusOK, gin.H{"message": "ok"})
 	})
 
+	engine.GET("/ws/terminal", ServeTerminal())
+
 	setupAuthRoutes(v1, tokenProvider)
 	setupNamespaceRoutes(v1, tokenProvider, scheme)
 	setupClustersRoutes(v1, tokenProvider, scheme)
@@ -121,6 +123,11 @@ func setupNamespaceRoutes(v1 *gin.RouterGroup, tokenProvider auth.TokenProvider,
 	{
 		logsGroup.GET("/pod/:podName/logs", GetPodLogs())
 		logsGroup.Use(middleware.ClusterMiddleware()).GET("/capp/:cappName/logs", GetCappLogs())
+	}
+
+	terminalGroup := namespacesGroup.Group("/:namespaceName")
+	{
+		terminalGroup.POST("/pods/:podName/containers/:containerName/terminal", StartTerminal())
 	}
 
 	serviceAccountsGroup := namespacesGroup.Group("/:namespaceName/serviceaccounts")

@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -24,6 +25,15 @@ func GetDynClient(c *gin.Context) (client.Client, error) {
 		return nil, c.Error(customerrors.NewNotFoundError("dynamic client not found in context"))
 	}
 	return kube.(client.Client), nil
+}
+
+// GetConfig retrieves the config from the gin.Context.
+func GetConfig(c *gin.Context) (*rest.Config, error) {
+	config, exists := c.Get(ConfigKey)
+	if !exists {
+		return nil, c.Error(customerrors.NewNotFoundError("config not found in context"))
+	}
+	return config.(*rest.Config), nil
 }
 
 // GetLogger retrieves the logger from the gin.Context.

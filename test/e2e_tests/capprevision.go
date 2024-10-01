@@ -137,7 +137,8 @@ var _ = Describe("Validate CappRevision routes and functionality", func() {
 
 			annotations := []types.KeyValue{
 				{Key: testutils.HasPlacementLabel, Value: site},
-				{Key: testutils.LastUpdatedCappLabel, Value: lastUpdatedBy}}
+				{Key: testutils.LastUpdatedCappLabel, Value: lastUpdatedBy},
+			}
 
 			expectedResponse := map[string]interface{}{
 				testutils.MetadataKey:    types.Metadata{Name: oneCappRevisionNames[0], Namespace: namespaceName},
@@ -276,7 +277,8 @@ var _ = Describe("Validate CappRevision routes and functionality", func() {
 
 			annotations := []types.KeyValue{
 				{Key: testutils.HasPlacementLabel, Value: site},
-				{Key: testutils.LastUpdatedCappLabel, Value: lastUpdatedBy}}
+				{Key: testutils.LastUpdatedCappLabel, Value: lastUpdatedBy},
+			}
 
 			expectedResponse := map[string]interface{}{
 				testutils.MetadataKey:    types.Metadata{Name: oneCappRevisionNames[0], Namespace: namespaceName},

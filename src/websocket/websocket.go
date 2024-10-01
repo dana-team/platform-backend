@@ -2,9 +2,11 @@ package websocket
 
 import (
 	"github.com/dana-team/platform-backend/src/middleware"
+	"github.com/dana-team/platform-backend/src/terminal"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
+	"log"
 	"net/http"
 )
 
@@ -16,6 +18,15 @@ type WebSocketHandler interface {
 // WebSocket struct holds the websocket.Upgrader.
 type WebSocket struct {
 	upgrader websocket.Upgrader
+}
+
+func (ws WebSocket) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	c, err := ws.upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Printf("error %s when upgrading connection to websocket", err)
+		return
+	}
+	terminal.HandleTerminalSession(c)
 }
 
 // NewWebSocket creates a new WebSocket instance with the provided upgrader.
@@ -47,4 +58,10 @@ func (ws *WebSocket) Register(c *gin.Context) (*websocket.Conn, error) {
 	}
 
 	return conn, nil
+}
+
+// CreateAttachHandler creates new web socket handler to handle terminal web socket
+func CreateAttachHandler() http.Handler {
+	handler := NewWebSocket(nil)
+	return handler
 }
