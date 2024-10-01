@@ -75,14 +75,10 @@ var (
 )
 
 const (
-	LabelSelectorKey                = "labelSelector"
-	LabelKey                        = "key"
-	LabelValue                      = "value"
-	InvalidLabelSelector            = ":--"
-	System                          = "system"
-	ServiceAccount                  = "serviceaccount"
-	RcsDeployerSystem               = "rcs-deployer-system"
-	RcsOcmDeployerControllerManager = "rcs-ocm-deployer-controller-manager"
+	LabelSelectorKey     = "labelSelector"
+	LabelKey             = "key"
+	LabelValue           = "value"
+	InvalidLabelSelector = ":--"
 )
 
 const (

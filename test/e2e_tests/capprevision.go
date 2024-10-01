@@ -132,9 +132,12 @@ var _ = Describe("Validate CappRevision routes and functionality", func() {
 			uri := fmt.Sprintf("%s/v1/namespaces/%s/capps/%s/%s/%s", platformURL, namespaceName, oneCappName, testutils.CapprevisionsKey, oneCappRevisionNames[0])
 			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
 
+			capp := getCapp(k8sClient, oneCappName, namespaceName)
+			lastUpdatedBy := capp.GetAnnotations()[testutils.LastUpdatedCappLabel]
+
 			annotations := []types.KeyValue{
 				{Key: testutils.HasPlacementLabel, Value: site},
-				{Key: testutils.LastUpdatedCappLabel, Value: fmt.Sprintf("%s:%s:%s:%s", testutils.System, testutils.ServiceAccount, testutils.RcsDeployerSystem, testutils.RcsOcmDeployerControllerManager)}}
+				{Key: testutils.LastUpdatedCappLabel, Value: lastUpdatedBy}}
 
 			expectedResponse := map[string]interface{}{
 				testutils.MetadataKey:    types.Metadata{Name: oneCappRevisionNames[0], Namespace: namespaceName},
@@ -268,9 +271,12 @@ var _ = Describe("Validate CappRevision routes and functionality", func() {
 			uri := fmt.Sprintf("%s/v1/clusters/%s/namespaces/%s/%s/%s", platformURL, site, namespaceName, testutils.CapprevisionsKey, oneCappRevisionNames[0])
 			status, response := performHTTPRequest(httpClient, nil, http.MethodGet, uri, "", "", userToken)
 
+			capp := getCapp(k8sClient, oneCappName, namespaceName)
+			lastUpdatedBy := capp.GetAnnotations()[testutils.LastUpdatedCappLabel]
+
 			annotations := []types.KeyValue{
 				{Key: testutils.HasPlacementLabel, Value: site},
-				{Key: testutils.LastUpdatedCappLabel, Value: fmt.Sprintf("%s:%s:%s:%s", testutils.System, testutils.ServiceAccount, testutils.RcsDeployerSystem, testutils.RcsOcmDeployerControllerManager)}}
+				{Key: testutils.LastUpdatedCappLabel, Value: lastUpdatedBy}}
 
 			expectedResponse := map[string]interface{}{
 				testutils.MetadataKey:    types.Metadata{Name: oneCappRevisionNames[0], Namespace: namespaceName},
