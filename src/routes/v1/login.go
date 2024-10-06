@@ -5,6 +5,7 @@ import (
 	"github.com/dana-team/platform-backend/src/auth"
 	"github.com/dana-team/platform-backend/src/customerrors"
 	"github.com/dana-team/platform-backend/src/middleware"
+	"github.com/dana-team/platform-backend/src/types"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"net/http"
@@ -41,6 +42,10 @@ func Login(tokenProvider auth.TokenProvider) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"token": token})
+		result := types.LoginOutput{
+			Token: token,
+		}
+
+		c.JSON(http.StatusOK, result)
 	}
 }

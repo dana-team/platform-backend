@@ -57,7 +57,7 @@ type CappController interface {
 	UpdateCapp(namespace, name string, capp types.UpdateCapp) (types.Capp, error)
 
 	// DeleteCapp deletes a specific Capp in the specified namespace.
-	DeleteCapp(namespace, name string) (types.CappError, error)
+	DeleteCapp(namespace, name string) (types.MessageResponse, error)
 
 	// EditCappState edits the state of a specific Capp in the specified namespace.
 	EditCappState(namespace string, cappName string, state string) (types.CappStateResponse, error)
@@ -264,13 +264,14 @@ func (c *cappController) GetCappState(namespace, name string) (types.GetCappStat
 		cappState = types.GetCappStateResponse{
 			LastCreatedRevision: noRevision,
 			LastReadyRevision:   noRevision,
-			State:               capp.Status.StateStatus.State}
+			State:               capp.Status.StateStatus.State,
+		}
 	} else {
 		cappState = types.GetCappStateResponse{
 			LastCreatedRevision: capp.Status.KnativeObjectStatus.LatestCreatedRevisionName,
 			LastReadyRevision:   capp.Status.KnativeObjectStatus.LatestReadyRevisionName,
-			State:               capp.Status.StateStatus.State}
-
+			State:               capp.Status.StateStatus.State,
+		}
 	}
 
 	return cappState, nil
@@ -379,7 +380,7 @@ func (c *cappController) EditCappState(namespace string, cappName string, state 
 	return types.CappStateResponse{Name: capp.Name, State: capp.Spec.State}, nil
 }
 
-func (c *cappController) DeleteCapp(namespace, name string) (types.CappError, error) {
+func (c *cappController) DeleteCapp(namespace, name string) (types.MessageResponse, error) {
 	c.logger.Debug(fmt.Sprintf("Trying to delete capp %q in namespace %q", name, namespace))
 
 	capp := &cappv1alpha1.Capp{
@@ -390,10 +391,10 @@ func (c *cappController) DeleteCapp(namespace, name string) (types.CappError, er
 	}
 	if err := c.client.Delete(c.ctx, capp); err != nil {
 		c.logger.Error(fmt.Sprintf("%v with error: %v", fmt.Sprintf(ErrCouldNotDeleteCapp, name, namespace), err.Error()))
-		return types.CappError{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotDeleteCapp, name, namespace), err)
+		return types.MessageResponse{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotDeleteCapp, name, namespace), err)
 	}
 
-	return types.CappError{
+	return types.MessageResponse{
 		Message: fmt.Sprintf("Deleted capp %q in namespace %q successfully", name, namespace),
 	}, nil
 }

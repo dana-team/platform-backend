@@ -2,6 +2,9 @@ package controllers
 
 import (
 	"fmt"
+	"strconv"
+	"testing"
+
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/customerrors"
 	"github.com/dana-team/platform-backend/src/types"
@@ -11,8 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"strconv"
-	"testing"
 )
 
 func TestGetCapp(t *testing.T) {
@@ -83,9 +84,7 @@ func TestGetCapp(t *testing.T) {
 			}
 			assert.Equal(t, test.want.capp, response)
 		})
-
 	}
-
 }
 
 func TestGetCappState(t *testing.T) {
@@ -175,9 +174,7 @@ func TestGetCappState(t *testing.T) {
 			}
 			assert.Equal(t, test.want.cappState, response)
 		})
-
 	}
-
 }
 
 func TestGetCappDNS(t *testing.T) {
@@ -213,10 +210,11 @@ func TestGetCappDNS(t *testing.T) {
 			},
 			want: want{
 				errorStatus: metav1.StatusSuccess,
-				cappDNS: types.GetDNSResponse{Records: []types.DNS{
-					{Status: corev1.ConditionFalse, Name: fmt.Sprintf("%s.%s", testutils.Hostname+"-1", testutils.DefaultZone)},
-					{Status: corev1.ConditionTrue, Name: fmt.Sprintf("%s.%s", testutils.Hostname+"-2", testutils.DefaultZone)},
-				},
+				cappDNS: types.GetDNSResponse{
+					Records: []types.DNS{
+						{Status: corev1.ConditionFalse, Name: fmt.Sprintf("%s.%s", testutils.Hostname+"-1", testutils.DefaultZone)},
+						{Status: corev1.ConditionTrue, Name: fmt.Sprintf("%s.%s", testutils.Hostname+"-2", testutils.DefaultZone)},
+					},
 				},
 			},
 			records: []dnsParams{
@@ -233,10 +231,11 @@ func TestGetCappDNS(t *testing.T) {
 			},
 			want: want{
 				errorStatus: metav1.StatusSuccess,
-				cappDNS: types.GetDNSResponse{Records: []types.DNS{
-					{Status: corev1.ConditionFalse, Name: fmt.Sprintf("%s.%s", testutils.Hostname+"-1", testutils.DefaultZone)},
-					{Status: corev1.ConditionTrue, Name: fmt.Sprintf("%s.%s", testutils.Hostname+"-2", testutils.DefaultZone)},
-				},
+				cappDNS: types.GetDNSResponse{
+					Records: []types.DNS{
+						{Status: corev1.ConditionFalse, Name: fmt.Sprintf("%s.%s", testutils.Hostname+"-1", testutils.DefaultZone)},
+						{Status: corev1.ConditionTrue, Name: fmt.Sprintf("%s.%s", testutils.Hostname+"-2", testutils.DefaultZone)},
+					},
 				},
 			},
 			records: []dnsParams{
@@ -252,9 +251,10 @@ func TestGetCappDNS(t *testing.T) {
 			},
 			want: want{
 				errorStatus: metav1.StatusSuccess,
-				cappDNS: types.GetDNSResponse{Records: []types.DNS{
-					{Status: corev1.ConditionUnknown, Name: fmt.Sprintf("%s.%s", testutils.Hostname+"-1", testutils.DefaultZone)},
-				},
+				cappDNS: types.GetDNSResponse{
+					Records: []types.DNS{
+						{Status: corev1.ConditionUnknown, Name: fmt.Sprintf("%s.%s", testutils.Hostname+"-1", testutils.DefaultZone)},
+					},
 				},
 			},
 			records: []dnsParams{
@@ -270,9 +270,10 @@ func TestGetCappDNS(t *testing.T) {
 			},
 			want: want{
 				errorStatus: metav1.StatusSuccess,
-				cappDNS: types.GetDNSResponse{Records: []types.DNS{
-					{Status: corev1.ConditionUnknown, Name: fmt.Sprintf("%s.%s", testutils.Hostname+"-1", testutils.DefaultZone)},
-				},
+				cappDNS: types.GetDNSResponse{
+					Records: []types.DNS{
+						{Status: corev1.ConditionUnknown, Name: fmt.Sprintf("%s.%s", testutils.Hostname+"-1", testutils.DefaultZone)},
+					},
 				},
 			},
 			records: []dnsParams{
@@ -309,7 +310,6 @@ func TestGetCappDNS(t *testing.T) {
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
-
 			if test.cappName != "" {
 				mocks.CreateTestCapp(dynClient, test.cappName, namespaceName, testutils.Domain, testutils.SiteName, map[string]string{}, map[string]string{})
 			}
@@ -332,9 +332,7 @@ func TestGetCappDNS(t *testing.T) {
 			}
 			assert.Equal(t, test.want.cappDNS, response)
 		})
-
 	}
-
 }
 
 func TestGetCapps(t *testing.T) {
@@ -363,11 +361,12 @@ func TestGetCapps(t *testing.T) {
 			},
 			want: want{
 				errorStatus: metav1.StatusSuccess,
-				cappList: types.CappList{ListMetadata: types.ListMetadata{Count: 2}, Capps: []types.CappSummary{
-					mocks.PrepareCappSummary(testutils.CappName+"-1", namespaceName),
+				cappList: types.CappList{
+					ListMetadata: types.ListMetadata{Count: 2}, Capps: []types.CappSummary{
+						mocks.PrepareCappSummary(testutils.CappName+"-1", namespaceName),
 
-					mocks.PrepareCappSummary(testutils.CappName+"-2", namespaceName),
-				},
+						mocks.PrepareCappSummary(testutils.CappName+"-2", namespaceName),
+					},
 				},
 			},
 		},
@@ -377,9 +376,10 @@ func TestGetCapps(t *testing.T) {
 				cappQuery: types.GetCappQuery{LabelSelector: fmt.Sprintf("%s-2=%s-2", testutils.LabelKey, testutils.LabelValue)},
 			},
 			want: want{
-				cappList: types.CappList{ListMetadata: types.ListMetadata{Count: 1}, Capps: []types.CappSummary{
-					mocks.PrepareCappSummary(testutils.CappName+"-2", namespaceName),
-				},
+				cappList: types.CappList{
+					ListMetadata: types.ListMetadata{Count: 1}, Capps: []types.CappSummary{
+						mocks.PrepareCappSummary(testutils.CappName+"-2", namespaceName),
+					},
 				},
 				errorStatus: metav1.StatusSuccess,
 			},
@@ -732,7 +732,7 @@ func TestDeleteCapp(t *testing.T) {
 		namespace string
 	}
 	type want struct {
-		response    types.CappError
+		response    types.MessageResponse
 		errorStatus metav1.StatusReason
 	}
 	cases := map[string]struct {
@@ -746,7 +746,7 @@ func TestDeleteCapp(t *testing.T) {
 			},
 			want: want{
 				errorStatus: metav1.StatusSuccess,
-				response: types.CappError{
+				response: types.MessageResponse{
 					Message: fmt.Sprintf("Deleted capp %q in namespace %q successfully", testutils.CappName+"-1", namespaceName),
 				},
 			},
@@ -758,7 +758,7 @@ func TestDeleteCapp(t *testing.T) {
 			},
 			want: want{
 				errorStatus: metav1.StatusReasonNotFound,
-				response:    types.CappError{},
+				response:    types.MessageResponse{},
 			},
 		},
 	}

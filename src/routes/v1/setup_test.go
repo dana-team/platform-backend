@@ -54,8 +54,8 @@ func setupRouter(logger *zap.Logger) *gin.Engine {
 
 	v1 := engine.Group("/v1")
 
-	setupNamespaceRoutes(v1, nil, nil)
-	setupClustersRoutes(v1, nil, nil)
+	setupNamespaceRoutes(nil, nil, v1, nil, nil)
+	setupClustersRoutes(nil, nil, v1, nil, nil)
 
 	return engine
 }

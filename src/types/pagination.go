@@ -15,6 +15,6 @@ type List[T any] struct {
 }
 
 type PaginationParams struct {
-	Limit int `form:"limit,omitempty" binding:"min=0"`
-	Page  int `form:"page,default=1,omitempty" binding:"min=1"`
+	Limit int `form:"limit,omitempty" json:"limit" binding:"min=0"`
+	Page  int `form:"page,default=1,omitempty" json:"page" binding:"min=1"`
 }

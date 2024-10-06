@@ -1,0 +1,46 @@
+{
+  "annotations": [
+    {
+      "key": "string",
+      "value": "string"
+    }
+  ],
+  "labels": [
+    {
+      "key": "string",
+      "value": "string"
+    }
+  ],
+  "metadata": {
+    "name": "example"
+  },
+  "spec": {
+    "configurationSpec": {
+      "template": {
+        "spec": {
+          "containers": [
+            {
+              "image": "ghcr.io/dana-team/capp-gin-app:main",
+              "name": "example",
+              "ports": [
+                {
+                  "containerPort": 8080,
+                  "protocol": "TCP"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "logSpec": {},
+    "routeSpec": {
+      "hostname": "string",
+      "routeTimeoutSeconds": 0,
+      "tlsEnabled": false
+    },
+    "scaleMetric": "cpu",
+    "site": "string",
+    "state": "enabled"
+  }
+}

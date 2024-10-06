@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+
 	"github.com/dana-team/platform-backend/src/customerrors"
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/dana-team/platform-backend/src/utils"
@@ -17,7 +18,7 @@ const (
 	ErrCouldNotGetPods = "Could not get pods"
 )
 
-// PodController defines methods to interact with pod pods.
+// PodController defines methods to interact with pods.
 type PodController interface {
 	GetPods(namespace, cappName string, limit, page int) (types.GetPodsResponse, error)
 }
@@ -29,7 +30,7 @@ type podController struct {
 	logger *zap.Logger
 }
 
-// PodPaginator paginates through secrets in a specified namespace.
+// PodPaginator paginates through pods in a specified namespace.
 type PodPaginator struct {
 	pagination.GenericPaginator
 	namespace string
@@ -77,13 +78,12 @@ func (n *podController) GetPods(namespace, cappName string, limit, page int) (ty
 	return response, nil
 }
 
-// FetchList retrieves a list of secrets from the specified namespace with given options.
+// FetchList retrieves a list of pods from the specified namespace with given options.
 func (p *PodPaginator) FetchList(listOptions metav1.ListOptions) (*types.List[corev1.Pod], error) {
 	pods, err := utils.GetPodsByLabel(p.Ctx, p.client, p.namespace, fmt.Sprintf(utils.ParentCappLabelSelector, p.cappName), metav1.ListOptions{
 		Limit:    listOptions.Limit,
 		Continue: listOptions.Continue,
 	})
-
 	if err != nil {
 		p.Logger.Error(fmt.Sprintf("%v: %s", errFetchingCappPods, err.Error()))
 		return nil, customerrors.NewAPIError(errFetchingCappPods, err)
