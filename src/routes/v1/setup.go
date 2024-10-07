@@ -18,6 +18,8 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider, scheme *r
 		c.JSON(http.StatusOK, gin.H{"message": "ok"})
 	})
 
+	engine.GET("/ws/terminal", ServeTerminal())
+
 	setupAuthRoutes(v1, tokenProvider)
 	setupNamespaceRoutes(v1, tokenProvider, scheme)
 	setupClustersRoutes(v1, tokenProvider, scheme)
@@ -132,11 +134,12 @@ func setupNamespaceRoutes(v1 *gin.RouterGroup, tokenProvider auth.TokenProvider,
 // setupClustersRoutes defines routes related to clusters and their namespaces.
 func setupClustersRoutes(v1 *gin.RouterGroup, tokenProvider auth.TokenProvider, scheme *runtime.Scheme) {
 	clustersGroup := v1.Group("/clusters/:clusterName")
-	clustersGroup.Use(middleware.ClusterMiddleware())
 
 	if tokenProvider != nil {
 		clustersGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
 	}
+
+	clustersGroup.Use(middleware.ClusterMiddleware())
 
 	namespacesGroup := clustersGroup.Group("/namespaces")
 	{
@@ -144,6 +147,11 @@ func setupClustersRoutes(v1 *gin.RouterGroup, tokenProvider auth.TokenProvider, 
 		{
 			logsGroup.GET("/pod/:podName/logs", GetPodLogs())
 			logsGroup.GET("/capp/:cappName/logs", GetCappLogs())
+		}
+
+		terminalGroup := namespacesGroup.Group("/:namespaceName")
+		{
+			terminalGroup.POST("/pods/:podName/containers/:containerName/terminal", StartTerminal())
 		}
 
 		cappRevisionGroup := namespacesGroup.Group("/:namespaceName/capprevisions")
