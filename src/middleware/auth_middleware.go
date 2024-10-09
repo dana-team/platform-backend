@@ -32,6 +32,7 @@ const (
 	KubeClientCtxKey    = "kubeClient"
 	DynamicClientCtxKey = "dynClient"
 	TokenCtxKey         = "token"
+	ConfigKey           = "config"
 )
 
 const (
@@ -96,6 +97,7 @@ func TokenAuthMiddleware(tokenProvider auth.TokenProvider, scheme *runtime.Schem
 		c.Set(KubeClientCtxKey, kubeClient)
 		c.Set(DynamicClientCtxKey, dynClient)
 		c.Set(TokenCtxKey, token)
+		c.Set(ConfigKey, config)
 		c.Next()
 	}
 }
