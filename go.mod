@@ -7,6 +7,7 @@ require (
 	github.com/dana-team/container-app-operator v0.3.2
 	github.com/dana-team/provider-dns v0.1.3
 	github.com/dana-team/rcs-ocm-deployer v0.3.3
+	github.com/danielgtaylor/huma/v2 v2.23.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/joho/godotenv v1.5.1

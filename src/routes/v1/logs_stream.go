@@ -16,11 +16,11 @@ import (
 const (
 	namespaceParam      = "namespaceName"
 	cappNameParam       = "cappName"
-	containerQueryParam = "container"
+	containerQueryParam = "containerName"
 	previousQueryParam  = "previous"
 	trueValue           = "true"
 	trueValueCapital    = "True"
-	podNameQueryParam   = "podName"
+	podNameParam        = "podName"
 )
 
 const (
@@ -29,7 +29,7 @@ const (
 
 // GetPodLogs returns a handler function that fetches logs for a specified pod and container.
 func GetPodLogs() gin.HandlerFunc {
-	return createLogHandler(streamPodLogs, podNameQueryParam, "Pod")
+	return createLogHandler(streamPodLogs, podNameParam, "Pod")
 }
 
 // GetCappLogs returns a handler function that fetches logs for a specified Capp.
@@ -82,7 +82,7 @@ func streamPodLogs(c *gin.Context, logger *zap.Logger) (io.ReadCloser, error) {
 	}
 
 	namespace := c.Param(namespaceParam)
-	podName := c.Param(podNameQueryParam)
+	podName := c.Param(podNameParam)
 	containerName := c.Query(containerQueryParam)
 
 	context := routes.GetContext(c)
@@ -99,7 +99,7 @@ func streamCappLogs(c *gin.Context, logger *zap.Logger) (io.ReadCloser, error) {
 	namespace := c.Param(namespaceParam)
 	cappName := c.Param(cappNameParam)
 	containerName := c.DefaultQuery(containerQueryParam, cappName)
-	podName := c.Query(podNameQueryParam)
+	podName := c.Query(podNameParam)
 
 	context := routes.GetContext(c)
 	return controllers.FetchCappLogs(context, client, namespace, cappName, containerName, podName, isPreviousLogsRequested(c), logger)

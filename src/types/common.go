@@ -14,3 +14,7 @@ type Metadata struct {
 type ListMetadata struct {
 	Count int `json:"count"`
 }
+
+type MessageResponse struct {
+	Message string `json:"message"`
+}

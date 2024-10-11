@@ -47,8 +47,8 @@ func FetchCappLogs(ctx context.Context, client kubernetes.Interface, namespace, 
 	}
 
 	podName, ok := FetchCappPodName(podName, pods)
-	logger.Error(fmt.Sprintf(errPodNotFound, podName, cappName, namespace))
 	if !ok {
+		logger.Error(fmt.Sprintf(errPodNotFound, podName, cappName, namespace))
 		return nil, customerrors.NewAPIError(fmt.Sprintf(errPodNotFound, podName, cappName, namespace), err)
 	}
 

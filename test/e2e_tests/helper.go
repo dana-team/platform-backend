@@ -6,6 +6,7 @@ import (
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	rcsv1alpha1 "github.com/dana-team/rcs-ocm-deployer/api/v1alpha1"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	. "github.com/onsi/gomega"
 	configv1 "github.com/openshift/api/config/v1"
 	userv1 "github.com/openshift/api/user/v1"
@@ -76,7 +77,8 @@ func compareResponses(response, expectedResponse map[string]interface{}) {
 	Expect(err).ShouldNot(HaveOccurred())
 
 	compareError(expectedResponseNormalized, response)
-	Expect(response).Should(BeComparableTo(expectedResponseNormalized))
+	less := func(a, b string) bool { return a < b }
+	Expect(response).Should(BeComparableTo(expectedResponseNormalized, cmpopts.SortSlices(less)))
 }
 
 // compareError compares two errors and asserts that the response contains the expected response.

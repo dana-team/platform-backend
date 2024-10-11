@@ -1,8 +1,8 @@
 package types
 
 type ConfigMapUri struct {
-	NamespaceName string `uri:"namespaceName" binding:"required"`
-	ConfigMapName string `uri:"configMapName" binding:"required"`
+	NamespaceName string `uri:"namespaceName" json:"namespaceName" binding:"required"`
+	ConfigMapName string `uri:"configMapName" json:"configMapName" binding:"required"`
 }
 
 type ConfigMap struct {

@@ -30,7 +30,7 @@ func TestMain(m *testing.M) {
 }
 
 func setup() {
-	fakeClient = fake.NewSimpleClientset()
+	fakeClient = fake.NewClientset()
 	dynClient = runtimeFake.NewClientBuilder().WithScheme(setupScheme()).Build()
 	logger, _ = zap.NewProduction()
 }

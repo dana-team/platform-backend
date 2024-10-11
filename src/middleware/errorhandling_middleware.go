@@ -3,6 +3,7 @@ package middleware
 import (
 	"errors"
 	"github.com/dana-team/platform-backend/src/customerrors"
+	"github.com/dana-team/platform-backend/src/types"
 	"github.com/gin-gonic/gin"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"net/http"
@@ -42,10 +43,12 @@ func ErrorHandlingMiddleware() gin.HandlerFunc {
 			errorReason = string(k8sErr.ErrStatus.Reason)
 		}
 
-		c.JSON(statusCode, gin.H{
-			errorKey: errorMessage,
-			reason:   errorReason,
-		})
+		errorResponse := types.ErrorResponse{
+			Error:  errorMessage,
+			Reason: errorReason,
+		}
+
+		c.JSON(statusCode, errorResponse)
 	}
 }
 
