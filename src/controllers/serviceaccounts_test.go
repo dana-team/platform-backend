@@ -74,7 +74,9 @@ func TestGetServiceAccount(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
-			assert.Equal(t, test.want.serviceAccount, response)
+			assert.Equal(t, test.want.serviceAccount.Name, response.Name)
+			assert.Equal(t, test.want.serviceAccount.Namespace, response.Namespace)
+			assert.Equal(t, test.want.serviceAccount.Secrets, response.Secrets)
 		})
 	}
 }

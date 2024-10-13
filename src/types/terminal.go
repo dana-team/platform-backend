@@ -1,10 +1,10 @@
 package types
 
 type StartTerminalUri struct {
-	ClusterName   string `uri:"clusterName" binding:"required"`
-	NamespaceName string `uri:"namespaceName" binding:"required"`
-	PodName       string `uri:"podName" binding:"required"`
-	ContainerName string `uri:"containerName" binding:"required"`
+	ClusterName   string `uri:"clusterName" json:"clusterName" binding:"required"`
+	NamespaceName string `uri:"namespaceName" json:"namespaceName" binding:"required"`
+	PodName       string `uri:"podName" json:"podName" binding:"required"`
+	ContainerName string `uri:"containerName" json:"containerName" binding:"required"`
 }
 
 type StartTerminalBody struct {

@@ -41,7 +41,7 @@ func Test_GetCappLogs(t *testing.T) {
 		"ShouldStreamLogsWithoutQueryParams": {
 			args: args{
 				token: "valid_token",
-				wsUrl: fmt.Sprintf("/v1/namespaces/%s/capp/%s/logs", testNamespaceGetCappLogs, testutils.CappName),
+				wsUrl: fmt.Sprintf("/v1/namespaces/%s/capps/%s/logs", testNamespaceGetCappLogs, testutils.CappName),
 			},
 			want: want{
 				statusCode:    http.StatusSwitchingProtocols,
@@ -51,7 +51,7 @@ func Test_GetCappLogs(t *testing.T) {
 		"ShouldNotStreamLogsWithInvalidCappName": {
 			args: args{
 				token: "valid_token",
-				wsUrl: fmt.Sprintf("/v1/namespaces/%s/capp/invalid-capp/logs", testNamespaceGetCappLogs),
+				wsUrl: fmt.Sprintf("/v1/namespaces/%s/capps/invalid-capp/logs", testNamespaceGetCappLogs),
 			},
 			want: want{
 				statusCode:    http.StatusNotFound,
@@ -61,7 +61,7 @@ func Test_GetCappLogs(t *testing.T) {
 		"ShouldStreamLogsWithQueryParams": {
 			args: args{
 				token: "valid_token",
-				wsUrl: fmt.Sprintf("/v1/namespaces/%s/capp/%s/logs?podName=test-pod-2", testNamespaceGetCappLogs, testutils.CappName),
+				wsUrl: fmt.Sprintf("/v1/namespaces/%s/capps/%s/logs?podName=test-pod-2", testNamespaceGetCappLogs, testutils.CappName),
 			},
 			want: want{
 				statusCode:    http.StatusSwitchingProtocols,
@@ -71,7 +71,7 @@ func Test_GetCappLogs(t *testing.T) {
 		"ShouldStreamLogsWithPreviousQueryParam": {
 			args: args{
 				token: "valid_token",
-				wsUrl: fmt.Sprintf("/v1/namespaces/%s/capp/%s/logs?previous=true", testNamespaceGetCappLogs, testutils.CappName),
+				wsUrl: fmt.Sprintf("/v1/namespaces/%s/capps/%s/logs?previous=true", testNamespaceGetCappLogs, testutils.CappName),
 			},
 			want: want{
 				statusCode:    http.StatusSwitchingProtocols,
@@ -81,7 +81,7 @@ func Test_GetCappLogs(t *testing.T) {
 		"ShouldNotStreamLogsWithNonExistingPodName": {
 			args: args{
 				token: "valid_token",
-				wsUrl: fmt.Sprintf("/v1/namespaces/%s/capp/%s/logs?podName=pod%s", testNamespaceGetCappLogs, testutils.CappName, testutils.NonExistentSuffix),
+				wsUrl: fmt.Sprintf("/v1/namespaces/%s/capps/%s/logs?podName=pod%s", testNamespaceGetCappLogs, testutils.CappName, testutils.NonExistentSuffix),
 			},
 			want: want{
 				statusCode:    http.StatusSwitchingProtocols,
@@ -91,7 +91,7 @@ func Test_GetCappLogs(t *testing.T) {
 		"ShouldNotStreamLogsWithInvalidContainerName": {
 			args: args{
 				token: "valid_token",
-				wsUrl: fmt.Sprintf("/v1/namespaces/%s/capp/%s/logs?container=container%s", testNamespaceGetCappLogs, testutils.CappName, testutils.NonExistentSuffix),
+				wsUrl: fmt.Sprintf("/v1/namespaces/%s/capps/%s/logs?containerName=container%s", testNamespaceGetCappLogs, testutils.CappName, testutils.NonExistentSuffix),
 			},
 			want: want{
 				statusCode:    http.StatusSwitchingProtocols,
@@ -101,7 +101,7 @@ func Test_GetCappLogs(t *testing.T) {
 		"ShouldStreamLogsWithValidContainerName": {
 			args: args{
 				token: "valid_token",
-				wsUrl: fmt.Sprintf("/v1/namespaces/%s/capp/%s/logs?container=test-container", testNamespaceGetCappLogs, testutils.CappName),
+				wsUrl: fmt.Sprintf("/v1/namespaces/%s/capps/%s/logs?containerName=test-container", testNamespaceGetCappLogs, testutils.CappName),
 			},
 			want: want{
 				statusCode:    http.StatusSwitchingProtocols,
@@ -168,7 +168,7 @@ func Test_GetPodLogs(t *testing.T) {
 		"ShouldStreamLogsWithoutQueryParams": {
 			args: args{
 				token: "valid_token",
-				wsUrl: fmt.Sprintf("/v1/namespaces/%s/pod/%s/logs", testNamespaceGetPodLogs, pod1),
+				wsUrl: fmt.Sprintf("/v1/namespaces/%s/pods/%s/logs", testNamespaceGetPodLogs, pod1),
 			},
 			want: want{
 				statusCode:    http.StatusSwitchingProtocols,
@@ -178,7 +178,7 @@ func Test_GetPodLogs(t *testing.T) {
 		"ShouldStreamLogsWithQueryParams": {
 			args: args{
 				token: "valid_token",
-				wsUrl: fmt.Sprintf("/v1/namespaces/%s/pod/%s/logs?container=test-container", testNamespaceGetPodLogs, pod1),
+				wsUrl: fmt.Sprintf("/v1/namespaces/%s/pods/%s/logs?container=test-container", testNamespaceGetPodLogs, pod1),
 			},
 			want: want{
 				statusCode:    http.StatusSwitchingProtocols,
@@ -188,7 +188,7 @@ func Test_GetPodLogs(t *testing.T) {
 		"ShouldStreamLogsWithPreviousQueryParam": {
 			args: args{
 				token: "valid_token",
-				wsUrl: fmt.Sprintf("/v1/namespaces/%s/pod/%s/logs?previous=true", testNamespaceGetPodLogs, pod1),
+				wsUrl: fmt.Sprintf("/v1/namespaces/%s/pods/%s/logs?previous=true", testNamespaceGetPodLogs, pod1),
 			},
 			want: want{
 				statusCode:    http.StatusSwitchingProtocols,
@@ -198,7 +198,7 @@ func Test_GetPodLogs(t *testing.T) {
 		"ShouldStreamLogsWithoutQueryParamsMultipleContainers": {
 			args: args{
 				token: "valid_token",
-				wsUrl: fmt.Sprintf("/v1/namespaces/%s/pod/%s/logs", testNamespaceGetPodLogs, pod3),
+				wsUrl: fmt.Sprintf("/v1/namespaces/%s/pods/%s/logs", testNamespaceGetPodLogs, pod3),
 			},
 			want: want{
 				statusCode:    http.StatusSwitchingProtocols,
@@ -208,7 +208,7 @@ func Test_GetPodLogs(t *testing.T) {
 		"ShouldNotStreamLogsWithNonExistingPodName": {
 			args: args{
 				token: "valid_token",
-				wsUrl: fmt.Sprintf("/v1/namespaces/%s/pod/test-invalid-pod/logs", testNamespaceGetPodLogs),
+				wsUrl: fmt.Sprintf("/v1/namespaces/%s/pods/test-invalid-pod/logs", testNamespaceGetPodLogs),
 			},
 			want: want{
 				statusCode:    http.StatusSwitchingProtocols,
@@ -218,7 +218,7 @@ func Test_GetPodLogs(t *testing.T) {
 		"ShouldNotStreamLogsWithInvalidContainerName": {
 			args: args{
 				token: "valid_token",
-				wsUrl: fmt.Sprintf("/v1/namespaces/%s/pod/%s/logs?container=container%s", testNamespaceGetPodLogs, pod1, testutils.NonExistentSuffix),
+				wsUrl: fmt.Sprintf("/v1/namespaces/%s/pods/%s/logs?containerName=container%s", testNamespaceGetPodLogs, pod1, testutils.NonExistentSuffix),
 			},
 			want: want{
 				statusCode:    http.StatusSwitchingProtocols,

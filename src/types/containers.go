@@ -10,6 +10,6 @@ type Container struct {
 }
 
 type ContainerRequestUri struct {
-	NamespaceName string `uri:"namespaceName" binding:"required"`
-	PodName       string `uri:"podName" binding:"required"`
+	NamespaceName string `uri:"namespaceName" json:"namespaceName" binding:"required"`
+	PodName       string `uri:"podName" json:"podName" binding:"required"`
 }

@@ -3,6 +3,7 @@ package v1
 import (
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/middleware"
+	"github.com/dana-team/platform-backend/src/routes/v1/doc"
 	dnsrecordv1alpha1 "github.com/dana-team/provider-dns/apis/record/v1alpha1"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -33,7 +34,7 @@ func TestMain(m *testing.M) {
 }
 
 func setup() {
-	fakeClient = fake.NewSimpleClientset()
+	fakeClient = fake.NewClientset()
 	dynClient = runtimeFake.NewClientBuilder().WithScheme(setupScheme()).Build()
 	logger, _ := zap.NewProduction()
 	router = setupRouter(logger)
@@ -53,9 +54,10 @@ func setupRouter(logger *zap.Logger) *gin.Engine {
 	})
 
 	v1 := engine.Group("/v1")
+	api, r := doc.SetupAPIRegistry(engine)
 
-	setupNamespaceRoutes(v1, nil, nil)
-	setupClustersRoutes(v1, nil, nil)
+	setupNamespaceRoutes(api, r, v1, nil, nil)
+	setupClustersRoutes(api, r, v1, nil, nil)
 
 	return engine
 }

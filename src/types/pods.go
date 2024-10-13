@@ -10,6 +10,6 @@ type Pod struct {
 }
 
 type PodRequestUri struct {
-	NamespaceName string `uri:"namespaceName" binding:"required"`
-	CappName      string `uri:"cappName" binding:"required"`
+	NamespaceName string `uri:"namespaceName" json:"namespaceName" binding:"required"`
+	CappName      string `uri:"cappName" json:"cappName" binding:"required"`
 }

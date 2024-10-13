@@ -10,5 +10,5 @@ type NamespaceList struct {
 }
 
 type NamespaceUri struct {
-	NamespaceName string `uri:"namespaceName" binding:"required"`
+	NamespaceName string `uri:"namespaceName" json:"namespaceName" binding:"required"`
 }

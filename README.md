@@ -6,15 +6,7 @@ It is part of the [`rcs-ocm-deployer`](https://github.com/dana-team/rcs-ocm-depl
 
 ## Documentation
 
-The API is documented in the [docs/api](./docs/api) directory of this repository. Refer to:
-
-- [ContainerApp API](./docs/api/capp.md)
-- [ContainerApp Revisions API](./docs/api/capp_revision.md)
-- [Containers API](./docs/api/containers.md)
-- [Namespace API](./docs/api/namespace.md)
-- [Secrets API](./docs/api/secrets.md)
-- [Users API](./docs/api/users.md)
-- [Token API](./docs/api/token.md)
+The API is documented on the `/docs` route, for example at `http://localhost:8080/docs`. It uses the [`Huma` project](https://huma.rocks/) to generate the docs. 
 
 ## Set Up
 
