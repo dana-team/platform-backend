@@ -8,3 +8,14 @@ type ServiceAccountRequestUri struct {
 type TokenResponse struct {
 	Token string `json:"token"`
 }
+
+type CreateServiceAccountRequest ServiceAccountRequestUri
+
+type ServiceAccountOutput struct {
+	ServiceAccounts []string `json:"serviceAccounts"`
+	ListMetadata
+}
+
+type ServiceAccount struct {
+	Name string `json:"name" binding:"required"`
+}

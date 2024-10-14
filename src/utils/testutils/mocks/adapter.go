@@ -2,6 +2,7 @@ package mocks
 
 import (
 	"context"
+
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,7 +14,6 @@ import (
 func CreateTestNamespace(fakeClient *fake.Clientset, name string) {
 	namespace := PrepareNamespace(name, map[string]string{})
 	_, err := fakeClient.CoreV1().Namespaces().Create(context.TODO(), &namespace, metav1.CreateOptions{})
-
 	if err != nil {
 		panic(err)
 	}

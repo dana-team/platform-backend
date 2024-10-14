@@ -27,3 +27,10 @@ type UsersOutput struct {
 type DeleteUserResponse struct {
 	Message string `json:"message"`
 }
+type UserRole string
+
+const (
+	AdminRole       UserRole = "admin"
+	ContributorRole UserRole = "contributor"
+	ViewerRole      UserRole = "viewer"
+)

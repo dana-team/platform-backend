@@ -2,24 +2,24 @@ package controllers
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/dana-team/platform-backend/src/types"
 	"github.com/dana-team/platform-backend/src/utils"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	"github.com/stretchr/testify/assert"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"testing"
 )
 
 func TestGetServiceAccount(t *testing.T) {
 	namespaceName := testutils.TestNamespace + "-getServiceAccount"
 	type args struct {
-		namespace string
-		name      string
+		namespace                  string
+		existingServiceAccountName string
+		name                       string
 	}
 	type want struct {
-		serviceAccount *corev1.ServiceAccount
+		serviceAccount types.ServiceAccount
 		error          string
 	}
 	cases := map[string]struct {
@@ -28,43 +28,35 @@ func TestGetServiceAccount(t *testing.T) {
 	}{
 		"ShouldSucceedGettingServiceAccount": {
 			args: args{
-				namespace: namespaceName,
-				name:      testutils.ServiceAccountName,
+				namespace:                  namespaceName,
+				name:                       testutils.ServiceAccountName,
+				existingServiceAccountName: testutils.ServiceAccountName,
 			},
 			want: want{
-				serviceAccount: &corev1.ServiceAccount{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      testutils.ServiceAccountName,
-						Namespace: namespaceName,
-					},
-					Secrets: []corev1.ObjectReference{
-						{
-							Kind:      testutils.Secret,
-							Name:      "docker-cfg",
-							Namespace: namespaceName,
-						},
-					},
-				},
+				serviceAccount: types.ServiceAccount{Name: testutils.ServiceAccountName},
 			},
 		},
 		"ShouldNotFindServiceAccountInNonExistingNamespace": {
 			args: args{
-				name:      testutils.CappName + testutils.NonExistentSuffix,
-				namespace: namespaceName + testutils.NonExistentSuffix,
+				name:                       testutils.ServiceAccountName + testutils.NonExistentSuffix,
+				existingServiceAccountName: "",
+				namespace:                  namespaceName + testutils.NonExistentSuffix,
 			},
 			want: want{
-				serviceAccount: &corev1.ServiceAccount{},
-				error:          fmt.Sprintf(ErrCouldNotGetServiceAccount, testutils.CappName+testutils.NonExistentSuffix, namespaceName+testutils.NonExistentSuffix),
+				serviceAccount: types.ServiceAccount{},
+				error:          fmt.Sprintf(ErrCouldNotGetServiceAccount, testutils.ServiceAccountName+testutils.NonExistentSuffix, namespaceName+testutils.NonExistentSuffix),
 			},
 		},
 	}
 
 	setup()
 	createTestNamespace(namespaceName, utils.AddManagedLabel(map[string]string{}))
-	mocks.CreateTestServiceAccountWithToken(fakeClient, namespaceName, testutils.ServiceAccountName, "token-secret", "value", "docker-cfg")
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
+			if test.args.existingServiceAccountName != "" {
+				mocks.CreateTestServiceAccount(fakeClient, namespaceName, test.args.existingServiceAccountName, "")
+			}
 			c := mocks.GinContext()
 			serviceAccountController := NewServiceAccountController(fakeClient, c, logger)
 			response, err := serviceAccountController.GetServiceAccount(test.args.name, test.args.namespace)
@@ -75,8 +67,6 @@ func TestGetServiceAccount(t *testing.T) {
 				assert.NoError(t, err)
 			}
 			assert.Equal(t, test.want.serviceAccount.Name, response.Name)
-			assert.Equal(t, test.want.serviceAccount.Namespace, response.Namespace)
-			assert.Equal(t, test.want.serviceAccount.Secrets, response.Secrets)
 		})
 	}
 }
@@ -133,6 +123,119 @@ func TestGetServiceAccountToken(t *testing.T) {
 				assert.NoError(t, err)
 			}
 			assert.Equal(t, test.want.tokenResponse, response)
+		})
+	}
+}
+
+func TestCreateServiceAccount(t *testing.T) {
+	namespaceName := testutils.TestNamespace + "-createServiceAccount"
+	type args struct {
+		namespace                  string
+		name                       string
+		existingServiceAccountName string
+	}
+	type want struct {
+		response types.ServiceAccount
+		error    string
+	}
+	cases := map[string]struct {
+		args args
+		want want
+	}{
+		"ShouldSucceedCreatingServiceAccount": {
+			args: args{
+				namespace:                  namespaceName,
+				name:                       testutils.ServiceAccountName,
+				existingServiceAccountName: "",
+			},
+			want: want{
+				response: types.ServiceAccount{Name: testutils.ServiceAccountName},
+				error:    "",
+			},
+		},
+		"ShouldHandleAlreadyExistingServiceAccount": {
+			args: args{
+				name:                       testutils.ServiceAccountName + "-new",
+				namespace:                  namespaceName,
+				existingServiceAccountName: testutils.ServiceAccountName + "-new",
+			},
+			want: want{
+				response: types.ServiceAccount{},
+				error:    fmt.Sprintf("serviceaccounts %q already exists", testutils.ServiceAccountName+"-new"),
+			},
+		},
+	}
+
+	setup()
+	createTestNamespace(namespaceName, utils.AddManagedLabel(map[string]string{}))
+
+	for name, test := range cases {
+		t.Run(name, func(t *testing.T) {
+			if test.args.existingServiceAccountName != "" {
+				mocks.CreateTestServiceAccount(fakeClient, namespaceName, test.args.existingServiceAccountName, "")
+			}
+			c := mocks.GinContext()
+			serviceAccountController := NewServiceAccountController(fakeClient, c, logger)
+			response, err := serviceAccountController.CreateServiceAccount(test.args.name, test.args.namespace)
+
+			if test.want.error != "" {
+				assert.ErrorContains(t, err, test.want.error)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, test.want.response, response)
+		})
+	}
+}
+
+func TestDeleteServiceAccount(t *testing.T) {
+	namespaceName := testutils.TestNamespace + "-deleteServiceAccount"
+	type args struct {
+		namespace string
+		name      string
+	}
+	type want struct {
+		error string
+	}
+	cases := map[string]struct {
+		args args
+		want want
+	}{
+		"ShouldSucceedDeletingServiceAccount": {
+			args: args{
+				namespace: namespaceName,
+				name:      testutils.ServiceAccountName,
+			},
+			want: want{
+				error: "",
+			},
+		},
+		"ShouldHandleNonExistingServiceAccount": {
+			args: args{
+				namespace: namespaceName,
+				name:      testutils.ServiceAccountName + testutils.NonExistentSuffix,
+			},
+			want: want{
+				error: fmt.Sprintf(ErrCouldNotDeleteServiceAccount, testutils.ServiceAccountName+testutils.NonExistentSuffix, namespaceName),
+			},
+		},
+	}
+
+	setup()
+	createTestNamespace(namespaceName, utils.AddManagedLabel(map[string]string{}))
+	mocks.CreateTestServiceAccount(fakeClient, namespaceName, testutils.ServiceAccountName, "")
+
+	for name, test := range cases {
+		t.Run(name, func(t *testing.T) {
+			c := mocks.GinContext()
+			serviceAccountController := NewServiceAccountController(fakeClient, c, logger)
+			err := serviceAccountController.DeleteServiceAccount(test.args.name, test.args.namespace)
+
+			if test.want.error != "" {
+				assert.ErrorContains(t, err, test.want.error)
+			} else {
+				assert.NoError(t, err)
+			}
 		})
 	}
 }

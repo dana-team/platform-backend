@@ -2,10 +2,11 @@ package v1
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/dana-team/platform-backend/src/customerrors"
 	"github.com/dana-team/platform-backend/src/middleware"
 	"github.com/dana-team/platform-backend/src/utils/pagination"
-	"net/http"
 
 	"github.com/dana-team/platform-backend/src/controllers"
 	"github.com/dana-team/platform-backend/src/types"

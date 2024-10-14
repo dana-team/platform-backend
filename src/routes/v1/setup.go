@@ -1,10 +1,11 @@
 package v1
 
 import (
+	"net/http"
+
 	"github.com/dana-team/platform-backend/src/routes/v1/doc"
 	"github.com/dana-team/platform-backend/src/routes/v1/doc/operation"
 	"github.com/dana-team/platform-backend/src/types"
-	"net/http"
 
 	"github.com/dana-team/platform-backend/src/auth"
 	"github.com/dana-team/platform-backend/src/middleware"
@@ -183,8 +184,22 @@ func setupNamespaceRoutes(api huma.API, r huma.Registry, v1 *gin.RouterGroup, to
 
 	serviceAccountsGroup := namespacesGroup.Group("/:namespaceName/serviceaccounts")
 	{
+		serviceAccountsGroup.Use(middleware.PaginationMiddleware())
+
+		serviceAccountsGroup.GET("/:serviceAccountName", GetServiceAccount())
+		operation.AddGetServiceAccount(api, r)
+
 		serviceAccountsGroup.GET("/:serviceAccountName/token", GetToken())
 		operation.AddGetToken(api, r)
+
+		serviceAccountsGroup.GET("", GetServiceAccounts())
+		operation.AddGetServiceAccounts(api, r)
+
+		serviceAccountsGroup.POST("/:serviceAccountName", CreateServiceAccount())
+		operation.AddCreateServiceAccount(api, r)
+
+		serviceAccountsGroup.DELETE("/:serviceAccountName", DeleteServiceAccount())
+		operation.AddDeleteServiceAccount(api, r)
 	}
 }
 
