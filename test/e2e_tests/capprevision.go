@@ -2,6 +2,8 @@ package e2e_tests
 
 import (
 	"fmt"
+	"net/http"
+
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/controllers"
 	"github.com/dana-team/platform-backend/src/types"
@@ -9,7 +11,6 @@ import (
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"net/http"
 )
 
 var _ = Describe("Validate CappRevision routes and functionality", func() {
@@ -142,8 +143,8 @@ var _ = Describe("Validate CappRevision routes and functionality", func() {
 
 			expectedResponse := map[string]interface{}{
 				testutils.MetadataKey:    types.Metadata{Name: oneCappRevisionNames[0], Namespace: namespaceName},
-				testutils.AnnotationsKey: annotations,
 				testutils.LabelsKey:      []types.KeyValue{{Key: testutils.LabelCappName, Value: oneCappName}},
+				testutils.AnnotationsKey: nil,
 				testutils.SpecKey: mocks.PrepareCappRevisionSpec(
 					placementName,
 					mocks.ConvertKeyValueSliceToMap([]types.KeyValue{{Key: testutils.ManagedByLabel, Value: testutils.Rcs}}),
@@ -282,8 +283,9 @@ var _ = Describe("Validate CappRevision routes and functionality", func() {
 
 			expectedResponse := map[string]interface{}{
 				testutils.MetadataKey:    types.Metadata{Name: oneCappRevisionNames[0], Namespace: namespaceName},
-				testutils.AnnotationsKey: annotations,
 				testutils.LabelsKey:      []types.KeyValue{{Key: testutils.LabelCappName, Value: oneCappName}},
+				testutils.AnnotationsKey: nil,
+
 				testutils.SpecKey: mocks.PrepareCappRevisionSpec(
 					placementName,
 					mocks.ConvertKeyValueSliceToMap([]types.KeyValue{{Key: testutils.ManagedByLabel, Value: testutils.Rcs}}),
