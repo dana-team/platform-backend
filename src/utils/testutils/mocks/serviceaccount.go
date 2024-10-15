@@ -12,6 +12,9 @@ func PrepareServiceAccount(name, namespace string, dockerCfgSecretName string) *
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
+			Labels: map[string]string{
+				testutils.ManagedLabel: "true",
+			},
 		},
 	}
 

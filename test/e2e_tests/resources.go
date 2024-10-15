@@ -2,6 +2,9 @@ package e2e_tests
 
 import (
 	"context"
+	"math/rand"
+	"time"
+
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/src/utils/testutils"
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
@@ -12,10 +15,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"math/rand"
+
 	clusterv1beta1 "open-cluster-management.io/api/cluster/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 const (
@@ -205,6 +207,10 @@ func getServiceAccount(k8sClient client.Client, name string, namespace string) *
 func getServiceAccountTokenSecret(k8sClient client.Client, name string, namespace string) *corev1.Secret {
 	serviceAccount := getServiceAccount(k8sClient, name, namespace)
 
+	if serviceAccount.Secrets == nil {
+		return &corev1.Secret{}
+	}
+
 	for _, ref := range serviceAccount.Secrets {
 		secret := getSecret(k8sClient, ref.Name, namespace)
 
@@ -216,10 +222,12 @@ func getServiceAccountTokenSecret(k8sClient client.Client, name string, namespac
 					return tokenSecret
 				}
 			}
+		} else if secret.Type == corev1.SecretTypeServiceAccountToken {
+			return secret
 		}
 	}
 
-	return nil
+	return &corev1.Secret{}
 }
 
 // createTestNamespace creates a test Namespace object.

@@ -9,6 +9,7 @@ require (
 	github.com/dana-team/rcs-ocm-deployer v0.3.3
 	github.com/danielgtaylor/huma/v2 v2.23.0
 	github.com/gin-gonic/gin v1.10.0
+	github.com/google/go-cmp v0.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/joho/godotenv v1.5.1
 	github.com/oam-dev/cluster-gateway v1.9.0
@@ -81,7 +82,6 @@ require (
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/cel-go v0.20.1 // indirect
 	github.com/google/gnostic-models v0.6.8 // indirect
-	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/go-containerregistry v0.18.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20240827171923-fa2c70bbbfe5 // indirect

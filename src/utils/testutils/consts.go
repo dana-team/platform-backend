@@ -1,8 +1,9 @@
 package testutils
 
 import (
-	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"time"
+
+	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 )
 
 var (
@@ -23,6 +24,7 @@ const (
 	CappRevisionName      = TestName + "-capp-revision"
 	CapprevisionsKey      = "capprevisions"
 )
+
 const (
 	SecretsKey             = "secrets"
 	SecretNameKey          = "secretName"
@@ -36,6 +38,7 @@ const (
 	KeyField               = "key"
 	ValueField             = "value"
 )
+
 const (
 	TestName          = "test"
 	TestNamespace     = TestName + "-ns"
@@ -49,7 +52,7 @@ const (
 )
 
 const (
-	ServiceAccountsKey = "serviceaccounts"
+	ServiceAccountsKey = "serviceAccounts"
 	TokenKey           = "token"
 	Secret             = "Secret"
 	V1                 = "v1"
@@ -165,4 +168,8 @@ const (
 	ReasonNotFound      = "NotFound"
 	ReasonBadRequest    = "BadRequest"
 	ReasonAlreadyExists = "AlreadyExists"
+)
+
+const (
+	ServiceAccountParam = "serviceaccounts"
 )

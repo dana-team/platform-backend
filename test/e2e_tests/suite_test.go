@@ -5,11 +5,12 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
-	"github.com/dana-team/platform-backend/src/utils/testutils"
-	multicluster "github.com/oam-dev/cluster-gateway/pkg/apis/cluster/transport"
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/dana-team/platform-backend/src/utils/testutils"
+	multicluster "github.com/oam-dev/cluster-gateway/pkg/apis/cluster/transport"
 
 	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
 	configv1 "github.com/openshift/api/config/v1"
