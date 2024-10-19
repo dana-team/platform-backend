@@ -11,19 +11,20 @@ import (
 )
 
 const (
-	serviceAccountTag  = "ServiceAccounts"
-	serviceAccountsKey = "serviceaccounts"
+	tokenTag  = "Tokens"
+	tokensKey = "token"
 )
 
-// AddGetServiceAccount adds the GetServiceAccount route to the OpenAPI scheme.
-func AddGetServiceAccount(api huma.API, registry huma.Registry) {
+// TODO: figure out if this function is neccessary. It is sort of confusing since this is relating to dockercfgTokens, not auth tokens.
+// AddGetToken adds the GetToken route to the OpenAPI scheme.
+func AddGetToken(api huma.API, registry huma.Registry) {
 	operation := &huma.Operation{
-		OperationID: "get-serviceaccount",
+		OperationID: "get-token",
 		Method:      http.MethodGet,
-		Tags:        []string{serviceAccountTag},
-		Path:        fmt.Sprintf("/v1/%s/{%s}/%s/{%s}", namespacesKey, namespaceNameKey, serviceAccountsKey, serviceAccountName),
-		Summary:     "Get a specific ServiceAccount in a namespace",
-		Description: "Retrieves a specific ServiceAccount in a namespace",
+		Tags:        []string{tokenTag},
+		Path:        fmt.Sprintf("/v1/%s/{%s}/%s/{%s}/%s", namespacesKey, namespaceNameKey, serviceAccountsKey, serviceAccountName, tokensKey),
+		Summary:     "Get token of a ServiceAccount in a namespace",
+		Description: "Retrieves the token of a specific ServiceAccount in a namespace",
 		Parameters: []*huma.Param{
 			{
 				Name:     namespaceNameKey,
@@ -47,7 +48,7 @@ func AddGetServiceAccount(api huma.API, registry huma.Registry) {
 			strconv.Itoa(http.StatusOK): {
 				Content: map[string]*huma.MediaType{
 					applicationJSONKey: {
-						Schema: huma.SchemaFromType(registry, reflect.TypeOf(types.ServiceAccount{})),
+						Schema: huma.SchemaFromType(registry, reflect.TypeOf(types.TokenResponse{})),
 					},
 				},
 			},
@@ -71,15 +72,15 @@ func AddGetServiceAccount(api huma.API, registry huma.Registry) {
 	api.OpenAPI().AddOperation(operation)
 }
 
-// AddCreateServiceAccount adds the CreateServiceAccount route to the OpenAPI scheme.
-func AddCreateServiceAccount(api huma.API, registry huma.Registry) {
+// AddCreateToken adds the CreateToken route to the OpenAPI scheme.
+func AddCreateToken(api huma.API, registry huma.Registry) {
 	operation := &huma.Operation{
-		OperationID: "create-serviceaccount",
+		OperationID: "create-token",
 		Method:      http.MethodPost,
-		Tags:        []string{serviceAccountTag},
-		Path:        fmt.Sprintf("/v1/%s/{%s}/%s/{%s}", namespacesKey, namespaceNameKey, serviceAccountsKey, serviceAccountName),
-		Summary:     "Create a ServiceAccount in a namespace",
-		Description: "Creates a new ServiceAccount in a specific namespace",
+		Tags:        []string{tokenTag},
+		Path:        fmt.Sprintf("/v1/%s/{%s}/%s/{%s}/%s", namespacesKey, namespaceNameKey, serviceAccountsKey, serviceAccountName, tokensKey),
+		Summary:     "Creates an auth token for a service account",
+		Description: "Creates an auth token for a service account in a namespace",
 		Parameters: []*huma.Param{
 			{
 				Name:     namespaceNameKey,
@@ -95,6 +96,13 @@ func AddCreateServiceAccount(api huma.API, registry huma.Registry) {
 				Schema:   huma.SchemaFromType(registry, reflect.TypeOf(types.ServiceAccountRequestUri{}.ServiceAccountName)),
 				Example:  defaultExample,
 			},
+			{
+				Name:     expirationSecondsKey,
+				In:       queryKey,
+				Required: false,
+				Schema:   huma.SchemaFromType(registry, reflect.TypeOf("")),
+				Example:  defaultExampleSeconds,
+			},
 		},
 		Security: []map[string][]string{
 			{bearerKey: {}},
@@ -103,7 +111,7 @@ func AddCreateServiceAccount(api huma.API, registry huma.Registry) {
 			strconv.Itoa(http.StatusOK): {
 				Content: map[string]*huma.MediaType{
 					applicationJSONKey: {
-						Schema: huma.SchemaFromType(registry, reflect.TypeOf(types.ServiceAccount{})),
+						Schema: huma.SchemaFromType(registry, reflect.TypeOf(types.TokenRequestResponse{})),
 					},
 				},
 			},
@@ -123,18 +131,19 @@ func AddCreateServiceAccount(api huma.API, registry huma.Registry) {
 			},
 		},
 	}
+
 	api.OpenAPI().AddOperation(operation)
 }
 
-// AddDeleteServiceAccount adds the DeleteServiceAccount route to the OpenAPI scheme.
-func AddDeleteServiceAccount(api huma.API, registry huma.Registry) {
+// AddRevokeToken adds the RevokeToken route to the OpenAPI scheme.
+func AddRevokeToken(api huma.API, registry huma.Registry) {
 	operation := &huma.Operation{
-		OperationID: "delete-serviceaccount",
+		OperationID: "revoke-token",
 		Method:      http.MethodDelete,
-		Tags:        []string{serviceAccountTag},
-		Path:        fmt.Sprintf("/v1/%s/{%s}/%s/{%s}", namespacesKey, namespaceNameKey, serviceAccountsKey, serviceAccountName),
-		Summary:     "Deletes a ServiceAccount in a namespace",
-		Description: "Deletes a specific ServiceAccount in a specific namespace",
+		Tags:        []string{tokenTag},
+		Path:        fmt.Sprintf("/v1/%s/{%s}/%s/{%s}/%s", namespacesKey, namespaceNameKey, serviceAccountsKey, serviceAccountName, tokensKey),
+		Summary:     "Revokes the tokens for a ServiceAccount",
+		Description: "Revokes all tokens for a specific ServiceAccount in a namespace",
 		Parameters: []*huma.Param{
 			{
 				Name:     namespaceNameKey,
@@ -178,66 +187,5 @@ func AddDeleteServiceAccount(api huma.API, registry huma.Registry) {
 			},
 		},
 	}
-	api.OpenAPI().AddOperation(operation)
-}
-
-// AddGetServiceAccounts adds the GetServiceAccounts route to the OpenAPI scheme.
-func AddGetServiceAccounts(api huma.API, registry huma.Registry) {
-	operation := &huma.Operation{
-		OperationID: "get-serviceAccounts",
-		Method:      http.MethodGet,
-		Tags:        []string{serviceAccountTag},
-		Path:        fmt.Sprintf("/v1/%s/{%s}/%s", namespacesKey, namespaceNameKey, serviceAccountsKey),
-		Summary:     "Get all ServiceAccounts in a namespace",
-		Description: "Retrieves all ServiceAccounts in a specific namespace",
-		Parameters: []*huma.Param{
-			{
-				Name:    paginationPageKey,
-				In:      queryKey,
-				Schema:  huma.SchemaFromType(registry, reflect.TypeOf(types.PaginationParams{}.Page)),
-				Example: 1,
-			},
-			{
-				Name:    paginationLimitKey,
-				In:      queryKey,
-				Schema:  huma.SchemaFromType(registry, reflect.TypeOf(types.PaginationParams{}.Limit)),
-				Example: 1,
-			},
-			{
-				Name:     namespaceNameKey,
-				In:       pathKey,
-				Required: true,
-				Schema:   huma.SchemaFromType(registry, reflect.TypeOf(types.NamespaceUri{}.NamespaceName)),
-				Example:  defaultExample,
-			},
-		},
-		Security: []map[string][]string{
-			{bearerKey: {}},
-		},
-		Responses: map[string]*huma.Response{
-			strconv.Itoa(http.StatusOK): {
-				Content: map[string]*huma.MediaType{
-					applicationJSONKey: {
-						Schema: huma.SchemaFromType(registry, reflect.TypeOf(types.ServiceAccountOutput{})),
-					},
-				},
-			},
-			strconv.Itoa(http.StatusBadRequest): {
-				Content: map[string]*huma.MediaType{
-					applicationJSONKey: {
-						Schema: huma.SchemaFromType(registry, reflect.TypeOf(types.ErrorResponse{})),
-					},
-				},
-			},
-			strconv.Itoa(http.StatusInternalServerError): {
-				Content: map[string]*huma.MediaType{
-					applicationJSONKey: {
-						Schema: huma.SchemaFromType(registry, reflect.TypeOf(types.ErrorResponse{})),
-					},
-				},
-			},
-		},
-	}
-
 	api.OpenAPI().AddOperation(operation)
 }
