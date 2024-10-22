@@ -6,8 +6,8 @@ import (
 	"time"
 
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
-	"github.com/dana-team/platform-backend/src/utils/testutils"
-	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
+	"github.com/dana-team/platform-backend/internal/utils/testutils"
+	"github.com/dana-team/platform-backend/internal/utils/testutils/mocks"
 	rcsv1alpha1 "github.com/dana-team/rcs-ocm-deployer/api/v1alpha1"
 	multicluster "github.com/oam-dev/cluster-gateway/pkg/apis/cluster/transport"
 	. "github.com/onsi/gomega"

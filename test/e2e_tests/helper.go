@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
-	"github.com/dana-team/platform-backend/src/utils/testutils"
+	"github.com/dana-team/platform-backend/internal/utils/testutils"
 	rcsv1alpha1 "github.com/dana-team/rcs-ocm-deployer/api/v1alpha1"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	. "github.com/onsi/gomega"

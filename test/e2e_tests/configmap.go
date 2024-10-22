@@ -2,9 +2,9 @@ package e2e_tests
 
 import (
 	"fmt"
-	"github.com/dana-team/platform-backend/src/types"
-	"github.com/dana-team/platform-backend/src/utils/testutils"
-	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
+	"github.com/dana-team/platform-backend/internal/types"
+	"github.com/dana-team/platform-backend/internal/utils/testutils"
+	"github.com/dana-team/platform-backend/internal/utils/testutils/mocks"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"net/http"

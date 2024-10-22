@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/dana-team/platform-backend/src/types"
-	"github.com/dana-team/platform-backend/src/utils/testutils"
-	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
+	"github.com/dana-team/platform-backend/internal/types"
+	"github.com/dana-team/platform-backend/internal/utils/testutils"
+	"github.com/dana-team/platform-backend/internal/utils/testutils/mocks"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
