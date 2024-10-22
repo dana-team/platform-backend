@@ -81,10 +81,12 @@ func (t *tokenController) CreateToken(serviceAccountName, namespace string, expi
 	tokenRequestSecret, err := t.client.CoreV1().Secrets(namespace).Get(t.ctx, fmt.Sprintf("%s-%s", serviceAccountName, tokenRequestSuffix), metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
-			if createTokenErr := CreateTokenRequestSecret(t.ctx, t.client, serviceAccountName, namespace, t.logger); createTokenErr != nil {
-				t.logger.Error(fmt.Sprintf("%s with error: %s", fmt.Sprintf(ErrCouldNotCreateTokenRequestSecret, serviceAccountName, namespace), createTokenErr.Error()))
-				return types.TokenRequestResponse{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotCreateTokenRequestSecret, serviceAccountName, namespace), createTokenErr)
+			createdSecret, createSecretErr := CreateTokenRequestSecret(t.ctx, t.client, serviceAccountName, namespace, t.logger)
+			if createSecretErr != nil {
+				t.logger.Error(fmt.Sprintf("%s with error: %s", fmt.Sprintf(ErrCouldNotCreateTokenRequestSecret, serviceAccountName, namespace), createSecretErr.Error()))
+				return types.TokenRequestResponse{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotCreateTokenRequestSecret, serviceAccountName, namespace), createSecretErr)
 			}
+			tokenRequestSecret = createdSecret
 		} else {
 			t.logger.Error(fmt.Sprintf("%s with error: %s", fmt.Sprintf(ErrCouldNotGetTokenRequestSecret, serviceAccountName, namespace), err.Error()))
 			return types.TokenRequestResponse{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotGetTokenRequestSecret, serviceAccountName, namespace), err)
@@ -109,26 +111,26 @@ func (t *tokenController) CreateToken(serviceAccountName, namespace string, expi
 // CreateTokenRequestSecret creates a secret for the token request.
 // All token requests for a service account are bound to this secret.
 // When this secret is deleted, all tokens bound to it are revoked.
-func CreateTokenRequestSecret(ctx context.Context, client kubernetes.Interface, serviceAccountName, namespace string, log *zap.Logger) error {
+func CreateTokenRequestSecret(ctx context.Context, client kubernetes.Interface, serviceAccountName, namespace string, log *zap.Logger) (*corev1.Secret, error) {
 	_, err := client.CoreV1().Secrets(namespace).Get(ctx, fmt.Sprintf("%s-%s", serviceAccountName, tokenRequestSuffix), metav1.GetOptions{})
 	if err != nil {
 		if !errors.IsNotFound(err) {
 			log.Error(fmt.Sprintf("%s with error: %s", fmt.Sprintf(ErrCouldNotGetTokenRequestSecret, serviceAccountName, namespace), err.Error()))
-			return customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotGetTokenRequestSecret, serviceAccountName, namespace), err)
+			return nil, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotGetTokenRequestSecret, serviceAccountName, namespace), err)
 		}
 	}
 	serviceAccount, err := client.CoreV1().ServiceAccounts(namespace).Get(ctx, serviceAccountName, metav1.GetOptions{})
 	if err != nil {
 		log.Error(fmt.Sprintf("%s with error: %s", fmt.Sprintf(ErrCouldNotGetServiceAccount, serviceAccountName, namespace), err.Error()))
-		return customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotGetServiceAccount, serviceAccountName, namespace), err)
+		return nil, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotGetServiceAccount, serviceAccountName, namespace), err)
 	}
 	serviceAccountSecret := prepareTokenRequestSecret(serviceAccount)
-	_, err = client.CoreV1().Secrets(namespace).Create(ctx, serviceAccountSecret, metav1.CreateOptions{})
+	requestSecret, err := client.CoreV1().Secrets(namespace).Create(ctx, serviceAccountSecret, metav1.CreateOptions{})
 	if err != nil {
 		log.Error(fmt.Sprintf("%s with error: %s", fmt.Sprintf(ErrCouldNotCreateTokenRequestSecret, serviceAccountName, namespace), err.Error()))
-		return customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotCreateTokenRequestSecret, serviceAccountName, namespace), err)
+		return nil, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotCreateTokenRequestSecret, serviceAccountName, namespace), err)
 	}
-	return nil
+	return requestSecret, nil
 }
 
 // DeleteTokenRequestSecret deletes the secret for token requests.
