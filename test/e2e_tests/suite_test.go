@@ -9,10 +9,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dana-team/platform-backend/src/utils/testutils"
+	"github.com/dana-team/platform-backend/internal/utils/testutils"
 	multicluster "github.com/oam-dev/cluster-gateway/pkg/apis/cluster/transport"
 
-	"github.com/dana-team/platform-backend/src/utils/testutils/mocks"
+	"github.com/dana-team/platform-backend/internal/utils/testutils/mocks"
 	configv1 "github.com/openshift/api/config/v1"
 
 	ctrl "sigs.k8s.io/controller-runtime"
