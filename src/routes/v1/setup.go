@@ -200,6 +200,12 @@ func setupNamespaceRoutes(api huma.API, r huma.Registry, v1 *gin.RouterGroup, to
 
 		serviceAccountsGroup.DELETE("/:serviceAccountName", DeleteServiceAccount())
 		operation.AddDeleteServiceAccount(api, r)
+
+		serviceAccountsGroup.POST("/:serviceAccountName/token", CreateToken())
+		operation.AddCreateToken(api, r)
+
+		serviceAccountsGroup.DELETE("/:serviceAccountName/token", RevokeToken())
+		operation.AddRevokeToken(api, r)
 	}
 }
 

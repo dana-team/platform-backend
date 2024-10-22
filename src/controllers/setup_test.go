@@ -2,6 +2,9 @@ package controllers
 
 import (
 	"context"
+	"os"
+	"testing"
+
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	dnsrecordv1alpha1 "github.com/dana-team/provider-dns/apis/record/v1alpha1"
 	"go.uber.org/zap"
@@ -12,10 +15,9 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 	clusterv1beta1 "open-cluster-management.io/api/cluster/v1beta1"
-	"os"
+
 	runtimeClient "sigs.k8s.io/controller-runtime/pkg/client"
 	runtimeFake "sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
 )
 
 var (

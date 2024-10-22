@@ -37,6 +37,8 @@ const (
 	SecretNamespace        = SecretName + "-ns"
 	KeyField               = "key"
 	ValueField             = "value"
+	TokenName              = "token"
+	TokenNamespace         = TokenName + "-ns"
 )
 
 const (
@@ -54,6 +56,7 @@ const (
 const (
 	ServiceAccountsKey = "serviceAccounts"
 	TokenKey           = "token"
+	ExpiresKey         = "expires"
 	Secret             = "Secret"
 	V1                 = "v1"
 	Value              = "value"
@@ -171,5 +174,7 @@ const (
 )
 
 const (
-	ServiceAccountParam = "serviceaccounts"
+	ServiceAccountParam    = "serviceaccounts"
+	ExpirationSecondsParam = "expirationSeconds"
+	TokenRequestSuffix     = "token-request"
 )

@@ -48,6 +48,8 @@ const (
 
 	logsKey     = "logs"
 	terminalKey = "terminal"
+
+	expirationSecondsKey = "expirationSeconds"
 )
 
 const (
@@ -66,4 +68,8 @@ const (
 	sessionIDKey = "SessionID"
 	rowsKey      = "rows"
 	colsKey      = "cols"
+)
+
+const (
+	defaultExampleSeconds = "3600"
 )

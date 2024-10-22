@@ -145,6 +145,7 @@ func (c *serviceAccountController) CreateServiceAccount(name, namespace string) 
 	if err != nil {
 		return types.ServiceAccount{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotCreateServiceAccount, name, namespace), err)
 	}
+
 	return types.ServiceAccount{Name: name}, nil
 }
 
