@@ -25,7 +25,7 @@ require (
 	k8s.io/client-go v0.31.1
 	knative.dev/pkg v0.0.0-20240930065954-503173341499
 	knative.dev/serving v0.42.2
-	open-cluster-management.io/api v0.14.0
+	open-cluster-management.io/api v0.15.0
 	sigs.k8s.io/controller-runtime v0.19.0
 )
 
