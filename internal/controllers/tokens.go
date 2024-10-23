@@ -105,7 +105,7 @@ func (t *tokenController) CreateToken(serviceAccountName, namespace string, expi
 		t.logger.Error(fmt.Sprintf("%s with error: %s", fmt.Sprintf(ErrCouldNotCreateTokenRequest, serviceAccountName, namespace), err.Error()))
 		return types.TokenRequestResponse{}, customerrors.NewAPIError(fmt.Sprintf(ErrCouldNotCreateTokenRequest, serviceAccountName, namespace), err)
 	}
-	return types.TokenRequestResponse{Token: createdRequest.Status.Token, Expires: createdRequest.Status.ExpirationTimestamp.Time}, nil
+	return types.TokenRequestResponse{Token: createdRequest.Status.Token, ExpirationTimestamp: createdRequest.Status.ExpirationTimestamp.Time}, nil
 }
 
 // CreateTokenRequestSecret creates a secret for the token request.

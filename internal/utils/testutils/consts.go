@@ -54,12 +54,12 @@ const (
 )
 
 const (
-	ServiceAccountsKey = "serviceAccounts"
-	TokenKey           = "token"
-	ExpiresKey         = "expires"
-	Secret             = "Secret"
-	V1                 = "v1"
-	Value              = "value"
+	ServiceAccountsKey     = "serviceAccounts"
+	TokenKey               = "token"
+	ExpirationTimestampKey = "expirationTimestamp"
+	Secret                 = "Secret"
+	V1                     = "v1"
+	Value                  = "value"
 )
 
 const (
