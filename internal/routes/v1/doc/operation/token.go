@@ -15,8 +15,8 @@ const (
 	tokensKey = "token"
 )
 
-// TODO: figure out if this function is neccessary. It is sort of confusing since this is relating to dockercfgTokens, not auth tokens.
 // AddGetToken adds the GetToken route to the OpenAPI scheme.
+// TODO: figure out if this function is necessary. It is sort of confusing since this is relating to dockercfgTokens, not auth tokens.
 func AddGetToken(api huma.API, registry huma.Registry) {
 	operation := &huma.Operation{
 		OperationID: "get-token",

@@ -40,8 +40,8 @@ func TestCreateToken(t *testing.T) {
 			want: want{
 				statusCode: http.StatusOK,
 				response: map[string]interface{}{
-					"token":   "",
-					"expires": time.Time{},
+					"token":               "",
+					"expirationTimestamp": time.Time{},
 				},
 			},
 		},

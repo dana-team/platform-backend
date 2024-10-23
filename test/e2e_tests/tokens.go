@@ -62,14 +62,14 @@ var _ = Describe("Validate ServiceAccount token routes and functionality", func(
 
 			Expect(status).Should(Equal(http.StatusOK))
 			Expect(response[testutils.TokenKey]).ShouldNot(BeEmpty())
-			laterExpiration, err := time.Parse(time.RFC3339, response[testutils.ExpiresKey].(string))
+			laterExpiration, err := time.Parse(time.RFC3339, response[testutils.ExpirationTimestampKey].(string))
 			Expect(err).ShouldNot(HaveOccurred())
 
 			uri = fmt.Sprintf("%s/v1/namespaces/%s/%s/%s/token?%s=%s", platformURL, namespaceName, testutils.ServiceAccountParam, serviceAccountName, testutils.ExpirationSecondsParam, "3600")
 			status, response = performHTTPRequest(httpClient, nil, http.MethodPost, uri, "", "", userToken)
 			Expect(status).Should(Equal(http.StatusOK))
 			Expect(response[testutils.TokenKey]).ShouldNot(BeEmpty())
-			earlierExpiration, err := time.Parse(time.RFC3339, response[testutils.ExpiresKey].(string))
+			earlierExpiration, err := time.Parse(time.RFC3339, response[testutils.ExpirationTimestampKey].(string))
 			Expect(err).ShouldNot(HaveOccurred())
 			isActualAfterExpected := laterExpiration.After(earlierExpiration)
 			Expect(isActualAfterExpected).Should(BeTrue())

@@ -24,8 +24,8 @@ type ServiceAccount struct {
 }
 
 type TokenRequestResponse struct {
-	Token   string    `json:"token"`
-	Expires time.Time `json:"expires,omitempty"`
+	Token               string    `json:"token"`
+	ExpirationTimestamp time.Time `json:"expirationTimestamp,omitempty"`
 }
 
 type CreateTokenQuery struct {
