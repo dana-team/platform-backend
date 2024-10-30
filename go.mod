@@ -20,9 +20,9 @@ require (
 	github.com/stretchr/testify v1.9.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/oauth2 v0.23.0
-	k8s.io/api v0.31.1
-	k8s.io/apimachinery v0.31.1
-	k8s.io/client-go v0.31.1
+	k8s.io/api v0.31.2
+	k8s.io/apimachinery v0.31.2
+	k8s.io/client-go v0.31.2
 	knative.dev/pkg v0.0.0-20241021183759-9b9d535af5ad
 	knative.dev/serving v0.43.0
 	open-cluster-management.io/api v0.15.0
