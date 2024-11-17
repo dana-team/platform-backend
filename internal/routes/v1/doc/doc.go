@@ -1,12 +1,13 @@
 package doc
 
 import (
-	"github.com/danielgtaylor/huma/v2"
-	"github.com/danielgtaylor/huma/v2/adapters/humagin"
-	"github.com/gin-gonic/gin"
 	"reflect"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/danielgtaylor/huma/v2"
+	"github.com/danielgtaylor/huma/v2/adapters/humagin"
+	"github.com/gin-gonic/gin"
 )
 
 const (
@@ -37,6 +38,7 @@ func SetupAPIRegistry(engine *gin.Engine) (huma.API, huma.Registry) {
 		"It includes all the API-endpoints supported by the backend, with information on how to use them.\n\n" +
 		"Code exists at `https://github.com/dana-team/platform-backend`."
 
+	config.DocsPath = ""
 	mapRegistry := huma.NewMapRegistry("#/components/schemas/", SchemaNamer)
 	config.OpenAPI.Components.Schemas = mapRegistry
 	setupSecuritySchemes(config)

@@ -29,6 +29,7 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider, scheme *r
 	engine.GET("/ws/terminal", ServeTerminal())
 	operation.AddServeTerminal(api, r)
 
+	engine.GET("/docs", serveDocs())
 	setupAuthRoutes(api, r, v1, tokenProvider)
 	setupNamespaceRoutes(api, r, v1, tokenProvider, scheme)
 	setupClustersRoutes(api, r, v1, tokenProvider, scheme)
