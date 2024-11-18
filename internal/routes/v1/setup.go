@@ -18,6 +18,7 @@ import (
 func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider, scheme *runtime.Scheme) {
 	engine.Use(middleware.ErrorHandlingMiddleware())
 	v1 := engine.Group("/v1")
+	ws := engine.Group("/ws")
 
 	api, r := doc.SetupAPIRegistry(engine)
 
@@ -26,9 +27,7 @@ func SetupRoutes(engine *gin.Engine, tokenProvider auth.TokenProvider, scheme *r
 	})
 	operation.AddHealthz(api, r)
 
-	engine.GET("/ws/terminal", ServeTerminal())
-	operation.AddServeTerminal(api, r)
-
+	setupWSRoutes(api, r, ws, tokenProvider, scheme)
 	setupAuthRoutes(api, r, v1, tokenProvider)
 	setupNamespaceRoutes(api, r, v1, tokenProvider, scheme)
 	setupClustersRoutes(api, r, v1, tokenProvider, scheme)
@@ -40,6 +39,41 @@ func setupAuthRoutes(api huma.API, r huma.Registry, v1 *gin.RouterGroup, tokenPr
 	{
 		authGroup.POST("", Login(tokenProvider))
 		operation.AddLogin(api, r)
+	}
+}
+
+// setupWSRoutes defines routes related to websockets.
+func setupWSRoutes(api huma.API, r huma.Registry, ws *gin.RouterGroup, tokenProvider auth.TokenProvider, scheme *runtime.Scheme) {
+	ws.GET("/terminal", ServeTerminal())
+	operation.AddServeTerminal(api, r)
+
+	namespacesGroup := ws.Group("/namespaces")
+	clustersGroup := ws.Group("/clusters/:clusterName")
+	if tokenProvider != nil {
+		namespacesGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
+		clustersGroup.Use(middleware.TokenAuthMiddleware(tokenProvider, scheme))
+	}
+
+	logsGroup := namespacesGroup.Group("/:namespaceName")
+	{
+		logsGroup.GET("/pods/:podName/logs", GetPodLogs())
+		operation.AddGetPodLogs(api, r)
+
+		logsGroup.Use(middleware.ClusterMiddleware()).GET("/capps/:cappName/logs", GetCappLogs())
+		operation.AddGetCappLogs(api, r)
+	}
+
+	clustersGroup.Use(middleware.ClusterMiddleware())
+	clusterNamespacesGroup := clustersGroup.Group("/namespaces")
+	{
+		clusterLogsGroup := clusterNamespacesGroup.Group("/:namespaceName")
+		{
+			clusterLogsGroup.GET("/pods/:podName/logs", GetPodLogs())
+			operation.AddClusterGetPodLogs(api, r)
+
+			clusterLogsGroup.GET("/capps/:cappName/logs", GetCappLogs())
+			operation.AddClusterGetCappLogs(api, r)
+		}
 	}
 }
 
@@ -173,15 +207,6 @@ func setupNamespaceRoutes(api huma.API, r huma.Registry, v1 *gin.RouterGroup, to
 		operation.AddGetPods(api, r)
 	}
 
-	logsGroup := namespacesGroup.Group("/:namespaceName")
-	{
-		logsGroup.GET("/pods/:podName/logs", GetPodLogs())
-		operation.AddGetPodLogs(api, r)
-
-		logsGroup.Use(middleware.ClusterMiddleware()).GET("/capps/:cappName/logs", GetCappLogs())
-		operation.AddGetCappLogs(api, r)
-	}
-
 	serviceAccountsGroup := namespacesGroup.Group("/:namespaceName/serviceaccounts")
 	{
 		serviceAccountsGroup.Use(middleware.PaginationMiddleware())
@@ -221,14 +246,6 @@ func setupClustersRoutes(api huma.API, registry huma.Registry, v1 *gin.RouterGro
 
 	namespacesGroup := clustersGroup.Group("/namespaces")
 	{
-		logsGroup := namespacesGroup.Group("/:namespaceName")
-		{
-			logsGroup.GET("/pods/:podName/logs", GetPodLogs())
-			operation.AddClusterGetPodLogs(api, registry)
-
-			logsGroup.GET("/capps/:cappName/logs", GetCappLogs())
-			operation.AddClusterGetCappLogs(api, registry)
-		}
 
 		terminalGroup := namespacesGroup.Group("/:namespaceName")
 		{

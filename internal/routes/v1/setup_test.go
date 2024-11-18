@@ -1,6 +1,9 @@
 package v1
 
 import (
+	"os"
+	"testing"
+
 	cappv1alpha1 "github.com/dana-team/container-app-operator/api/v1alpha1"
 	"github.com/dana-team/platform-backend/internal/middleware"
 	"github.com/dana-team/platform-backend/internal/routes/v1/doc"
@@ -12,10 +15,9 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 	clusterv1beta1 "open-cluster-management.io/api/cluster/v1beta1"
-	"os"
+
 	runtimeClient "sigs.k8s.io/controller-runtime/pkg/client"
 	runtimeFake "sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
 )
 
 const (
@@ -54,10 +56,12 @@ func setupRouter(logger *zap.Logger) *gin.Engine {
 	})
 
 	v1 := engine.Group("/v1")
+	ws := engine.Group("/ws")
 	api, r := doc.SetupAPIRegistry(engine)
 
 	setupNamespaceRoutes(api, r, v1, nil, nil)
 	setupClustersRoutes(api, r, v1, nil, nil)
+	setupWSRoutes(api, r, ws, nil, nil)
 
 	return engine
 }

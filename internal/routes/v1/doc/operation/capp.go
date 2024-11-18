@@ -2,10 +2,11 @@ package operation
 
 import (
 	"fmt"
-	"github.com/dana-team/platform-backend/internal/utils/testutils/mocks"
 	"net/http"
 	"reflect"
 	"strconv"
+
+	"github.com/dana-team/platform-backend/internal/utils/testutils/mocks"
 
 	"github.com/dana-team/platform-backend/internal/types"
 	"github.com/dana-team/platform-backend/internal/utils"
@@ -113,6 +114,7 @@ func AddCreateCapp(api huma.API, registry huma.Registry) {
 		RequestBody: &huma.RequestBody{
 			Content: map[string]*huma.MediaType{
 				applicationJSONKey: {
+					Schema: huma.SchemaFromType(registry, reflect.TypeOf(types.CreateCapp{})),
 					Examples: map[string]*huma.Example{
 						"Full scheme": {
 							Value: huma.SchemaFromType(registry, reflect.TypeOf(types.CreateCapp{})),

@@ -2,11 +2,12 @@ package operation
 
 import (
 	"fmt"
-	"github.com/dana-team/platform-backend/internal/types"
-	"github.com/danielgtaylor/huma/v2"
 	"net/http"
 	"reflect"
 	"strconv"
+
+	"github.com/dana-team/platform-backend/internal/types"
+	"github.com/danielgtaylor/huma/v2"
 )
 
 const (
@@ -19,7 +20,7 @@ func AddGetPodLogs(api huma.API, registry huma.Registry) {
 		OperationID: "get-pod-logs",
 		Method:      http.MethodGet,
 		Tags:        []string{logsTag},
-		Path:        fmt.Sprintf("/v1/%s/{%s}/%s/{%s}/%s", namespacesKey, namespaceNameKey, podsKey, podNameKey, logsKey),
+		Path:        fmt.Sprintf("/ws/%s/{%s}/%s/{%s}/%s", namespacesKey, namespaceNameKey, podsKey, podNameKey, logsKey),
 		Summary:     "Get logs of a pod in a namespace",
 		Description: "Retrieves the logs of a specific pod in a specific namespace using websockets",
 		Parameters: []*huma.Param{
@@ -117,7 +118,7 @@ func AddClusterGetPodLogs(api huma.API, registry huma.Registry) {
 		OperationID: "get-pod-logs-cluster",
 		Method:      http.MethodGet,
 		Tags:        []string{logsTag},
-		Path:        fmt.Sprintf("/v1/%s/{%s}/%s/{%s}/%s/{%s}/%s", clustersKey, clusterNameKey, namespacesKey, namespaceNameKey, podsKey, podNameKey, logsKey),
+		Path:        fmt.Sprintf("/ws/%s/{%s}/%s/{%s}/%s/{%s}/%s", clustersKey, clusterNameKey, namespacesKey, namespaceNameKey, podsKey, podNameKey, logsKey),
 		Summary:     "Get logs of a pod in a namespace with cluster name",
 		Description: "Retrieves the logs of a specific pod in a specific namespace using websockets with cluster name",
 		Parameters: []*huma.Param{
@@ -223,7 +224,7 @@ func AddGetCappLogs(api huma.API, registry huma.Registry) {
 		OperationID: "get-capp-logs",
 		Method:      http.MethodGet,
 		Tags:        []string{logsTag},
-		Path:        fmt.Sprintf("/v1/%s/{%s}/%s/{%s}/%s", namespacesKey, namespaceNameKey, cappsKey, cappNameKey, logsKey),
+		Path:        fmt.Sprintf("/ws/%s/{%s}/%s/{%s}/%s", namespacesKey, namespaceNameKey, cappsKey, cappNameKey, logsKey),
 		Summary:     "Get logs of a Capp in a namespace",
 		Description: "Retrieves the logs of a specific Capp in a specific namespace using websockets",
 		Parameters: []*huma.Param{
@@ -324,10 +325,10 @@ func AddGetCappLogs(api huma.API, registry huma.Registry) {
 // AddClusterGetCappLogs adds the ClusterGetCappLogs route to the OpenAPI scheme.
 func AddClusterGetCappLogs(api huma.API, registry huma.Registry) {
 	operation := &huma.Operation{
-		OperationID: "get-capp-logs",
+		OperationID: "get-capp-logs-cluster",
 		Method:      http.MethodGet,
 		Tags:        []string{logsTag},
-		Path:        fmt.Sprintf("/v1/%s/{%s}/%s/{%s}/%s/{%s}/%s", clustersKey, clusterNameKey, namespacesKey, namespaceNameKey, cappsKey, cappNameKey, logsKey),
+		Path:        fmt.Sprintf("/ws/%s/{%s}/%s/{%s}/%s/{%s}/%s", clustersKey, clusterNameKey, namespacesKey, namespaceNameKey, cappsKey, cappNameKey, logsKey),
 		Summary:     "Get logs of a Capp in a namespace with cluster name",
 		Description: "Retrieves the logs of a specific Capp in a specific namespace using websockets using cluster name",
 		Parameters: []*huma.Param{
