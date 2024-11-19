@@ -18,7 +18,7 @@ const (
 // AddGetUsers adds the GetUsers route to the OpenAPI scheme.
 func AddGetUsers(api huma.API, registry huma.Registry) {
 	operation := &huma.Operation{
-		OperationID: "get-user",
+		OperationID: "get-users",
 		Method:      http.MethodGet,
 		Tags:        []string{userTag},
 		Path:        fmt.Sprintf("/v1/%s/{%s}/%s", namespacesKey, namespaceNameKey, usersKey),

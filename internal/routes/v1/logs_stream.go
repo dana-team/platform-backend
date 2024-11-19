@@ -2,6 +2,8 @@ package v1
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/dana-team/platform-backend/internal/controllers"
 	"github.com/dana-team/platform-backend/internal/customerrors"
 	"github.com/dana-team/platform-backend/internal/middleware"
@@ -10,7 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"go.uber.org/zap"
-	"io"
 )
 
 const (

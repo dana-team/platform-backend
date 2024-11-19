@@ -2,10 +2,10 @@ package websocket
 
 import (
 	"bufio"
+	"io"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"io"
-	"time"
 )
 
 // Stream reads lines from the provided stream, formats each line using the given formatFunc,
@@ -28,7 +28,6 @@ func Stream(c *gin.Context, conn *websocket.Conn, stream io.ReadCloser, formatFu
 					SendErrorMessage(conn, "Error writing message to WebSocket")
 					return
 				}
-				time.Sleep(time.Second)
 			}
 		}
 	}
