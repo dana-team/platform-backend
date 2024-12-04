@@ -40,19 +40,6 @@ jobs:
       - name: Run go vet
         run: go vet ./...
 
-      - name: Log into ghcr.io
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Add IMAGE_TAG env property with commit short sha
-        run: echo "IMAGE_TAG=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
-
-      - name: Build and push docker image
-        run: make docker-build docker-push IMG=${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}:${IMAGE_TAG}
-
       - name: Set Kubernetes context
         uses: Azure/k8s-set-context@v4
         with:
@@ -86,6 +73,19 @@ jobs:
         run: |
           until kubectl get mca rcs-score -n ${{ secrets.BACKEND_CI_CLUSTER_NAME }} -o jsonpath='{.status.conditions[?(@.type=="Available")].status}' | grep -q "True"; do echo "Waiting for rcs addons to be ready..."; sleep 5; done; echo "rcs addons is ready"
           until kubectl get mca capp-status-addon -n ${{ secrets.BACKEND_CI_CLUSTER_NAME }} -o jsonpath='{.status.conditions[?(@.type=="Available")].status}' | grep -q "True"; do echo "Waiting for rcs addons to be ready..."; sleep 5; done; echo "rcs addons is ready"
+
+      - name: Log into ghcr.io
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Add IMAGE_TAG env property with commit short sha
+        run: echo "IMAGE_TAG=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
+
+      - name: Build and push docker image
+        run: make docker-build docker-push IMG=${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}:${IMAGE_TAG}
 
       - name: Deploy backend
         run: | 
