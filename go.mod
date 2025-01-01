@@ -17,7 +17,7 @@ require (
 	github.com/onsi/gomega v1.35.1
 	github.com/openshift/api v0.0.0-20241007111039-82e082220d91
 	github.com/pkg/errors v0.9.1
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/oauth2 v0.24.0
 	k8s.io/api v0.31.3
